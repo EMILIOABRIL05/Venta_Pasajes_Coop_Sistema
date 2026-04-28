@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('paradas', function (Blueprint $table) {
-            $table->id();
+            $table->uuid("id")->primary();
+            $table->string("nombre");
+            $table->string("ciudad");
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
