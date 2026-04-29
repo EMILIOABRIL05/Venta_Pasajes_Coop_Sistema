@@ -1,23 +1,231 @@
-/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+###############################################################################
+# Laravel .gitignore - Arquitectura DevSecOps con Cero Fugas de Información
+###############################################################################
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔐 ARCHIVOS DE ENTORNO (NUNCA COMMITEAR CREDENCIALES)
+# ─────────────────────────────────────────────────────────────────────────────
 .env
 .env.backup
+.env.*.backup
+.env.*.php
+.env.local
+.env.testing
 .env.production
-.phpactor.json
+.env.*.php
+
+# ✓ Permitir archivo de ejemplo para documentar variables requeridas
+!.env.example
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 📦 DEPENDENCIAS Y GESTORES DE PAQUETES
+# ─────────────────────────────────────────────────────────────────────────────
+/vendor/
+/node_modules/
+composer.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🗄️  BASES DE DATOS LOCALES Y ARCHIVOS DE PERSISTENCIA
+# ─────────────────────────────────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.pgsql
+*.mysql
+/database/*.db
+/database/*.sqlite
+/database/*.sqlite3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 💾 ALMACENAMIENTO: CACHÉS, LOGS Y SUBIDAS LOCALES
+# ─────────────────────────────────────────────────────────────────────────────
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/logs/
+/storage/app/
+!storage/app/.gitkeep
+
+/public/storage/
+/public/hot
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 📋 CACHÉS DE BOOTSTRAP Y CONFIGURACIÓN
+# ─────────────────────────────────────────────────────────────────────────────
+/bootstrap/cache/
+*.cache
+.cache/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🖥️  ARCHIVOS DEL SISTEMA OPERATIVO
+# ─────────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🛠️  ARCHIVOS DE EDITORES E IDEs
+# ─────────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.vim
+.netrwhist
+*vim*
+.editorconfig
+.EditorConfig
+
+# JetBrains IDEs (PhpStorm, IntelliJ, etc.)
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# VS Code
+.vscode/
+.vscode-insiders/
+*.code-workspace
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔧 HERRAMIENTAS DE DESARROLLO Y TESTING
+# ─────────────────────────────────────────────────────────────────────────────
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
+/phpunit.xml
+/.php_cs.cache
+/.php-cs-fixer.cache
+/coverage/
+/reports/
+.coverage
+.phpbrew
+.phpenv
+.rbenv-version
+.ruby-version
+.rvm
+.bundler_stubs/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔍 HERRAMIENTAS DE ANÁLISIS Y DEBUGGING
+# ─────────────────────────────────────────────────────────────────────────────
+.scannerwork/
+.sonarqube/
+*.log
+logs/
+debug.log
+error.log
+
+# Xdebug
+.xdebug
+xdebug_config
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 📱 HERRAMIENTAS DE CONSTRUCCIÓN Y COMPILACIÓN
+# ─────────────────────────────────────────────────────────────────────────────
+/dist/
+/build/
 npm-debug.log
 yarn-error.log
+build-errors.log
+/public/build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🐳 DOCKER Y CONTENEDORIZACIÓN
+# ─────────────────────────────────────────────────────────────────────────────
+.env.docker
+docker-compose.override.yml
+.dockerignore
+.devcontainer/local.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔐 ARCHIVOS SENSIBLES Y CREDENCIALES
+# ─────────────────────────────────────────────────────────────────────────────
+*.key
+*.pem
+*.p8
+*.p12
+*.pfx
+*.cer
+*.crt
+*.pub
+*.privkey
+*.json.key
+/storage/*.key
+/storage/pail
+.ssh/
+.aws/
+.gcloud/
+.azure/
+secrets/
+credentials/
 /auth.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 📊 ARCHIVOS DE ESTADO Y PROCESOS
+# ─────────────────────────────────────────────────────────────────────────────
+.phpactor.json
+Homestead.json
+Homestead.yaml
+node_modules
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🚀 DEPLOYMENT Y RELEASES
+# ─────────────────────────────────────────────────────────────────────────────
+releases/
+artifacts/
+*.tar.gz
+*.zip
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 📝 NOTAS Y DOCUMENTACIÓN TEMPORAL
+# ─────────────────────────────────────────────────────────────────────────────
+*.md~
+TODO
+FIXME
+notes.txt
+scratch/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🔒 ARCHIVOS COMPILADOS Y OPTIMIZADOS
+# ─────────────────────────────────────────────────────────────────────────────
+*.pyc
+*.pyo
+*.pyd
+.Python
+__pycache__/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚙️  ARCHIVOS DE CONFIGURACIÓN LOCAL NO VERSIONADO
+# ─────────────────────────────────────────────────────────────────────────────
+.env.local.php
+config/local.php
+config/database.php.local
+services.local.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 🎯 IDE PROFESIONALES ADICIONALES
+# ─────────────────────────────────────────────────────────────────────────────
 /.fleet
-/.idea
 /.nova
-/.vscode
 /.zed
+
+###############################################################################
+# FIN: Declaración de Seguridad
+# Este .gitignore protege el proyecto de fugas de credenciales, datos sensibles
+# y archivos no necesarios en el repositorio. Revisión recomendada cada sprint.
+###############################################################################

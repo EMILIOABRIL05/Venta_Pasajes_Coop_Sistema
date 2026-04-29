@@ -9,8 +9,8 @@ class BoletoValidacion extends Model
 {
     use HasFactory;
 
-    // Indicamos el nombre de la tabla ya que no sigue el plural estándar de Laravel
-    protected $table = 'boleto_validacion';
+    // Indicamos el nombre de la tabla para seguir la convención plural snake_case
+    protected $table = 'boleto_validaciones';
 
     protected $fillable = [
         'boleto_id',
@@ -27,12 +27,12 @@ class BoletoValidacion extends Model
     // Relación con el Boleto (el cual usa UUID)
     public function boleto()
     {
-        return $this->belongsTo(Boleto::class, 'boleto_id');
+        return $this->belongsTo('App\\Models\\Boleto', 'boleto_id');
     }
 
     // Relación con el Usuario (el revisor/administrador)
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'usuario_id');
+        return $this->belongsTo('App\\Models\\User', 'usuario_id');
     }
 }

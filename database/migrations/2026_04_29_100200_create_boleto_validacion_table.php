@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('boleto_validacion', function (Blueprint $table) {
+        Schema::create('boleto_validaciones', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('boleto_id')->constrained('boletos')->cascadeOnDelete();
             $table->foreignId('usuario_id')->constrained('users')->cascadeOnDelete();
@@ -21,6 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('boleto_validacion');
+        Schema::dropIfExists('boleto_validaciones');
     }
 };
