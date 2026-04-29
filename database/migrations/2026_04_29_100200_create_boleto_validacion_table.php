@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('boleto_validacion', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('boleto_id')->constrained('boletos')->cascadeOnDelete();
+            $table->foreignUuid('boleto_id')->constrained('boletos')->cascadeOnDelete();
             $table->foreignId('usuario_id')->constrained('users')->cascadeOnDelete();
             $table->dateTime('fecha_validacion');
             $table->enum('estado', ['validado', 'rechazado'])->default('validado');
@@ -24,5 +24,3 @@ return new class extends Migration
         Schema::dropIfExists('boleto_validacion');
     }
 };
-</content>
-<parameter name="filePath">c:\Users\Windows 11\workspace\Venta_Pasajes_Coop_Sistema\database\migrations\2026_04_29_100200_create_boleto_validacion_table.php
