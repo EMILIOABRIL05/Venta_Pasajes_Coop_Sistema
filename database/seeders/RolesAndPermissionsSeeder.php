@@ -47,9 +47,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         foreach ($rolesPermissions as $roleName => $perms) {
             $role = Role::firstOrCreate(['name' => $roleName]);
-            if (!empty($perms)) {
-                $role->syncPermissions($perms);
-            }
+            $role->syncPermissions($perms);
         }
     }
 }
