@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ParadaSeeder::class,
             RutaSeeder::class,
             FrecuenciaSeeder::class,
+            RolesAndPermissionsSeeder::class,
         ]);
     }
 }
