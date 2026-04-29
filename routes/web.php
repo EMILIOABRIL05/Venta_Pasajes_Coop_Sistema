@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Livewire\AdminPanel;
 
 Route::get('/', function () {
     return view('welcome');
@@ -10,6 +11,11 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Panel de administración (ejemplo protegido por rol via Livewire)
+Route::get('/admin', AdminPanel::class)
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.panel');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
