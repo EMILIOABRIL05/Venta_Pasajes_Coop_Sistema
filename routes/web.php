@@ -27,6 +27,11 @@ Route::get('/catalogos/buses', BusesCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('catalogos.buses');
 
+    // Hoja de Ruta (Sprint 2 - Kevin)
+Route::get('/hoja-ruta', \App\Livewire\Operativa\HojaRuta::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('operativa.hoja-ruta');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
