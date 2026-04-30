@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PasajeroController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\AdminPanel;
 
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/pasajeros/crear', [PasajeroController::class, 'create'])->name('pasajeros.create');
     Route::post('/pasajeros', [PasajeroController::class, 'store'])->name('pasajeros.store');
+
+    Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
+    Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
 
     // Rutas para el CRUD de Frecuencias
     Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)->middleware(['auth', 'permission:manage_frecuencias|role:admin'])->name('frecuencias.index');
