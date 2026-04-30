@@ -3,11 +3,12 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use App\Models\Viaje;
 
 /**
  * Componente Livewire: BuscadorPasajes
  *
- * Sprint 1 — Tarea: Maqueta de la interfaz pública del buscador de pasajes.
+ * Sprint 2 — Tarea: Conectar buscador público a BD
  * Responsable: Web / Estudiante 5
  */
 class BuscadorPasajes extends Component
@@ -26,6 +27,11 @@ class BuscadorPasajes extends Component
     /** Número de pasajeros */
     public int $pasajeros = 1;
 
+    // ── Resultados de la búsqueda ──────────────────────────────────────────
+
+    public $viajesEncontrados = [];
+    public bool $busquedaRealizada = false;
+
     // ── Ciclo de vida y Métodos ────────────────────────────────────────────
 
     public function mount()
@@ -36,7 +42,28 @@ class BuscadorPasajes extends Component
 
     public function buscar()
     {
-        
+        $this->validate([
+            'origen' => 'required|string',
+            'destino' => 'required|string',
+            'fecha' => 'required|date',
+        ], [
+            'origen.required' => 'El origen es obligatorio.',
+            'destino.required' => 'El destino es obligatorio.',
+            'fecha.required' => 'La fecha es obligatoria y debe ser válida.',
+        ]);
+
+        // Nota: En la BD el modelo que representa la Hoja de Ruta es "Viaje"
+        $this->viajesEncontrados = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])
+            ->whereDate('fecha', $this->fecha)
+            ->whereHas('frecuencia.ruta.origen', function ($q) {
+                $q->where('ciudad', $this->origen)->orWhere('nombre', $this->origen);
+            })
+            ->whereHas('frecuencia.ruta.destino', function ($q) {
+                $q->where('ciudad', $this->destino)->orWhere('nombre', $this->destino);
+            })
+            ->get();
+
+        $this->busquedaRealizada = true;
     }
 
     public function render()
