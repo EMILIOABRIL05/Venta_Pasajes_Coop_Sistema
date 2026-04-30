@@ -16,23 +16,29 @@
     </head>
     <body class="font-sans antialiased bg-gray-100 text-gray-800">
         <div class="min-h-screen bg-gray-100">
-            <x-ui.navbar />
+            @auth
+                @include('components.sidebar-navigation')
+            @endauth
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <x-ui.alert />
+            <div class="flex flex-col {{ auth()->check() ? 'sm:ml-64' : '' }}">
+                <x-ui.navbar />
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <x-ui.alert />
+                </div>
+
+                @isset($header)
+                    <header class="bg-gray-100 border-b border-[#003366]/10">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endisset
+
+                <main class="py-6">
+                    {{ $slot }}
+                </main>
             </div>
-
-            @isset($header)
-                <header class="bg-gray-100 border-b border-[#003366]/10">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <main class="py-6">
-                {{ $slot }}
-            </main>
         </div>
     </body>
 </html>
