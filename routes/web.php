@@ -20,7 +20,7 @@ Route::get('/admin', AdminPanel::class)
     ->name('admin.panel');
 
 Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
-    ->middleware(['auth', 'role:admin'])
+    ->middleware(['auth', 'role:admin|oficinista'])
     ->name('catalogos.categorias-bus');
 
 Route::get('/catalogos/buses', BusesCrud::class)

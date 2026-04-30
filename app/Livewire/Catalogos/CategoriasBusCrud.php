@@ -23,7 +23,8 @@ class CategoriasBusCrud extends Component
 
     public function mount(): void
     {
-        $this->requireRole('admin');
+        // admin + oficinista pueden leer; solo admin puede crear/editar/eliminar
+        $this->requireRole('admin|oficinista');
     }
 
     protected function rules(): array
@@ -41,6 +42,12 @@ class CategoriasBusCrud extends Component
 
     public function save(): void
     {
+        // Solo admin puede crear/editar categorías
+        if (!auth()->user()?->hasRole('admin')) {
+            session()->flash('error', 'No tienes permisos para crear o editar categorías.');
+            return;
+        }
+
         $data = $this->validate();
 
         $payload = [
@@ -69,6 +76,12 @@ class CategoriasBusCrud extends Component
 
     public function delete(CategoriaBus $categoriaBus): void
     {
+        // Solo admin puede eliminar categorías
+        if (!auth()->user()?->hasRole('admin')) {
+            session()->flash('error', 'No tienes permisos para eliminar categorías.');
+            return;
+        }
+
         if ($categoriaBus->buses()->exists()) {
             session()->flash('error', 'No se puede eliminar una categoría que ya tiene buses asociados.');
 

@@ -119,6 +119,12 @@ class BusesCrud extends Component
 
     public function delete(Bus $bus): void
     {
+        // Solo admin puede eliminar buses
+        if (!auth()->user()?->hasRole('admin')) {
+            session()->flash('error', 'No tienes permisos para eliminar buses.');
+            return;
+        }
+
         $this->deletePhotoIfExists($bus->foto);
         $bus->delete();
 
