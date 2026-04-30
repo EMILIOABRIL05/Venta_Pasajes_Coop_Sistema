@@ -19,6 +19,11 @@ Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
 
+// Hoja de Ruta
+Route::get('/hoja-ruta', App\Livewire\Operativa\HojaRuta::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('operativa.hoja-ruta');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
