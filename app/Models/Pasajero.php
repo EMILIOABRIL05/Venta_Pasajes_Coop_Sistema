@@ -16,6 +16,8 @@ class Pasajero extends Model
         'cedula',
         'nombre_completo',
         'edad',
+        'correo',
+        'telefono',
     ];
 
     // ─── Relaciones ──────────────────────────────────────────────────────────
