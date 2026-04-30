@@ -32,10 +32,9 @@ class BusesCrud extends Component
 
     public string $anio = '';
 
-    public string $numero_asientos = '';
-
     public string $filas = '10';
 
+    // Pasillo fijo: interprovincial 2+2
     public bool $pasillo = true;
 
     public string $estado = 'disponible';
@@ -63,9 +62,7 @@ class BusesCrud extends Component
             'marca_chasis' => ['required', 'string', 'max:120'],
             'carroceria' => ['required', 'string', 'max:120'],
             'anio' => ['required', 'integer', 'min:1900', 'max:' . now()->year],
-            'numero_asientos' => ['required', 'integer', 'min:1', 'max:120'],
             'filas' => ['required', 'integer', 'min:1', 'max:60'],
-            'pasillo' => ['boolean'],
             'estado' => ['required', Rule::in(['disponible', 'en_ruta', 'mantenimiento'])],
             'foto' => ['nullable', 'image', 'max:2048'],
         ];
@@ -101,30 +98,34 @@ class BusesCrud extends Component
         $this->resetPage();
     }
 
-    public function edit(Bus $bus): void
+    public function edit(int $id): void
     {
+        $bus = Bus::query()->findOrFail($id);
+
         $this->busId = $bus->id;
         $this->categoria_bus_id = (string) $bus->categoria_bus_id;
         $this->placa = $bus->placa;
         $this->marca_chasis = $bus->marca_chasis;
         $this->carroceria = $bus->carroceria;
         $this->anio = (string) $bus->anio;
-        $this->numero_asientos = (string) $bus->numero_asientos;
         $this->filas = (string) ($bus->mapa_asientos['filas'] ?? Bus::estructuraAsientosBase()['filas']);
-        $this->pasillo = (bool) ($bus->mapa_asientos['pasillo'] ?? Bus::estructuraAsientosBase()['pasillo']);
+        // pasillo es fijo en true; no editable en UI
+        $this->pasillo = true;
         $this->estado = $bus->estado;
         $this->fotoActual = $bus->foto;
         $this->foto = null;
+
     }
 
-    public function delete(Bus $bus): void
+    public function delete(int $id): void
     {
         // Solo admin puede eliminar buses
-        if (!auth()->user()?->hasRole('admin')) {
+        if (! auth()->user()?->hasRole('admin')) {
             session()->flash('error', 'No tienes permisos para eliminar buses.');
             return;
         }
 
+        $bus = Bus::query()->findOrFail($id);
         $this->deletePhotoIfExists($bus->foto);
         $bus->delete();
 
@@ -144,7 +145,6 @@ class BusesCrud extends Component
             'marca_chasis',
             'carroceria',
             'anio',
-            'numero_asientos',
             'fotoActual',
             'foto',
         ]);
@@ -156,17 +156,18 @@ class BusesCrud extends Component
 
     private function buildPayload(array $data): array
     {
+        $filas = (int) $data['filas'];
+        // Pasillo central forzado a true (estándar interprovincial)
+        $pasillo = true;
+
         return [
             'categoria_bus_id' => (int) $data['categoria_bus_id'],
             'placa' => strtoupper(trim($data['placa'])),
             'marca_chasis' => trim($data['marca_chasis']),
             'carroceria' => trim($data['carroceria']),
             'anio' => (int) $data['anio'],
-            'numero_asientos' => (int) $data['numero_asientos'],
-            'mapa_asientos' => [
-                'filas' => (int) $data['filas'],
-                'pasillo' => (bool) $data['pasillo'],
-            ],
+            'numero_asientos' => Bus::calcularCapacidad($filas, $pasillo),
+            'mapa_asientos' => Bus::generarEstructuraAsientos($filas, $pasillo),
             'estado' => $data['estado'],
         ];
     }

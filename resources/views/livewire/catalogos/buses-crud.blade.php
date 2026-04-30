@@ -35,7 +35,7 @@
                     </div>
                 </div>
 
-                <form wire:submit.prevent="save" class="space-y-5">
+                <form wire:key="bus-form-{{ $busId ?? 'new' }}" wire:submit.prevent="save" class="space-y-5">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700" for="categoria_bus_id">Categoría</label>
                         <select id="categoria_bus_id" wire:model="categoria_bus_id" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -77,12 +77,6 @@
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700" for="numero_asientos">Número de asientos</label>
-                            <input id="numero_asientos" type="number" wire:model="numero_asientos" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="40">
-                            @error('numero_asientos') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700" for="estado">Estado</label>
                             <select id="estado" wire:model="estado" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="disponible">Disponible</option>
@@ -90,6 +84,14 @@
                                 <option value="mantenimiento">Mantenimiento</option>
                             </select>
                             @error('estado') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-[0.15em] text-emerald-700">Capacidad estimada</p>
+                            <p class="mt-2 text-2xl font-black text-emerald-800">
+                                {{ \App\Models\Bus::calcularCapacidad((int) $filas, true) }} asientos
+                            </p>
+                            <p class="mt-1 text-xs text-emerald-700">Calculado automáticamente desde filas (pasillo central por defecto).</p>
                         </div>
                     </div>
 
@@ -100,10 +102,10 @@
                             @error('filas') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
 
-                        <label class="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700">
-                            <input type="checkbox" wire:model="pasillo" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                            Pasillo central
-                        </label>
+                        {{-- Pasillo central fijo: no editable (estándar interprovincial 2+2) --}}
+                        <div class="rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700">
+                            <p>Pasillo central: <span class="font-semibold">Sí (por defecto)</span></p>
+                        </div>
                     </div>
 
                     <div>
@@ -122,10 +124,7 @@
                         @endif
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="mb-2 text-sm font-semibold text-slate-700">Estructura JSON de asientos</div>
-                        <pre class="overflow-x-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-emerald-300">{{ json_encode(['filas' => (int) $filas, 'pasillo' => (bool) $pasillo], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-                    </div>
+                    {{-- Panel JSON removido por simplicidad; la estructura se guarda implícitamente --}}
 
                     <div class="flex gap-3">
                         <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">

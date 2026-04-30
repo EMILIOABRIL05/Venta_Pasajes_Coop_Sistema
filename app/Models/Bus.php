@@ -25,6 +25,7 @@ class Bus extends Model
 
     protected $casts = [
         'mapa_asientos' => 'array',
+        'estructura_asientos' => 'array',
         'anio' => 'integer',
         'numero_asientos' => 'integer',
     ];
@@ -34,7 +35,76 @@ class Bus extends Model
         return [
             'filas' => 10,
             'pasillo' => true,
+            'asientos_por_fila' => 4,
+            'capacidad_total' => 40,
+            'extras' => [],
         ];
+    }
+
+    public static function generarEstructuraAsientos(int $filas, bool $tienePasillo = true): array
+    {
+        $asientosPorFila = self::calcularAsientosPorFila($tienePasillo);
+
+        return [
+            'filas' => $filas,
+            'pasillo' => $tienePasillo,
+            'asientos_por_fila' => $asientosPorFila,
+            'capacidad_total' => $filas * $asientosPorFila,
+            'extras' => [],
+            'version' => 1,
+        ];
+    }
+
+    private static function calcularAsientosPorFila(bool $tienePasillo): int
+    {
+        return $tienePasillo ? 4 : 5;
+    }
+
+    public static function calcularCapacidad(int $filas, bool $tienePasillo = true): int
+    {
+        return $filas * self::calcularAsientosPorFila($tienePasillo);
+    }
+
+    public function obtenerInfoMapa(): array
+    {
+        $mapa = $this->mapa_asientos ?? self::estructuraAsientosBase();
+        
+        return [
+            'filas' => $mapa['filas'] ?? 10,
+            'pasillo' => $mapa['pasillo'] ?? true,
+            'asientos_por_fila' => $mapa['asientos_por_fila'] ?? self::calcularAsientosPorFila($mapa['pasillo'] ?? true),
+            'capacidad_total' => $mapa['capacidad_total'] ?? self::calcularCapacidad($mapa['filas'] ?? 10, $mapa['pasillo'] ?? true),
+            'extras' => $mapa['extras'] ?? [],
+            'version' => $mapa['version'] ?? 1,
+        ];
+    }
+
+    public function validarEstructuraAsientos(): bool
+    {
+        if (! is_array($this->mapa_asientos)) {
+            return false;
+        }
+
+        $requeridos = ['filas', 'pasillo', 'asientos_por_fila', 'capacidad_total'];
+        foreach ($requeridos as $campo) {
+            if (! isset($this->mapa_asientos[$campo])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function getEstructuraAsientosAttribute(): ?array
+    {
+        return $this->mapa_asientos;
+    }
+
+    public function setEstructuraAsientosAttribute(?array $value): void
+    {
+        $this->attributes['mapa_asientos'] = is_array($value)
+            ? json_encode($value, JSON_UNESCAPED_UNICODE)
+            : null;
     }
 
     // Relación: un bus pertenece a una categoría
@@ -56,10 +126,11 @@ class Bus extends Model
     
     public function getMapaAsientosResumenAttribute(): string
     {
-        $mapa = $this->mapa_asientos ?? [];
-        $filas = $mapa['filas'] ?? 'N/D';
-        $pasillo = ! empty($mapa['pasillo']) ? 'con pasillo' : 'sin pasillo';
+        $info = $this->obtenerInfoMapa();
+        $filas = $info['filas'];
+        $pasillo = $info['pasillo'] ? 'con pasillo' : 'sin pasillo';
+        $capacidad = $info['capacidad_total'];
         
-        return $filas . ' filas, ' . $pasillo;
+        return "{$filas} filas, {$pasillo} ({$capacidad} asientos)";
     }
 }
