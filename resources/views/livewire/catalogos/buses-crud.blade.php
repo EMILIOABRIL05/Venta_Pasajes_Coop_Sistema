@@ -113,11 +113,11 @@
 
                         @if ($foto)
                             <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                                <img src="{{ $foto->temporaryUrl() }}" alt="Vista previa del bus" class="h-56 w-full object-cover">
+                                    <img src="{{ $foto->temporaryUrl() }}" alt="Vista previa del bus" class="h-56 w-full object-cover">
                             </div>
                         @elseif ($fotoActual)
                             <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                                <img src="{{ asset('storage/' . $fotoActual) }}" alt="Foto actual del bus" class="h-56 w-full object-cover">
+                                    <img src="{{ asset('storage/' . $fotoActual) }}" alt="Foto actual del bus" class="h-56 w-full object-cover">
                             </div>
                         @endif
                     </div>
@@ -154,8 +154,8 @@
                         <article class="overflow-hidden rounded-2xl border border-slate-200 transition hover:border-emerald-200 hover:shadow-md">
                             <div class="grid gap-0 md:grid-cols-[160px_minmax(0,1fr)]">
                                 <div class="bg-slate-100">
-                                    @if ($bus->foto)
-                                        <img src="{{ asset('storage/' . $bus->foto) }}" alt="Foto de {{ $bus->placa }}" class="h-full min-h-44 w-full object-cover">
+                                        @if ($bus->foto_url)
+                                            <img src="{{ $bus->foto_url }}" alt="Foto de {{ $bus->placa }}" class="h-full min-h-44 w-full object-cover">
                                     @else
                                         <div class="flex min-h-44 items-center justify-center bg-slate-100 text-sm font-semibold text-slate-400">Sin foto</div>
                                     @endif
@@ -178,7 +178,7 @@
 
                                             <div class="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                                                 <p><span class="font-semibold text-slate-900">Asientos:</span> {{ $bus->numero_asientos }}</p>
-                                                <p><span class="font-semibold text-slate-900">Mapa:</span> {{ $bus->mapa_asientos['filas'] ?? 'N/D' }} filas, {{ !empty($bus->mapa_asientos['pasillo']) ? 'con pasillo' : 'sin pasillo' }}</p>
+                                                <p><span class="font-semibold text-slate-900">Mapa:</span> {{ $bus->mapa_asientos_resumen }}</p>
                                             </div>
                                         </div>
 

@@ -48,4 +48,18 @@ class Bus extends Model
     {
         return $query->where('estado', 'disponible');
     }
+    
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->foto ? asset('storage/' . $this->foto) : null;
+    }
+    
+    public function getMapaAsientosResumenAttribute(): string
+    {
+        $mapa = $this->mapa_asientos ?? [];
+        $filas = $mapa['filas'] ?? 'N/D';
+        $pasillo = ! empty($mapa['pasillo']) ? 'con pasillo' : 'sin pasillo';
+        
+        return $filas . ' filas, ' . $pasillo;
+    }
 }
