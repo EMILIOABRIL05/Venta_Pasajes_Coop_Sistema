@@ -16,11 +16,14 @@ Rutas actuales relevantes
 
 Checklist por Estudiante (Sprint 0.3.0) — qué proteger y cómo
 
-- Estudiante 2 (Catálogos: Buses, CategoriasBus)
-  - Protecciones: `auth` + `role:admin|oficinista` o `permission:manage_buses`.
-  - Delete: `role:admin` o `permission:manage_buses`.
-  - Snippet ruta: `Route::get('/buses', BusIndex::class)->middleware(['auth','role:admin|oficinista']);`
-  - Snippet Livewire `mount()`: ` $this->requireRole('admin|oficinista');`
+- ✅ **Estudiante 2 (Catálogos: Buses, CategoriasBus) — COMPLETADO**
+  - Implementado: `auth` + `role:admin|oficinista` en rutas y mount().
+  - Delete: Protegido con validación `hasRole('admin')` en métodos delete().
+  - Detalle: 
+    - BusesCrud: `/catalogos/buses` → middleware `['auth', 'role:admin|oficinista']`, delete solo admin
+    - CategoriasBusCrud: `/catalogos/categorias-bus` → middleware `['auth', 'role:admin|oficinista']`, create/edit/delete solo admin
+  - Implementación: Trait RequiresRole en mount() + guards en save/delete métodos
+  - PR/Commit: feat: estructura almacenamiento fotos buses y usuarios prueba + fix: protecciones de rol en delete y lectura para catalogos
 
 - Estudiante 3 (Operativa: Frecuencias, Hoja de Ruta)
   - Protecciones: `permission:manage_frecuencias` o `role:admin` para CRUD.
