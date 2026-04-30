@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Ventanilla;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ruta;
 use Illuminate\Http\Request;
 
 class VentaController extends Controller
@@ -12,7 +13,11 @@ class VentaController extends Controller
      */
     public function index()
     {
-        //
+        $rutas = Ruta::with(['origen', 'destino'])
+            ->orderBy('precio_base')
+            ->get();
+
+        return view('ventanilla.index', compact('rutas'));
     }
 
     /**
