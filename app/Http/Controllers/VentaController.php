@@ -71,7 +71,14 @@ class VentaController extends Controller
             'observaciones' => ['nullable', 'string'],
         ]);
 
+        $frecuencia = Frecuencia::with('ruta')->findOrFail($validated['frecuencia_id']);
         $bus = Bus::findOrFail($validated['bus_id']);
+
+        if ($validated['precio_final'] != $frecuencia->ruta->precio_base) {
+            return back()
+                ->withInput()
+                ->withErrors(['precio_final' => 'El monto del pago no coincide con el precio de la frecuencia seleccionada.']);
+        }
 
         if ($validated['numero_asiento'] > $bus->numero_asientos) {
             return back()
