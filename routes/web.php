@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\PasajeroController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\VentaController;
+use App\Http\Controllers\Ventanilla\PasajeroController;
+use App\Http\Controllers\Ventanilla\VentaController;
+use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
 use Illuminate\Support\Facades\Route;
-use App\Livewire\AdminPanel;
 
 Route::get('/', function () {
     return view('welcome');
@@ -39,15 +39,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/pasajeros/crear', [PasajeroController::class, 'create'])->name('pasajeros.create');
-    Route::post('/pasajeros', [PasajeroController::class, 'store'])->name('pasajeros.store');
-
-    Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
-    Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
-    Route::get('/ventas/{venta}', [VentaController::class, 'show'])->name('ventas.show');
-
     // Rutas para el CRUD de Frecuencias
     Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)->middleware(['auth', 'permission:manage_frecuencias|role:admin'])->name('frecuencias.index');
 });
+
+// ─── Módulo Ventanilla ────────────────────────────────────────────────────────
+Route::middleware('auth')
+    ->prefix('ventanilla')
+    ->name('ventanilla.')
+    ->group(function () {
+        Route::resource('ventas',    VentaController::class);
+        Route::resource('pasajeros', PasajeroController::class);
+    });
 
 require __DIR__.'/auth.php';
