@@ -15,12 +15,12 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 flex">
+        <div class="min-h-screen bg-gray-100">
             @auth
                 @include('components.sidebar-navigation')
             @endauth
 
-            <div class="flex-1 flex flex-col">
+            <div class="flex flex-col sm:ml-64">
                 @include('layouts.navigation')
 
                 <!-- Page Heading -->

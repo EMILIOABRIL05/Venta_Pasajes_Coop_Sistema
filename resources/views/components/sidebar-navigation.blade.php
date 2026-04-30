@@ -1,6 +1,6 @@
-<div x-data="{ open: false, catalogosOpen: false }" class="flex">
-    <!-- Sidebar -->
-    <nav class="w-64 bg-[#003366] text-white min-h-screen flex flex-col shadow-xl hidden md:flex transition-all duration-300">
+<div x-data="{ open: false, catalogosOpen: false }">
+    <!-- Sidebar Desktop -->
+    <nav class="w-64 bg-[#003366] text-white min-h-screen flex flex-col shadow-xl hidden sm:flex transition-all duration-300 fixed left-0 top-0">
         <!-- Logo / Header -->
         <div class="p-6 border-b border-blue-700">
             <h1 class="text-xl font-bold tracking-tight">Cooperativa Ambato</h1>
@@ -95,7 +95,7 @@
     </nav>
 
     <!-- Mobile Sidebar Toggle Button (Visible only on mobile) -->
-    <div class="md:hidden fixed bottom-6 right-6 z-50">
+    <div class="sm:hidden fixed bottom-6 right-6 z-50">
         <button @click="open = !open"
             class="w-14 h-14 bg-[#003366] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200">
             <svg :class="open ? 'hidden' : 'block'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@
         leave-active-class="transition ease-in duration-200"
         leave-from-class="opacity-100"
         leave-to-class="opacity-0">
-        <div x-show="open" @click="open = false" class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+        <div x-show="open" @click="open = false" class="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
     </transition>
 
     <!-- Mobile Sidebar Menu -->
@@ -126,7 +126,7 @@
         leave-active-class="transition ease-in duration-200 transform"
         leave-from-class="translate-x-0"
         leave-to-class="translate-x-full">
-        <nav x-show="open" class="md:hidden fixed right-0 top-0 h-screen w-64 bg-[#003366] text-white shadow-2xl flex flex-col z-40">
+        <nav x-show="open" class="sm:hidden fixed right-0 top-0 h-screen w-64 bg-[#003366] text-white shadow-2xl flex flex-col z-40">
             <!-- Mobile Header -->
             <div class="p-6 border-b border-blue-700 flex justify-between items-center">
                 <div>
