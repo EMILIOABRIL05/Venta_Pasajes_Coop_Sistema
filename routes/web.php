@@ -3,6 +3,8 @@
 use App\Http\Controllers\PasajeroController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
+use App\Livewire\Catalogos\BusesCrud;
+use App\Livewire\Catalogos\CategoriasBusCrud;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\AdminPanel;
 
@@ -19,8 +21,16 @@ Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
 
-// Hoja de Ruta
-Route::get('/hoja-ruta', App\Livewire\Operativa\HojaRuta::class)
+Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('catalogos.categorias-bus');
+
+Route::get('/catalogos/buses', BusesCrud::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('catalogos.buses');
+
+    // Hoja de Ruta (Sprint 2 - Kevin)
+Route::get('/hoja-ruta', \App\Livewire\Operativa\HojaRuta::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('operativa.hoja-ruta');
 
