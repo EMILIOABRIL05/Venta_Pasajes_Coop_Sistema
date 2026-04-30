@@ -22,7 +22,7 @@
                     <select id="frecuencia_id" wire:model="frecuencia_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Seleccione una frecuencia</option>
                         @foreach($frecuencias as $frecuencia)
-                            <option value="{{ $frecuencia->id }}">{{ $frecuencia->hora_salida }} - {{ $frecuencia->ruta->nombre }}</option>
+                            <option value="{{ $frecuencia->id }}">{{ $frecuencia->hora_salida }} - (Ruta #{{ $frecuencia->ruta->id }})</option>
                         @endforeach
                     </select>
                     @error('frecuencia_id') <span class="text-red-500 text-xs italic">{{ $message }}</span> @enderror

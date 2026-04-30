@@ -67,8 +67,6 @@ class HojaRuta extends Component
 
     public function render()
     {
-        return view('livewire.operativa.hoja-ruta')
-            ->extends('layouts.app')
-            ->section('content');
+        return view('livewire.operativa.hoja-ruta')->layout('layouts.app');
     }
 }
