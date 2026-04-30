@@ -25,7 +25,17 @@ class Bus extends Model
 
     protected $casts = [
         'mapa_asientos' => 'array',
+        'anio' => 'integer',
+        'numero_asientos' => 'integer',
     ];
+
+    public static function estructuraAsientosBase(): array
+    {
+        return [
+            'filas' => 10,
+            'pasillo' => true,
+        ];
+    }
 
     // Relación: un bus pertenece a una categoría
     public function categoria()

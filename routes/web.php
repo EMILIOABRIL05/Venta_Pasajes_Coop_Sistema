@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\AdminPanel;
@@ -21,6 +22,10 @@ Route::get('/admin', AdminPanel::class)
 Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
     ->middleware(['auth', 'role:admin'])
     ->name('catalogos.categorias-bus');
+
+Route::get('/catalogos/buses', BusesCrud::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('catalogos.buses');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
