@@ -91,7 +91,7 @@ class VentaController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($validated, $seatString) {
+            $venta = DB::transaction(function () use ($validated, $seatString) {
                 $venta = Venta::create([
                     'user_id' => auth()->id(),
                     'total' => $validated['precio_final'],
@@ -114,12 +114,12 @@ class VentaController extends Controller
                     'referencia' => $validated['referencia'] ?? null,
                     'observaciones' => $validated['observaciones'] ?? 'Pago registrado automáticamente al confirmar la venta.',
                 ]);
+
+                return $venta;
             });
 
-            return redirect()->route('ventas.create', [
-                'frecuencia_id' => $validated['frecuencia_id'],
-                'bus_id' => $validated['bus_id'],
-            ])->with('success', 'Venta y boleto creados correctamente.');
+            return redirect()->route('ventas.show', $venta->id)
+                ->with('success', 'Venta completada exitosamente.');
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -132,9 +132,17 @@ class VentaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Venta $venta)
     {
-        //
+        $venta->load([
+            'boletos.pasajero',
+            'boletos.frecuencia.ruta.origen',
+            'boletos.frecuencia.ruta.destino',
+            'user',
+            'pagos'
+        ]);
+
+        return view('ventas.show', compact('venta'));
     }
 
     /**
