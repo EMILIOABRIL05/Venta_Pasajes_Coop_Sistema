@@ -41,7 +41,7 @@ class HojaRuta extends Component
 
     public function loadFrecuencias()
     {
-        $this->frecuencias = Frecuencia::with('ruta')->get();
+        $this->frecuencias = Frecuencia::with('ruta.origen', 'ruta.destino')->get();
     }
 
     public function saveViaje()
@@ -80,7 +80,7 @@ class HojaRuta extends Component
 
     public function loadViajes()
     {
-        $this->viajes = Viaje::with(['frecuencia.ruta', 'bus'])->latest()->get();
+        $this->viajes = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])->latest()->get();
     }
 
     public function render()
