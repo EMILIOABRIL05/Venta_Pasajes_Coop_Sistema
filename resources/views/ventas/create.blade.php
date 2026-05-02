@@ -86,51 +86,18 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-
-                        <div>
-                            <label for="numero_asiento" class="block text-sm font-medium text-gray-700">Número de asiento</label>
-                            <input
-                                type="number"
-                                name="numero_asiento"
-                                id="numero_asiento"
-                                value="{{ old('numero_asiento') }}"
-                                min="1"
-                                max="{{ $bus->numero_asientos }}"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="1"
-                                required
-                            >
-                            @error('numero_asiento')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Selector de asientos</label>
-                        <div class="mt-3 grid grid-cols-5 gap-3">
-                            @foreach($seatNumbers as $seat)
-                                @php $seatKey = (string) $seat; @endphp
-                                <label class="cursor-pointer rounded-lg border px-3 py-2 text-center text-sm font-medium transition-all
-                                    {{ in_array($seatKey, $occupiedSeats) ? 'border-red-300 bg-red-50 text-red-700 line-through' : 'border-gray-300 bg-white text-slate-900 hover:border-indigo-500 hover:bg-indigo-50' }}">
-                                    <input
-                                        type="radio"
-                                        name="numero_asiento"
-                                        value="{{ $seatKey }}"
-                                        class="hidden"
-                                        {{ old('numero_asiento') == $seatKey ? 'checked' : '' }}
-                                        {{ in_array($seatKey, $occupiedSeats) ? 'disabled' : '' }}
-                                    >
-                                    <div>{{ $seatKey }}</div>
-                                    @if(in_array($seatKey, $occupiedSeats))
-                                        <span class="text-xs">Ocupado</span>
-                                    @else
-                                        <span class="text-xs">Libre</span>
-                                    @endif
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
+                    <x-seat-map
+                        :seat-numbers="$seatNumbers"
+                        :occupied-seats="$occupiedSeats"
+                        :selected-seat="old('numero_asiento')"
+                        name="numero_asiento"
+                    />
+
+                    @error('numero_asiento')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
 
                     <div class="grid gap-6 md:grid-cols-3">
                         <div>
