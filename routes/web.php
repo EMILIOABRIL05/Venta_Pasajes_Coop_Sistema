@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\BoletoValidacionController;
+use App\Http\Controllers\ReporteController;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,9 @@ Route::middleware('auth')->group(function () {
 
     // Validar boleto
     Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
+
+    // Reportes
+    Route::get('/admin/reportes', [ReporteController::class, 'index'])->middleware(['auth', 'role:admin'])->name('admin.reportes');
 
     // Rutas para el CRUD de Frecuencias
     Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)->middleware(['auth', 'permission:manage_frecuencias|role:admin'])->name('frecuencias.index');
