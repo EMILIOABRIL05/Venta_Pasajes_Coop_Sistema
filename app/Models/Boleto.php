@@ -30,6 +30,7 @@ class Boleto extends Model
         'pasajero_id',
         'numero_asiento',
         'precio_final',
+        'frecuencia_id',
     ];
 
     // ─── Generación automática del UUID ──────────────────────────────────────
@@ -62,5 +63,13 @@ class Boleto extends Model
     public function pasajero()
     {
         return $this->belongsTo(Pasajero::class);
+    }
+
+    /**
+     * El boleto pertenece a una frecuencia.
+     */
+    public function frecuencia()
+    {
+        return $this->belongsTo(Frecuencia::class);
     }
 }
