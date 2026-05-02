@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Events\UserCreated;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles, SoftDeletes;
+
+    protected $dispatchesEvents = [
+        'created' => UserCreated::class,
+    ];
 
     protected $fillable = [
         'name',
