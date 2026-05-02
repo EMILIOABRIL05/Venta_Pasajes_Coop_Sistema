@@ -7,6 +7,12 @@
         </div>
     @endif
 
+    @if (session()->has('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ session('error') }}
+    </div>
+@endif
+
     <div class="bg-white shadow-md rounded-lg p-6 mb-8">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Generar Nuevo Viaje</h2>
         <form wire:submit.prevent="saveViaje">

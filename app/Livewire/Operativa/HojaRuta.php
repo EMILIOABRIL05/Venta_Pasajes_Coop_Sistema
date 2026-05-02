@@ -48,6 +48,24 @@ class HojaRuta extends Component
     {
         $this->validate();
 
+        // Bloqueo de Estado
+        $bus = Bus::find($this->bus_id);
+        if ($bus->estado !== 'disponible') {
+            session()->flash('error', 'El bus seleccionado no está disponible.');
+            return;
+        }
+
+        // Bloqueo Anti-Clonación
+        $existingViaje = Viaje::where('fecha', $this->fecha)
+            ->where('frecuencia_id', $this->frecuencia_id)
+            ->where('bus_id', $this->bus_id)
+            ->exists();
+
+        if ($existingViaje) {
+            session()->flash('error', 'El bus ya está ocupado para esa fecha y hora.');
+            return;
+        }
+
         Viaje::create([
             'fecha' => $this->fecha,
             'frecuencia_id' => $this->frecuencia_id,
