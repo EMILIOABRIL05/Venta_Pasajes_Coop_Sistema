@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\BoletoValidacionController;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,9 @@ Route::middleware('auth')->group(function () {
 
     // Descargar boleto en PDF
     Route::get('/ventas/boleto/{id}/descargar', [VentaController::class, 'descargarBoleto'])->name('ventas.boleto.descargar');
+
+    // Validar boleto
+    Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
 
     // Rutas para el CRUD de Frecuencias
     Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)->middleware(['auth', 'permission:manage_frecuencias|role:admin'])->name('frecuencias.index');
