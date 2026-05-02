@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Traits\CalculaDescuentoPorEdad;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasFactory, Notifiable, HasRoles, SoftDeletes, CalculaDescuentoPorEdad;
 
     protected $fillable = [
         'name',
@@ -37,17 +38,13 @@ class User extends Authenticatable
         ];
     }
 
-    // Helper: saber si es tercera edad (>=65) para descuento
     public function esTerceraEdad(): bool
     {
-        if (!$this->fecha_nacimiento) return false;
-        return $this->fecha_nacimiento->age >= 65;
+        return $this->tipoDescuentoPorEdad() === 'tercera_edad';
     }
 
-    // Helper: saber si es niño (<5 años) para descuento
     public function esNino(): bool
     {
-        if (!$this->fecha_nacimiento) return false;
-        return $this->fecha_nacimiento->age < 5;
+        return $this->tipoDescuentoPorEdad() === 'nino';
     }
 }

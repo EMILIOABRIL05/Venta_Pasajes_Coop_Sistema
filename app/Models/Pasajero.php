@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\CalculaDescuentoPorEdad;
 
 class Pasajero extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, CalculaDescuentoPorEdad;
 
     /**
      * Campos asignables masivamente.
@@ -28,5 +29,15 @@ class Pasajero extends Model
     public function boletos()
     {
         return $this->hasMany(Boleto::class);
+    }
+
+    public function esTerceraEdad(): bool
+    {
+        return $this->tipoDescuentoPorEdad() === 'tercera_edad';
+    }
+
+    public function esNino(): bool
+    {
+        return $this->tipoDescuentoPorEdad() === 'nino';
     }
 }

@@ -8,12 +8,16 @@ trait CalculaDescuentoPorEdad
 {
     public function edadParaDescuento(): ?int
     {
-        if (property_exists($this, 'edad') && is_numeric($this->edad)) {
-            return (int) $this->edad;
+        $edad = data_get($this, 'edad');
+
+        if (is_numeric($edad)) {
+            return (int) $edad;
         }
 
-        if (property_exists($this, 'fecha_nacimiento') && $this->fecha_nacimiento) {
-            return (int) $this->fecha_nacimiento->age;
+        $fechaNacimiento = data_get($this, 'fecha_nacimiento');
+
+        if ($fechaNacimiento) {
+            return (int) $fechaNacimiento->age;
         }
 
         return null;
