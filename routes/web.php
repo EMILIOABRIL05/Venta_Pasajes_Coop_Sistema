@@ -34,6 +34,11 @@ Route::get('/hoja-ruta', \App\Livewire\Operativa\HojaRuta::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('operativa.hoja-ruta');
 
+// CRUD de Frecuencias (Sprint 3 - Kevin)
+Route::get('/frecuencias', \App\Livewire\Operativa\FrecuenciasCrud::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('operativa.frecuencias');    
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -49,6 +54,7 @@ Route::middleware('auth')
     ->name('ventanilla.')
     ->group(function () {
         Route::get('/', [VentaController::class, 'index'])->name('index'); // /ventanilla
+        Route::get('/', [VentaController::class, 'index'])->name('index');
         Route::resource('ventas',    VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
     });
