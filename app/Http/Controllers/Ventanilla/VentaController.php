@@ -174,7 +174,15 @@ class VentaController extends Controller
 
     // ─── Métodos pendientes de implementar ────────────────────────────────────
 
-    public function create() {}
+    public function create()
+    {
+        $rutas = Ruta::with(['origen', 'destino'])
+            ->orderBy('precio_base')
+            ->get();
+
+        return view('ventanilla.ventas.create', compact('rutas'));
+    }
+
 
     public function show(Venta $venta)
     {
