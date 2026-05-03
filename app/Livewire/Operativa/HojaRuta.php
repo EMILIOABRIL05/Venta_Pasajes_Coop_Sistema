@@ -41,12 +41,30 @@ class HojaRuta extends Component
 
     public function loadFrecuencias()
     {
-        $this->frecuencias = Frecuencia::with('ruta')->get();
+        $this->frecuencias = Frecuencia::with('ruta.origen', 'ruta.destino')->get();
     }
 
     public function saveViaje()
     {
         $this->validate();
+
+        // Bloqueo de Estado
+        $bus = Bus::find($this->bus_id);
+        if ($bus->estado !== 'disponible') {
+            session()->flash('error', 'El bus seleccionado no está disponible.');
+            return;
+        }
+
+        // Bloqueo Anti-Clonación
+        $existingViaje = Viaje::where('fecha', $this->fecha)
+            ->where('frecuencia_id', $this->frecuencia_id)
+            ->where('bus_id', $this->bus_id)
+            ->exists();
+
+        if ($existingViaje) {
+            session()->flash('error', 'El bus ya está ocupado para esa fecha y hora.');
+            return;
+        }
 
         Viaje::create([
             'fecha' => $this->fecha,
@@ -62,7 +80,7 @@ class HojaRuta extends Component
 
     public function loadViajes()
     {
-        $this->viajes = Viaje::with(['frecuencia.ruta', 'bus'])->latest()->get();
+        $this->viajes = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])->latest()->get();
     }
 
     public function render()

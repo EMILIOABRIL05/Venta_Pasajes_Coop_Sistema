@@ -1,4 +1,4 @@
-<div class="p-6 bg-gray-100 min-h-screen">
+<div class="sm:ml-64 p-6 bg-gray-100 min-h-screen">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Armar Hoja de Ruta</h1>
 
     @if (session()->has('message'))
@@ -6,6 +6,12 @@
             <span class="block sm:inline">{{ session('message') }}</span>
         </div>
     @endif
+
+    @if (session()->has('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ session('error') }}
+    </div>
+@endif
 
     <div class="bg-white shadow-md rounded-lg p-6 mb-8">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Generar Nuevo Viaje</h2>
@@ -22,7 +28,7 @@
                     <select id="frecuencia_id" wire:model="frecuencia_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Seleccione una frecuencia</option>
                         @foreach($frecuencias as $frecuencia)
-                            <option value="{{ $frecuencia->id }}">{{ $frecuencia->hora_salida }} - (Ruta #{{ $frecuencia->ruta->id }})</option>
+                            <option value="{{ $frecuencia->id }}">{{ $frecuencia->hora_salida }} - ({{ $frecuencia->ruta->origen->nombre }} a {{ $frecuencia->ruta->destino->nombre }})</option>
                         @endforeach
                     </select>
                     @error('frecuencia_id') <span class="text-red-500 text-xs italic">{{ $message }}</span> @enderror
@@ -79,7 +85,8 @@
                                     {{ $viaje->fecha->format('d/m/Y') }}
                                 </td>
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    {{ $viaje->frecuencia->hora_salida }} - {{ $viaje->frecuencia->ruta->nombre }}
+                                    {{ $viaje->frecuencia?->hora_salida ?? 'Sin hora' }} - 
+                                    ({{ $viaje->frecuencia?->ruta->origen->nombre }} a {{ $viaje->frecuencia?->ruta->destino->nombre }})
                                 </td>
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                     {{ $viaje->bus->placa }} (Asientos: {{ $viaje->bus->numero_asientos }})
