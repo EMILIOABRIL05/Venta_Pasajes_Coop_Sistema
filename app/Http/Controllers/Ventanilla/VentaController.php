@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Ventanilla;
 
 use App\Http\Controllers\Controller;
+use App\Models\Boleto;
 use App\Models\Ruta;
 use App\Models\Venta;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+
 
 class VentaController extends Controller
 {
@@ -69,6 +72,18 @@ class VentaController extends Controller
             'precio_final'   => $precioUnitario,
         ], $asientos);
 
+        // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
+        //    Doble capa de protección contra ventas simultáneas del mismo asiento:
+        //      a) Cache::lock()  → bloqueo atómico (evita race conditions)
+        //      b) Query 60s      → red de seguridad contra boletos recién creados
+        [$conflict, $locks] = $this->verifyAsientosDisponibles($asientos);
+
+        if ($conflict !== null) {
+            return back()
+                ->withInput()
+                ->with('error', $conflict);
+        }
+
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
             $venta = DB::transaction(function () use ($boletosPayload, $total) {
@@ -99,6 +114,7 @@ class VentaController extends Controller
             }, 2); // ← 2 reintentos automáticos ante deadlock de InnoDB
 
         } catch (QueryException $e) {
+
             Log::error('[Ventanilla] store() — QueryException', [
                 'user_id'  => auth()->id(),
                 'asientos' => $asientos,
@@ -125,8 +141,14 @@ class VentaController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Ocurrió un error inesperado. Contacte al administrador del sistema.');
-        }
 
+        } finally {
+            // ── Siempre liberar los Cache locks ──────────────────────────────
+            //    El bloque finally se ejecuta tanto si la transacción fue exitosa
+            //    como si lanzó cualquier excepción, garantizando que los asientos
+            //    queden disponibles para el siguiente intento.
+            collect($locks)->each(fn ($lock) => $lock->release());
+        }
 
         // ── 4. Respuesta de éxito: Flash estructurado ─────────────────────────
         //    Array en sesión en lugar de string para que la vista construya
@@ -166,5 +188,74 @@ class VentaController extends Controller
     public function update(Request $request, Venta $venta) {}
 
     public function destroy(Venta $venta) {}
+
+    // ─── Privados ─────────────────────────────────────────────────────────────
+
+    /**
+     * Verifica que ningún asiento del array esté bloqueado o vendido
+     * en los últimos 60 segundos por otro usuario.
+     *
+     * Estrategia de doble capa:
+     *   1. Cache::lock()  — bloqueo atómico en memoria: impide que dos requests
+     *                       concurrentes procesen el mismo asiento a la vez.
+     *   2. Query BD 60s   — red de seguridad: detecta boletos creados muy
+     *                       recientemente aunque el lock ya se haya liberado.
+     *
+     * @param  int[]  $asientos  Números de asiento a verificar
+     * @return array{0: string|null, 1: array}  [mensaje_error|null, locks_adquiridos]
+     */
+    private function verifyAsientosDisponibles(array $asientos): array
+    {
+        $LOCK_TTL  = 60; // segundos
+        $WINDOW_S  = 60; // ventana de detección en BD
+
+        // ── Capa 1: Cache locks atómicos ──────────────────────────────────────
+        $locks      = [];
+        $bloqueados = [];
+
+        foreach ($asientos as $seat) {
+            $lock = Cache::lock("asiento:{$seat}", $LOCK_TTL);
+
+            if ($lock->get()) {
+                $locks[] = $lock;          // Adquirido: guardar para liberar luego
+            } else {
+                $bloqueados[] = $seat;     // Otro cajero lo está procesando ahora
+            }
+        }
+
+        if (!empty($bloqueados)) {
+            // Liberar los locks que SÍ adquirimos antes de abortar
+            collect($locks)->each(fn ($l) => $l->release());
+
+            $lista = implode(', ', array_map(fn ($s) => "#{$s}", $bloqueados));
+            return [
+                "Los asientos {$lista} están siendo procesados por otro cajero. Intente en {$LOCK_TTL} segundos.",
+                [],
+            ];
+        }
+
+        // ── Capa 2: Ventana de 60s en BD ──────────────────────────────────────
+        //    Detecta boletos creados recientemente aunque el lock ya se liberó
+        //    (p.ej. venta exitosa hace 30s → lock liberado → asiento bloqueado aún).
+        $vendidosReciente = Boleto::whereIn(
+                'numero_asiento',
+                array_map('strval', $asientos)
+            )
+            ->where('created_at', '>=', now()->subSeconds($WINDOW_S))
+            ->pluck('numero_asiento');
+
+        if ($vendidosReciente->isNotEmpty()) {
+            collect($locks)->each(fn ($l) => $l->release());
+
+            $lista = $vendidosReciente->map(fn ($s) => "#{$s}")->join(', ');
+            return [
+                "Los asientos {$lista} ya fueron vendidos en los últimos {$WINDOW_S} segundos. Seleccione otros asientos.",
+                [],
+            ];
+        }
+
+        // Sin conflictos: devolver locks para que el llamador los libere en finally
+        return [null, $locks];
+    }
 }
 
