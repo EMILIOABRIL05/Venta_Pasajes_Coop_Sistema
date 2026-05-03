@@ -106,5 +106,7 @@ class Boleto extends Model
     {
         return $this->belongsTo(Pasajero::class);
     }
+
+    
 }
 
