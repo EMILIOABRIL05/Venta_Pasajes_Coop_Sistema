@@ -114,33 +114,70 @@ class VentaController extends Controller
             }, 2); // ← 2 reintentos automáticos ante deadlock de InnoDB
 
         } catch (QueryException $e) {
+            $sqlState = $e->getCode();
 
-            Log::error('[Ventanilla] store() — QueryException', [
-                'user_id'  => auth()->id(),
-                'asientos' => $asientos,
-                'total'    => $total,
-                'sql'      => $e->getSql(),
-                'bindings' => $e->getBindings(),
-                'message'  => $e->getMessage(),
-            ]);
+            $logContext = [
+                'sqlstate'  => $sqlState,
+                'sql'       => $e->getSql(),
+                'bindings'  => $e->getBindings(),
+                'message'   => $e->getMessage(),
+                'user'      => [
+                    'id'    => auth()->id(),
+                    'name'  => auth()->user()->name  ?? 'N/A',
+                    'email' => auth()->user()->email ?? 'N/A',
+                ],
+                'request'   => [
+                    'ip'      => $request->ip(),
+                    'url'     => $request->fullUrl(),
+                    'payload' => [
+                        'ruta_id'     => $validated['ruta_id']     ?? null,
+                        'pasajero_id' => $validated['pasajero_id'] ?? null,
+                        'asientos'    => $asientos                 ?? [],
+                        'total'       => $total                    ?? 0,
+                    ],
+                ],
+            ];
 
-            return back()
-                ->withInput()
-                ->with('error', 'Error de base de datos al registrar la venta. Intente nuevamente.');
+            if ($sqlState === '23000') {
+                Log::error('[Ventanilla] store() — Integrity constraint violation', $logContext);
+                return back()
+                    ->withInput()
+                    ->with('error', 'Error de integridad en base de datos. Uno de los datos ingresados viola una restricción del sistema (llave foránea o valor duplicado). Verifique los datos del pasajero y la ruta seleccionada.');
+            } elseif ($sqlState === '40001') {
+                Log::warning('[Ventanilla] store() — Deadlock tras reintentos', $logContext);
+                return back()
+                    ->withInput()
+                    ->with('error', 'Conflicto de concurrencia. Otro cajero procesó una venta al mismo tiempo. Espere unos segundos e intente de nuevo.');
+            } else {
+                Log::error('[Ventanilla] store() — QueryException genérica', $logContext);
+                return back()
+                    ->withInput()
+                    ->with('error', 'Ocurrió un problema al guardar la venta en la base de datos. Intente nuevamente o contacte al soporte técnico.');
+            }
 
         } catch (Throwable $e) {
             Log::critical('[Ventanilla] store() — Fallo crítico inesperado', [
-                'user_id'  => auth()->id(),
-                'asientos' => $asientos ?? [],
-                'total'    => $total    ?? 0,
-                'message'  => $e->getMessage(),
-                'file'     => $e->getFile().':'.$e->getLine(),
-                'trace'    => $e->getTraceAsString(),
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile() . ':' . $e->getLine(),
+                'trace'     => $e->getTraceAsString(),
+                'user'      => [
+                    'id'    => auth()->id(),
+                    'name'  => auth()->user()->name  ?? 'N/A',
+                    'email' => auth()->user()->email ?? 'N/A',
+                ],
+                'request'   => [
+                    'ip'      => $request->ip(),
+                    'url'     => $request->fullUrl(),
+                    'payload' => [
+                        'asientos' => $asientos ?? [],
+                        'total'    => $total    ?? 0,
+                    ],
+                ],
             ]);
 
             return back()
                 ->withInput()
-                ->with('error', 'Ocurrió un error inesperado. Contacte al administrador del sistema.');
+                ->with('error', 'Error inesperado del sistema. La operación fue cancelada de forma segura. Contacte al administrador e indíquele la hora exacta: ' . now()->format('H:i:s d/m/Y') . '.');
 
         } finally {
             // ── Siempre liberar los Cache locks ──────────────────────────────
