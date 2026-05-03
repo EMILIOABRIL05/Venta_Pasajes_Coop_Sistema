@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Viaje;
+use App\Models\Parada;
 
 /**
  * Componente Livewire: BuscadorPasajes
@@ -40,34 +41,35 @@ class BuscadorPasajes extends Component
         $this->fecha = now()->toDateString();
     }
 
-    public function buscar()
-    {
-        $this->validate([
-            'origen' => 'required|string',
-            'destino' => 'required|string',
-            'fecha' => 'required|date',
-        ], [
-            'origen.required' => 'El origen es obligatorio.',
-            'destino.required' => 'El destino es obligatorio.',
-            'fecha.required' => 'La fecha es obligatoria y debe ser válida.',
-        ]);
+   public function buscar()
+{
+    $this->validate([
+        'origen' => 'required|string',
+        'destino' => 'required|string',
+        'fecha' => 'required|date',
+    ]);
 
-        // Nota: En la BD el modelo que representa la Hoja de Ruta es "Viaje"
-        $this->viajesEncontrados = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])
-            ->whereDate('fecha', $this->fecha)
-            ->whereHas('frecuencia.ruta.origen', function ($q) {
-                $q->where('ciudad', $this->origen)->orWhere('nombre', $this->origen);
-            })
-            ->whereHas('frecuencia.ruta.destino', function ($q) {
-                $q->where('ciudad', $this->destino)->orWhere('nombre', $this->destino);
-            })
-            ->get();
+    // AQUÍ ES EL CAMBIO:
+    $this->viajesEncontrados = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])
+        ->whereDate('fecha', $this->fecha)
+        ->whereHas('frecuencia.ruta.origen', function ($q) {
+            // Cambiamos 'ciudad' por 'id' porque $this->origen ahora tiene el UUID del select
+            $q->where('id', $this->origen); 
+        })
+        ->whereHas('frecuencia.ruta.destino', function ($q) {
+            // Lo mismo para el destino
+            $q->where('id', $this->destino); 
+        })
+        ->get();
 
-        $this->busquedaRealizada = true;
-    }
+    $this->busquedaRealizada = true;
+}
 
     public function render()
-    {
-        return view('livewire.buscador-pasajes');
-    }
+{
+    return view('livewire.buscador-pasajes', [
+        // Esto envía las ciudades de la BD a tu formulario
+        'paradas' => Parada::all() 
+    ]);
+}
 }
