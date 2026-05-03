@@ -127,16 +127,28 @@ class VentaController extends Controller
                 ->with('error', 'Ocurrió un error inesperado. Contacte al administrador del sistema.');
         }
 
-        // ── 4. Respuesta de éxito ─────────────────────────────────────────────
+
+        // ── 4. Respuesta de éxito: Flash estructurado ─────────────────────────
+        //    Array en sesión en lugar de string para que la vista construya
+        //    un resumen visual rico con todos los detalles de la operación.
         return redirect()
-            ->route('ventanilla.ventas.show', $venta)
-            ->with('success', sprintf(
-                'Venta #%d registrada — %d boleto(s) emitido(s) — $%s USD.',
-                $venta->id,
-                $venta->boletos->count(),
-                number_format($total, 2)
-            ));
+            ->route('ventanilla.index')
+            ->with('venta_exitosa', [
+                'id'       => $venta->id,
+                'total'    => number_format($total, 2),
+                'boletos'  => $venta->boletos->count(),
+                'asientos' => $venta->boletos
+                                   ->pluck('numero_asiento')
+                                   ->sort()->values()->join(', '),
+                'codigos'  => $venta->boletos
+                                   ->pluck('codigo_reserva')
+                                   ->join(' · '),
+                'cajero'   => auth()->user()->name ?? 'Sistema',
+                'fecha'    => now()->format('d/m/Y'),
+                'hora'     => now()->format('H:i:s'),
+            ]);
     }
+
 
     // ─── Métodos pendientes de implementar ────────────────────────────────────
 

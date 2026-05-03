@@ -23,7 +23,87 @@
     <div class="py-10">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+            {{-- ── Flash: Venta registrada exitosamente ──────────────────────── --}}
+            @if (session('venta_exitosa'))
+                @php $v = session('venta_exitosa'); @endphp
+
+                <div x-data="{ visible: true }" x-show="visible"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 -translate-y-3"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="rounded-2xl overflow-hidden shadow-lg ring-1 ring-emerald-200">
+
+                    {{-- Banda de éxito --}}
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <p class="text-white font-bold text-base tracking-tight">Venta #{{ $v['id'] }} registrada exitosamente</p>
+                                <p class="text-emerald-100 text-xs mt-0.5">
+                                    {{ $v['fecha'] }} · {{ $v['hora'] }} · Cajero: {{ $v['cajero'] }}
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="visible = false"
+                                class="text-white/70 hover:text-white transition-colors"
+                                aria-label="Cerrar">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Cuerpo del resumen --}}
+                    <div class="bg-white px-6 py-5 grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+                        {{-- Total cobrado --}}
+                        <div class="flex flex-col items-center justify-center bg-emerald-50 rounded-xl p-4 ring-1 ring-emerald-100">
+                            <p class="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-1">Total Cobrado</p>
+                            <p class="text-3xl font-extrabold text-emerald-700 tracking-tight">
+                                <span class="text-lg font-semibold">$</span>{{ $v['total'] }}
+                                <span class="text-sm font-medium text-emerald-500 ml-1">USD</span>
+                            </p>
+                            <p class="text-xs text-emerald-500 mt-1">{{ $v['boletos'] }} boleto(s) emitido(s)</p>
+                        </div>
+
+                        {{-- Asientos vendidos --}}
+                        <div class="flex flex-col justify-center">
+                            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Asientos vendidos</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach (explode(', ', $v['asientos']) as $num)
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold">
+                                        {{ trim($num) }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Códigos de reserva --}}
+                        <div class="flex flex-col justify-center">
+                            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Códigos de reserva</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach (explode(' · ', $v['codigos']) as $cod)
+                                    <span class="inline-flex items-center rounded-full bg-slate-800 text-slate-100 text-[10px] font-mono font-semibold px-2.5 py-1 tracking-wider">
+                                        {{ trim($cod) }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            @endif
+            {{-- /Flash --}}
+
             {{-- ── Tarjeta principal ───────────────────────────────────────── --}}
+
             <div class="bg-white shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-100">
 
                 {{-- Cabecera de la tarjeta --}}
