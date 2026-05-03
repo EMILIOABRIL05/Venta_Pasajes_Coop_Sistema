@@ -179,7 +179,8 @@
 
                         {{-- ── Ruta ── --}}
                         <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-6">
-                            <label for="ruta_id" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                            <label for="ruta_id" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
                                 Ruta
                             </label>
                             <select name="ruta_id" id="ruta_id"
@@ -201,7 +202,8 @@
 
                         {{-- ── Pasajero ── --}}
                         <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-6">
-                            <label for="pasajero_id" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                            <label for="pasajero_id" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                                 ID del Pasajero
                             </label>
                             <input type="number"
@@ -256,10 +258,11 @@
                         {{-- ── Botón submit ── --}}
                         <button type="submit"
                                 id="btn-submit"
-                                class="w-full rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-indigo-700 active:scale-95 transition-all duration-150
+                                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-indigo-700 active:scale-95 transition-all duration-150
                                        disabled:opacity-40 disabled:cursor-not-allowed"
                                 disabled>
-                            Confirmar Venta →
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                            Confirmar Venta
                         </button>
 
                     </div>{{-- /col derecha --}}
