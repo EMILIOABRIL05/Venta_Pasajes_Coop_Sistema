@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Frecuencia;
 
 class Boleto extends Model
 {
@@ -26,11 +27,12 @@ class Boleto extends Model
      * Campos asignables masivamente.
      */
     protected $fillable = [
+        'id',
         'venta_id',
         'pasajero_id',
+        'frecuencia_id',
         'numero_asiento',
         'precio_final',
-        'frecuencia_id',
     ];
 
     // ─── Generación automática del UUID ──────────────────────────────────────
@@ -58,6 +60,14 @@ class Boleto extends Model
     }
 
     /**
+     * El boleto pertenece a una frecuencia.
+     */
+    public function frecuencia()
+    {
+        return $this->belongsTo(Frecuencia::class);
+    }
+
+    /**
      * El boleto pertenece a un pasajero.
      */
     public function pasajero()
@@ -65,11 +75,5 @@ class Boleto extends Model
         return $this->belongsTo(Pasajero::class);
     }
 
-    /**
-     * El boleto pertenece a una frecuencia.
-     */
-    public function frecuencia()
-    {
-        return $this->belongsTo(Frecuencia::class);
-    }
+    
 }
