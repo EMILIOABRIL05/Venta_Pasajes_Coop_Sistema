@@ -149,6 +149,34 @@
                 @endif
 
             </div>{{-- /tarjeta --}}
+
+            {{-- ── Cuadrícula de asientos ──────────────────────────────────── --}}
+            <div class="bg-white shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-100">
+
+                {{-- Cabecera --}}
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Distribución del bus</p>
+                    <p class="text-base font-semibold text-gray-800">Mapa de Asientos (40 asientos)</p>
+                </div>
+
+                {{-- Cuadrícula --}}
+                <div class="p-6">
+                    <div class="grid grid-cols-4 gap-2">
+                        @for ($i = 1; $i <= 40; $i++)
+                            <button
+                                type="button"
+                                id="asiento-{{ $i }}"
+                                data-asiento="{{ $i }}"
+                                class="flex items-center justify-center rounded-md border border-gray-300 p-3 text-sm font-semibold"
+                            >
+                                {{ $i }}
+                            </button>
+                        @endfor
+                    </div>
+                </div>
+
+            </div>{{-- /cuadrícula asientos --}}
+
         </div>
     </div>
 
