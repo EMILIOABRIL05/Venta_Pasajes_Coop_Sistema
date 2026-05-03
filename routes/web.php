@@ -51,8 +51,10 @@ Route::middleware('auth')->group(function () {
     // Dashboard de Reportes Administrativos
     Route::get('/admin/reportes', [ReporteController::class, 'index'])->middleware(['auth', 'role:admin'])->name('admin.reportes');
 
-    // Rutas para el CRUD de Frecuencias
-    Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)->middleware(['auth', 'permission:manage_frecuencias|role:admin'])->name('frecuencias.index');
+    // Rutas para el CRUD de Frecuencias (Sprint 3 - Kevin)
+    Route::get('/frecuencias', App\Livewire\Operativa\FrecuenciasCrud::class)
+        ->middleware(['auth', 'role:admin|oficinista'])
+        ->name('frecuencias.index');
 });
 
 // ─── Módulo Ventanilla ────────────────────────────────────────────────────────
