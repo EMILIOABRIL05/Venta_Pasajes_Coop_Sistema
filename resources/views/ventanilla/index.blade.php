@@ -153,25 +153,91 @@
             {{-- ── Cuadrícula de asientos ──────────────────────────────────── --}}
             <div class="bg-white shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-100">
 
-                {{-- Cabecera --}}
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Distribución del bus</p>
-                    <p class="text-base font-semibold text-gray-800">Mapa de Asientos (40 asientos)</p>
+                {{-- Cabecera con leyenda --}}
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="14" rx="3"/>
+                                <path d="M3 10h18M8 21l1-4M16 21l-1-4M7 17h10" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-widest text-gray-400">Distribución del bus</p>
+                            <p class="text-base font-semibold text-gray-800">Mapa de Asientos — 40 plazas</p>
+                        </div>
+                    </div>
+                    {{-- Leyenda --}}
+                    <div class="flex items-center gap-5 text-xs font-semibold text-gray-500">
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-emerald-500 shadow-sm"></span>
+                            Disponible
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-red-400 opacity-60"></span>
+                            Ocupado
+                        </span>
+                    </div>
                 </div>
 
-                {{-- Cuadrícula --}}
-                <div class="p-6">
-                    <div class="grid grid-cols-4 gap-2">
-                        @for ($i = 1; $i <= 40; $i++)
-                            <button
-                                type="button"
-                                id="asiento-{{ $i }}"
-                                data-asiento="{{ $i }}"
-                                class="flex items-center justify-center rounded-md border border-gray-300 p-3 text-sm font-semibold"
-                            >
-                                {{ $i }}
-                            </button>
-                        @endfor
+                {{-- Cuerpo del bus --}}
+                <div class="p-8">
+                    <div class="max-w-sm mx-auto">
+
+                        {{-- ── Frente del bus: volante ── --}}
+                        <div class="flex flex-col items-center mb-8 pb-6 border-b-2 border-dashed border-gray-200">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">⬆ Frente del Bus</p>
+
+                            {{-- Volante SVG de 3 rayos --}}
+                            <div class="w-20 h-20 text-slate-700 drop-shadow-md">
+                                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                                    {{-- Aro exterior --}}
+                                    <circle cx="50" cy="50" r="43" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+                                    {{-- Hub central --}}
+                                    <circle cx="50" cy="50" r="9" fill="currentColor"/>
+                                    {{-- Rayo superior --}}
+                                    <line x1="50" y1="41" x2="50" y2="7" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                    {{-- Rayo inferior-izquierdo --}}
+                                    <line x1="43" y1="55" x2="12" y2="74" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                    {{-- Rayo inferior-derecho --}}
+                                    <line x1="57" y1="55" x2="88" y2="74" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2 font-medium tracking-wide">Conductor</p>
+                        </div>
+
+                        {{-- ── Cuadrícula de asientos ── --}}
+                        @php
+                            // Temporal: reemplazar con asientos reales de la BD
+                            $asientosOcupados = [3, 7, 12, 15, 22, 28, 33];
+                        @endphp
+
+                        <div class="grid grid-cols-4 gap-2">
+                            @for ($i = 1; $i <= 40; $i++)
+                                @php $ocupado = in_array($i, $asientosOcupados); @endphp
+                                <button
+                                    type="button"
+                                    id="asiento-{{ $i }}"
+                                    data-asiento="{{ $i }}"
+                                    @disabled($ocupado)
+                                    title="{{ $ocupado ? 'Ocupado' : 'Disponible – Asiento '.$i }}"
+                                    class="relative flex flex-col items-center justify-center gap-0.5 rounded-lg py-2.5 px-1 text-xs font-bold border transition-all duration-150
+                                        {{ $ocupado
+                                            ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
+                                            : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
+                                        }}"
+                                >
+                                    {{-- Icono silla --}}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 shrink-0">
+                                        <path d="M6 2a2 2 0 00-2 2v7h2V4h12v7h2V4a2 2 0 00-2-2H6z"/>
+                                        <path d="M4 13a2 2 0 012-2h12a2 2 0 012 2v3H4v-3z"/>
+                                        <path d="M6 16v4h2v-2h8v2h2v-4H6z"/>
+                                    </svg>
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                        </div>
+
                     </div>
                 </div>
 
