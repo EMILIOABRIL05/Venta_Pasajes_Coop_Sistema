@@ -168,10 +168,14 @@
                         </div>
                     </div>
                     {{-- Leyenda --}}
-                    <div class="flex items-center gap-5 text-xs font-semibold text-gray-500">
+                    <div class="flex items-center gap-4 text-xs font-semibold text-gray-500">
                         <span class="flex items-center gap-1.5">
                             <span class="inline-block w-3.5 h-3.5 rounded bg-emerald-500 shadow-sm"></span>
                             Disponible
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-cyan-500 shadow-sm ring-2 ring-cyan-300"></span>
+                            Seleccionado
                         </span>
                         <span class="flex items-center gap-1.5">
                             <span class="inline-block w-3.5 h-3.5 rounded bg-red-400 opacity-60"></span>
@@ -219,7 +223,7 @@
                                 @php $ocupado = in_array($i, $asientosOcupados); @endphp
 
                                 {{-- Wrapper group para el tooltip --}}
-                                <div class="relative group flex justify-center">
+                                <div class="relative group flex justify-center" data-group>
 
                                     {{-- ── Tooltip ── --}}
                                     <div class="pointer-events-none absolute -top-[5.5rem] left-1/2 -translate-x-1/2 z-50
@@ -232,8 +236,8 @@
                                             <p class="text-emerald-400 text-[11px] font-semibold mt-0.5">
                                                 ${{ number_format($precioRef, 2) }}
                                             </p>
-                                            <p class="text-[9px] mt-1 font-medium
-                                                {{ $ocupado ? 'text-red-400' : 'text-gray-400' }}">
+                                            <p data-tooltip-status
+                                               class="text-[9px] mt-1 font-medium {{ $ocupado ? 'text-red-400' : 'text-gray-400' }}">
                                                 {{ $ocupado ? '🔴 Ocupado' : '🟢 Disponible' }}
                                             </p>
                                         </div>
@@ -248,6 +252,7 @@
                                         type="button"
                                         id="asiento-{{ $i }}"
                                         data-asiento="{{ $i }}"
+                                        data-seat-state="{{ $ocupado ? 'occupied' : 'available' }}"
                                         @disabled($ocupado)
                                         class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2.5 px-1 text-xs font-bold border transition-all duration-150
                                             {{ $ocupado
@@ -269,6 +274,46 @@
 
                     </div>
                 </div>
+
+                {{-- Safelist Tailwind: clases dinámicas de selección --}}
+                <div class="hidden bg-cyan-500 border-cyan-600 ring-2 ring-cyan-300 ring-offset-1 text-cyan-400"></div>
+
+                {{-- Lógica de selección de asientos --}}
+                <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Clases CSS para cada estado
+                    var CLS_AVAIL    = ['bg-emerald-500', 'border-emerald-600', 'shadow-sm'];
+                    var CLS_SELECTED = ['bg-cyan-500',    'border-cyan-600',    'shadow-md', 'ring-2', 'ring-cyan-300', 'ring-offset-1'];
+
+                    // Escuchar clics solo en asientos disponibles
+                    document.querySelectorAll('[data-seat-state="available"]').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            var isSelected = this.dataset.seatState === 'selected';
+                            var statusEl   = this.closest('[data-group]').querySelector('[data-tooltip-status]');
+
+                            if (isSelected) {
+                                // ── Deseleccionar → vuelve a verde ──
+                                this.dataset.seatState = 'available';
+                                CLS_SELECTED.forEach(function (c) { btn.classList.remove(c); });
+                                CLS_AVAIL.forEach(function (c)    { btn.classList.add(c); });
+                                if (statusEl) {
+                                    statusEl.textContent = '🟢 Disponible';
+                                    statusEl.classList.replace('text-cyan-400', 'text-gray-400');
+                                }
+                            } else {
+                                // ── Seleccionar → cambia a cian ──
+                                this.dataset.seatState = 'selected';
+                                CLS_AVAIL.forEach(function (c)    { btn.classList.remove(c); });
+                                CLS_SELECTED.forEach(function (c) { btn.classList.add(c); });
+                                if (statusEl) {
+                                    statusEl.textContent = '🔵 Seleccionado';
+                                    statusEl.classList.replace('text-gray-400', 'text-cyan-400');
+                                }
+                            }
+                        });
+                    });
+                });
+                </script>
 
             </div>{{-- /cuadrícula asientos --}}
 
