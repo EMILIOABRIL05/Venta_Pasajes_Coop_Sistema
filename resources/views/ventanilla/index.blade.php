@@ -151,7 +151,7 @@
             </div>{{-- /tarjeta --}}
 
             {{-- ── Cuadrícula de asientos ──────────────────────────────────── --}}
-            <div class="bg-white shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-100">
+            <div class="bg-white shadow-lg rounded-2xl ring-1 ring-gray-100">
 
                 {{-- Cabecera con leyenda --}}
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
@@ -210,31 +210,60 @@
                         @php
                             // Temporal: reemplazar con asientos reales de la BD
                             $asientosOcupados = [3, 7, 12, 15, 22, 28, 33];
+                            // Precio de referencia: mínimo entre las rutas cargadas
+                            $precioRef = $rutas->min('precio_base') ?? 0;
                         @endphp
 
-                        <div class="grid grid-cols-4 gap-2">
+                        <div class="grid grid-cols-4 gap-3">
                             @for ($i = 1; $i <= 40; $i++)
                                 @php $ocupado = in_array($i, $asientosOcupados); @endphp
-                                <button
-                                    type="button"
-                                    id="asiento-{{ $i }}"
-                                    data-asiento="{{ $i }}"
-                                    @disabled($ocupado)
-                                    title="{{ $ocupado ? 'Ocupado' : 'Disponible – Asiento '.$i }}"
-                                    class="relative flex flex-col items-center justify-center gap-0.5 rounded-lg py-2.5 px-1 text-xs font-bold border transition-all duration-150
-                                        {{ $ocupado
-                                            ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
-                                            : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
-                                        }}"
-                                >
-                                    {{-- Icono silla --}}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 shrink-0">
-                                        <path d="M6 2a2 2 0 00-2 2v7h2V4h12v7h2V4a2 2 0 00-2-2H6z"/>
-                                        <path d="M4 13a2 2 0 012-2h12a2 2 0 012 2v3H4v-3z"/>
-                                        <path d="M6 16v4h2v-2h8v2h2v-4H6z"/>
-                                    </svg>
-                                    {{ $i }}
-                                </button>
+
+                                {{-- Wrapper group para el tooltip --}}
+                                <div class="relative group flex justify-center">
+
+                                    {{-- ── Tooltip ── --}}
+                                    <div class="pointer-events-none absolute -top-[5.5rem] left-1/2 -translate-x-1/2 z-50
+                                                opacity-0 invisible
+                                                group-hover:opacity-100 group-hover:visible
+                                                transition-all duration-200 ease-out
+                                                w-32">
+                                        <div class="bg-gray-900 text-white rounded-xl px-3 py-2.5 shadow-2xl text-center">
+                                            <p class="text-[11px] font-bold tracking-wide">Asiento {{ $i }}</p>
+                                            <p class="text-emerald-400 text-[11px] font-semibold mt-0.5">
+                                                ${{ number_format($precioRef, 2) }}
+                                            </p>
+                                            <p class="text-[9px] mt-1 font-medium
+                                                {{ $ocupado ? 'text-red-400' : 'text-gray-400' }}">
+                                                {{ $ocupado ? '🔴 Ocupado' : '🟢 Disponible' }}
+                                            </p>
+                                        </div>
+                                        {{-- Flecha del tooltip --}}
+                                        <div class="flex justify-center">
+                                            <div class="w-2.5 h-2.5 bg-gray-900 rotate-45 -mt-1.5"></div>
+                                        </div>
+                                    </div>
+
+                                    {{-- ── Botón de asiento ── --}}
+                                    <button
+                                        type="button"
+                                        id="asiento-{{ $i }}"
+                                        data-asiento="{{ $i }}"
+                                        @disabled($ocupado)
+                                        class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2.5 px-1 text-xs font-bold border transition-all duration-150
+                                            {{ $ocupado
+                                                ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
+                                                : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
+                                            }}"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 shrink-0">
+                                            <path d="M6 2a2 2 0 00-2 2v7h2V4h12v7h2V4a2 2 0 00-2-2H6z"/>
+                                            <path d="M4 13a2 2 0 012-2h12a2 2 0 012 2v3H4v-3z"/>
+                                            <path d="M6 16v4h2v-2h8v2h2v-4H6z"/>
+                                        </svg>
+                                        {{ $i }}
+                                    </button>
+
+                                </div>{{-- /group --}}
                             @endfor
                         </div>
 
