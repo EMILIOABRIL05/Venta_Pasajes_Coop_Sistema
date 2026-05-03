@@ -43,51 +43,64 @@ class VentaController extends Controller
     public function store(Request $request)
     {
         // ── 1. Validación estricta de entrada ─────────────────────────────────
+        //    'distinct' rechaza que el frontend envíe el mismo número dos veces.
         $validated = $request->validate([
             'ruta_id'         => ['required', 'integer', 'exists:rutas,id'],
             'pasajero_id'     => ['required', 'integer', 'exists:pasajeros,id'],
             'asientos'        => ['required', 'array', 'min:1', 'max:40'],
-            'asientos.*'      => ['required', 'integer', 'between:1,40'],
+            'asientos.*'      => ['required', 'integer', 'between:1,40', 'distinct'],
             'precio_unitario' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        // Calcular totales fuera de la transacción para evitar cómputo en el lock
-        $asientos       = array_unique($validated['asientos']);
+        // ── 2. Preparación de datos (fuera del lock transaccional) ────────────
+        //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
+        //    para minimizar el tiempo que los registros quedan bloqueados.
+        $asientos       = array_values(array_unique($validated['asientos']));
         $precioUnitario = (float) $validated['precio_unitario'];
         $total          = round($precioUnitario * count($asientos), 2);
 
-        // ── 2. Transacción atómica ────────────────────────────────────────────
-        try {
-            /** @var \App\Models\Venta $venta */
-            $venta = DB::transaction(function () use ($validated, $asientos, $precioUnitario, $total) {
+        //    Payload para createMany(): cada elemento es un array con los campos
+        //    del boleto. El UUID se genera en Boleto::booted() durante el create().
+        //    NO se incluye 'venta_id' porque Eloquent lo inyecta a través de
+        //    la relación hasMany ($venta->boletos()->createMany(...)).
+        $boletosPayload = array_map(fn (int $seat) => [
+            'pasajero_id'    => $validated['pasajero_id'],  // FK → pasajeros.id ✓
+            'numero_asiento' => (string) $seat,
+            'precio_final'   => $precioUnitario,
+        ], $asientos);
 
-                // 2a. Cabecera de la venta —————————————————————————————————————
-                //     Vincula el cajero autenticado y el total calculado.
+        // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
+        try {
+            $venta = DB::transaction(function () use ($boletosPayload, $total) {
+
+                // 3a. Cabecera de la venta ─────────────────────────────────────
+                //     FK: ventas.user_id → users.id (cajero autenticado)
                 $venta = Venta::create([
-                    'user_id' => auth()->id(),  // Cajero/ventanilla autenticado
+                    'user_id' => auth()->id(),
                     'total'   => $total,
                 ]);
 
-                // 2b. Boletos (líneas de venta) ————————————————————————————————
-                //     Cada asiento seleccionado genera un Boleto independiente.
-                //     El UUID lo genera automáticamente el observer en Boleto::booted().
-                foreach ($asientos as $numeroAsiento) {
-                    $venta->boletos()->create([
-                        'pasajero_id'    => $validated['pasajero_id'],
-                        'numero_asiento' => (string) $numeroAsiento,
-                        'precio_final'   => $precioUnitario,
-                    ]);
-                }
+                // 3b. Inserción masiva de boletos ──────────────────────────────
+                //     createMany() itera el payload y llama create() por cada
+                //     elemento, disparando Boleto::booted() → UUID automático.
+                //
+                //     Garantías de integridad referencial:
+                //       · boletos.venta_id    → ventas.id    ✓ vía relación Eloquent
+                //       · boletos.pasajero_id → pasajeros.id ✓ validado con exists:
+                //
+                //     Si CUALQUIER insert falla (FK rota, duplicado, etc.),
+                //     Eloquent lanza una excepción → MySQL ejecuta ROLLBACK
+                //     completo → ni la Venta ni ningún Boleto queda persistido.
+                $venta->boletos()->createMany($boletosPayload);
 
-                return $venta;
+                // Devolver el modelo hidratado (sin query adicional al cliente)
+                return $venta->load('boletos');
 
-            }, 2); // ← Reintenta hasta 2 veces si InnoDB lanza un deadlock
+            }, 2); // ← 2 reintentos automáticos ante deadlock de InnoDB
 
         } catch (QueryException $e) {
-            // Error de base de datos: FK violada, connection drop, timeout, etc.
             Log::error('[Ventanilla] store() — QueryException', [
                 'user_id'  => auth()->id(),
-                'ruta_id'  => $validated['ruta_id']  ?? null,
                 'asientos' => $asientos,
                 'total'    => $total,
                 'sql'      => $e->getSql(),
@@ -100,8 +113,6 @@ class VentaController extends Controller
                 ->with('error', 'Error de base de datos al registrar la venta. Intente nuevamente.');
 
         } catch (Throwable $e) {
-            // Fallo inesperado: corte de red, error eléctrico, PHP fatal, etc.
-            // La transacción ya hizo ROLLBACK automático en este punto.
             Log::critical('[Ventanilla] store() — Fallo crítico inesperado', [
                 'user_id'  => auth()->id(),
                 'asientos' => $asientos ?? [],
@@ -116,13 +127,13 @@ class VentaController extends Controller
                 ->with('error', 'Ocurrió un error inesperado. Contacte al administrador del sistema.');
         }
 
-        // ── 3. Respuesta de éxito ─────────────────────────────────────────────
+        // ── 4. Respuesta de éxito ─────────────────────────────────────────────
         return redirect()
             ->route('ventanilla.ventas.show', $venta)
             ->with('success', sprintf(
-                'Venta #%d registrada correctamente — %d asiento(s) — $%s USD.',
+                'Venta #%d registrada — %d boleto(s) emitido(s) — $%s USD.',
                 $venta->id,
-                count($asientos),
+                $venta->boletos->count(),
                 number_format($total, 2)
             ));
     }

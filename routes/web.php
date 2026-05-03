@@ -54,7 +54,6 @@ Route::middleware('auth')
     ->name('ventanilla.')
     ->group(function () {
         Route::get('/', [VentaController::class, 'index'])->name('index'); // /ventanilla
-        Route::get('/', [VentaController::class, 'index'])->name('index');
         Route::resource('ventas',    VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
     });
