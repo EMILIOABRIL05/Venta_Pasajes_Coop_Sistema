@@ -129,12 +129,12 @@
                                                     data-asiento="{{ $i }}"
                                                     data-seat-state="{{ $ocupado ? 'occupied' : ($preselected ? 'selected' : 'available') }}"
                                                     @disabled($ocupado)
-                                                    class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2 px-1 text-xs font-bold border transition-all duration-150
+                                                    class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2 px-1 text-xs font-bold border transition-all duration-300
                                                         {{ $ocupado
                                                             ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
                                                             : ($preselected
-                                                                ? 'bg-cyan-500 border-cyan-600 text-white shadow-md ring-2 ring-cyan-300 ring-offset-1'
-                                                                : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer')
+                                                                ? 'bg-cyan-500 border-cyan-600 text-white shadow-md ring-2 ring-cyan-300 ring-offset-1 hover:scale-110'
+                                                                : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 hover:scale-110 active:scale-95 cursor-pointer')
                                                         }}"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
@@ -258,8 +258,8 @@
                         {{-- ── Botón submit ── --}}
                         <button type="submit"
                                 id="btn-submit"
-                                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-indigo-700 active:scale-95 transition-all duration-150
-                                       disabled:opacity-40 disabled:cursor-not-allowed"
+                                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all duration-300
+                                       disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
                             Confirmar Venta
