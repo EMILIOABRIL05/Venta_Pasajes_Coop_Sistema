@@ -211,6 +211,12 @@ class VentaController extends Controller
 
     // ─── Métodos pendientes de implementar ────────────────────────────────────
 
+    /**
+     * Muestra el formulario para crear una nueva venta de boletos.
+     * Carga las rutas disponibles para el selector.
+     *
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
         $rutas = Ruta::with(['origen', 'destino'])
@@ -220,7 +226,12 @@ class VentaController extends Controller
         return view('ventanilla.ventas.create', compact('rutas'));
     }
 
-
+    /**
+     * Muestra los detalles de una venta específica y sus boletos.
+     *
+     * @param  \App\Models\Venta  $venta
+     * @return \Illuminate\View\View
+     */
     public function show(Venta $venta)
     {
         $venta->load('boletos.pasajero');
@@ -228,10 +239,32 @@ class VentaController extends Controller
         return view('ventanilla.ventas.show', compact('venta'));
     }
 
+    /**
+     * Muestra el formulario para editar una venta.
+     * (Método pendiente de implementar)
+     *
+     * @param  \App\Models\Venta  $venta
+     * @return void
+     */
     public function edit(Venta $venta) {}
 
+    /**
+     * Actualiza los datos de una venta en almacenamiento.
+     * (Método pendiente de implementar)
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Venta  $venta
+     * @return void
+     */
     public function update(Request $request, Venta $venta) {}
 
+    /**
+     * Elimina una venta del almacenamiento (soft delete).
+     * (Método pendiente de implementar)
+     *
+     * @param  \App\Models\Venta  $venta
+     * @return void
+     */
     public function destroy(Venta $venta) {}
 
     // ─── Privados ─────────────────────────────────────────────────────────────
