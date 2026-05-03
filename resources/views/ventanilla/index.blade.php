@@ -134,7 +134,7 @@
                     </div>
                 @else
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100 text-sm">
+                        <table class="min-w-full divide-y divide-gray-100 text-sm whitespace-nowrap">
 
                             {{-- Encabezados --}}
                             <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">

@@ -97,7 +97,7 @@
                                     $precioRefMap      = $rutas->min('precio_base') ?? 0;
                                 @endphp
 
-                                <div class="grid grid-cols-4 gap-2">
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                                     @for ($i = 1; $i <= 40; $i++)
                                         @php
                                             $ocupado      = in_array($i, $asientosOcupados);
