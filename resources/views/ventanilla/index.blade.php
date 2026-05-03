@@ -149,6 +149,174 @@
                 @endif
 
             </div>{{-- /tarjeta --}}
+
+            {{-- ── Cuadrícula de asientos ──────────────────────────────────── --}}
+            <div class="bg-white shadow-lg rounded-2xl ring-1 ring-gray-100">
+
+                {{-- Cabecera con leyenda --}}
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="14" rx="3"/>
+                                <path d="M3 10h18M8 21l1-4M16 21l-1-4M7 17h10" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-widest text-gray-400">Distribución del bus</p>
+                            <p class="text-base font-semibold text-gray-800">Mapa de Asientos — 40 plazas</p>
+                        </div>
+                    </div>
+                    {{-- Leyenda --}}
+                    <div class="flex items-center gap-4 text-xs font-semibold text-gray-500">
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-emerald-500 shadow-sm"></span>
+                            Disponible
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-cyan-500 shadow-sm ring-2 ring-cyan-300"></span>
+                            Seleccionado
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-3.5 h-3.5 rounded bg-red-400 opacity-60"></span>
+                            Ocupado
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Cuerpo del bus --}}
+                <div class="p-8">
+                    <div class="max-w-sm mx-auto">
+
+                        {{-- ── Frente del bus: volante ── --}}
+                        <div class="flex flex-col items-center mb-8 pb-6 border-b-2 border-dashed border-gray-200">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">⬆ Frente del Bus</p>
+
+                            {{-- Volante SVG de 3 rayos --}}
+                            <div class="w-20 h-20 text-slate-700 drop-shadow-md">
+                                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                                    {{-- Aro exterior --}}
+                                    <circle cx="50" cy="50" r="43" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+                                    {{-- Hub central --}}
+                                    <circle cx="50" cy="50" r="9" fill="currentColor"/>
+                                    {{-- Rayo superior --}}
+                                    <line x1="50" y1="41" x2="50" y2="7" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                    {{-- Rayo inferior-izquierdo --}}
+                                    <line x1="43" y1="55" x2="12" y2="74" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                    {{-- Rayo inferior-derecho --}}
+                                    <line x1="57" y1="55" x2="88" y2="74" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2 font-medium tracking-wide">Conductor</p>
+                        </div>
+
+                        {{-- ── Cuadrícula de asientos ── --}}
+                        @php
+                            // Temporal: reemplazar con asientos reales de la BD
+                            $asientosOcupados = [3, 7, 12, 15, 22, 28, 33];
+                            // Precio de referencia: mínimo entre las rutas cargadas
+                            $precioRef = $rutas->min('precio_base') ?? 0;
+                        @endphp
+
+                        <div class="grid grid-cols-4 gap-3">
+                            @for ($i = 1; $i <= 40; $i++)
+                                @php $ocupado = in_array($i, $asientosOcupados); @endphp
+
+                                {{-- Wrapper group para el tooltip --}}
+                                <div class="relative group flex justify-center" data-group>
+
+                                    {{-- ── Tooltip ── --}}
+                                    <div class="pointer-events-none absolute -top-[5.5rem] left-1/2 -translate-x-1/2 z-50
+                                                opacity-0 invisible
+                                                group-hover:opacity-100 group-hover:visible
+                                                transition-all duration-200 ease-out
+                                                w-32">
+                                        <div class="bg-gray-900 text-white rounded-xl px-3 py-2.5 shadow-2xl text-center">
+                                            <p class="text-[11px] font-bold tracking-wide">Asiento {{ $i }}</p>
+                                            <p class="text-emerald-400 text-[11px] font-semibold mt-0.5">
+                                                ${{ number_format($precioRef, 2) }}
+                                            </p>
+                                            <p data-tooltip-status
+                                               class="text-[9px] mt-1 font-medium {{ $ocupado ? 'text-red-400' : 'text-gray-400' }}">
+                                                {{ $ocupado ? '🔴 Ocupado' : '🟢 Disponible' }}
+                                            </p>
+                                        </div>
+                                        {{-- Flecha del tooltip --}}
+                                        <div class="flex justify-center">
+                                            <div class="w-2.5 h-2.5 bg-gray-900 rotate-45 -mt-1.5"></div>
+                                        </div>
+                                    </div>
+
+                                    {{-- ── Botón de asiento ── --}}
+                                    <button
+                                        type="button"
+                                        id="asiento-{{ $i }}"
+                                        data-asiento="{{ $i }}"
+                                        data-seat-state="{{ $ocupado ? 'occupied' : 'available' }}"
+                                        @disabled($ocupado)
+                                        class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2.5 px-1 text-xs font-bold border transition-all duration-150
+                                            {{ $ocupado
+                                                ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
+                                                : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
+                                            }}"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 shrink-0">
+                                            <path d="M6 2a2 2 0 00-2 2v7h2V4h12v7h2V4a2 2 0 00-2-2H6z"/>
+                                            <path d="M4 13a2 2 0 012-2h12a2 2 0 012 2v3H4v-3z"/>
+                                            <path d="M6 16v4h2v-2h8v2h2v-4H6z"/>
+                                        </svg>
+                                        {{ $i }}
+                                    </button>
+
+                                </div>{{-- /group --}}
+                            @endfor
+                        </div>
+
+                    </div>
+                </div>
+
+                {{-- Safelist Tailwind: clases dinámicas de selección --}}
+                <div class="hidden bg-cyan-500 border-cyan-600 ring-2 ring-cyan-300 ring-offset-1 text-cyan-400"></div>
+
+                {{-- Lógica de selección de asientos --}}
+                <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Clases CSS para cada estado
+                    var CLS_AVAIL    = ['bg-emerald-500', 'border-emerald-600', 'shadow-sm'];
+                    var CLS_SELECTED = ['bg-cyan-500',    'border-cyan-600',    'shadow-md', 'ring-2', 'ring-cyan-300', 'ring-offset-1'];
+
+                    // Escuchar clics solo en asientos disponibles
+                    document.querySelectorAll('[data-seat-state="available"]').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            var isSelected = this.dataset.seatState === 'selected';
+                            var statusEl   = this.closest('[data-group]').querySelector('[data-tooltip-status]');
+
+                            if (isSelected) {
+                                // ── Deseleccionar → vuelve a verde ──
+                                this.dataset.seatState = 'available';
+                                CLS_SELECTED.forEach(function (c) { btn.classList.remove(c); });
+                                CLS_AVAIL.forEach(function (c)    { btn.classList.add(c); });
+                                if (statusEl) {
+                                    statusEl.textContent = '🟢 Disponible';
+                                    statusEl.classList.replace('text-cyan-400', 'text-gray-400');
+                                }
+                            } else {
+                                // ── Seleccionar → cambia a cian ──
+                                this.dataset.seatState = 'selected';
+                                CLS_AVAIL.forEach(function (c)    { btn.classList.remove(c); });
+                                CLS_SELECTED.forEach(function (c) { btn.classList.add(c); });
+                                if (statusEl) {
+                                    statusEl.textContent = '🔵 Seleccionado';
+                                    statusEl.classList.replace('text-gray-400', 'text-cyan-400');
+                                }
+                            }
+                        });
+                    });
+                });
+                </script>
+
+            </div>{{-- /cuadrícula asientos --}}
+
         </div>
     </div>
 
