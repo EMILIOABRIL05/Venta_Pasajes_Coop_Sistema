@@ -30,4 +30,12 @@ class Viaje extends Model
     {
         return $this->belongsTo(Bus::class);
     }
+
+    /**
+     * Boletos vendidos para este viaje (a través de su frecuencia).
+     */
+    public function boletos()
+    {
+        return $this->hasMany(Boleto::class, 'frecuencia_id', 'frecuencia_id');
+    }
 }

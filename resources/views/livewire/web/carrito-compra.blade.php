@@ -1,12 +1,10 @@
-
-<style>
-    .min-h-screen > div {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-</style>
-
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-100 min-h-screen">
+    <style>
+        .min-h-screen > div {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+    </style>
     
     <!-- Hero Minimalista -->
     <div class="bg-[#003366] text-white py-8 px-6 sm:px-10 rounded-2xl shadow-xl mb-8 flex flex-col md:flex-row items-center justify-between relative overflow-hidden border-b-4 border-[#CC0000]">
@@ -48,22 +46,15 @@
                 </div>
             </div>
             
-            <!-- Integración con el Mapa de Asientos -->
-            <!-- wire:ignore = Livewire no toca este DOM al re-renderizar -->
-            <!-- x-data + x-on:click = Alpine captura el clic y llama a $wire -->
-<div wire:ignore
-     class="flex justify-center bg-gray-50 rounded-xl p-6 border border-gray-100"
-     x-data
-     x-on:click="
-        let input = $event.target.closest('label')?.querySelector('input')
-                    ?? ($event.target.tagName === 'INPUT' ? $event.target : null);
-        if (input && !input.disabled) {
-            $wire.seleccionarAsiento(input.value);
-        }
-     ">
+{{-- Integración Directa con el Mapa de Asientos (Sin Alpine para evitar conflictos) --}}
+<div class="flex justify-center bg-gray-50 rounded-xl p-6 border border-gray-100"
+     wire:key="seat-map-container"
+     wire:loading.class="opacity-50 pointer-events-none transition-opacity">
+    
     <x-seat-map 
         :seatNumbers="range(1, $viaje->bus->numero_asientos ?? 40)" 
         :occupiedSeats="$viaje->boletos ? $viaje->boletos->pluck('numero_asiento')->toArray() : []"
+        :selectedSeats="$asientosSeleccionados"
     />
 </div>
         </div>
@@ -93,72 +84,73 @@
                 @endif
                 
                 @if(count($asientosSeleccionados) > 0)
-                    <form wire:submit.prevent="confirmarVenta" class="space-y-6">
-                        @foreach($asientosSeleccionados as $asiento)
-                            <div class="p-5 bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-200 group">
-                                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
-                                    <div class="flex items-center">
-                                        <div class="bg-[#003366] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-3 shadow-inner">
-                                            {{ $asiento }}
+                    <form wire:submit.prevent="confirmarVenta" class="flex flex-col">
+                        <!-- Area Desplazable de Pasajeros -->
+                        <div class="space-y-4 overflow-y-auto pr-2 mb-6 custom-scrollbar" style="max-height: 400px;">
+                            @foreach($asientosSeleccionados as $asiento)
+                                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-200 group">
+                                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                                        <div class="flex items-center">
+                                            <div class="bg-[#003366] text-white w-7 h-7 rounded-full flex items-center justify-center font-bold mr-2 text-xs shadow-inner">
+                                                {{ $asiento }}
+                                            </div>
+                                            <span class="font-bold text-gray-700 text-sm">Pasajero</span>
                                         </div>
-                                        <span class="font-bold text-gray-700">Pasajero</span>
-                                    </div>
-                                    <span class="text-xs font-bold px-2.5 py-1 bg-green-100 text-green-700 rounded-full uppercase tracking-wider">Llenar datos</span>
-                                </div>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <input type="text" wire:model="datosPasajeros.{{ $asiento }}.nombre" 
-                                               placeholder="Nombre Completo" 
-                                               class="w-full border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#003366] focus:border-[#003366] placeholder-gray-400 transition-all shadow-sm">
-                                        @error('datosPasajeros.'.$asiento.'.nombre') <span class="text-xs text-[#CC0000] font-medium mt-1 block">{{ $message }}</span> @enderror
+                                        <span class="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full uppercase tracking-wider">Llenar</span>
                                     </div>
                                     
-                                    <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-3">
                                         <div>
-                                            <input type="text" wire:model="datosPasajeros.{{ $asiento }}.cedula" 
-                                                   placeholder="Cédula" 
-                                                   class="w-full border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#003366] focus:border-[#003366] placeholder-gray-400 transition-all shadow-sm">
-                                            @error('datosPasajeros.'.$asiento.'.cedula') <span class="text-xs text-[#CC0000] font-medium mt-1 block">{{ $message }}</span> @enderror
+                                            <input type="text" wire:model="datosPasajeros.{{ $asiento }}.nombre" 
+                                                   placeholder="Nombre Completo" 
+                                                   class="w-full border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#003366] focus:border-[#003366] placeholder-gray-400 transition-all shadow-sm">
+                                            @error('datosPasajeros.'.$asiento.'.nombre') <span class="text-[10px] text-[#CC0000] font-medium mt-1 block">{{ $message }}</span> @enderror
                                         </div>
-                                        <div>
-                                            <input type="number" wire:model.live="datosPasajeros.{{ $asiento }}.edad" 
-                                                   wire:change="calcularTotal"
-                                                   placeholder="Edad" 
-                                                   class="w-full border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#003366] focus:border-[#003366] placeholder-gray-400 transition-all shadow-sm">
-                                            @error('datosPasajeros.'.$asiento.'.edad') <span class="text-xs text-[#CC0000] font-medium mt-1 block">{{ $message }}</span> @enderror
+                                        
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <input type="text" wire:model="datosPasajeros.{{ $asiento }}.cedula" 
+                                                       placeholder="Cédula" 
+                                                       class="w-full border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#003366] focus:border-[#003366] transition-all shadow-sm">
+                                            </div>
+                                            <div>
+                                                <input type="number" wire:model.live="datosPasajeros.{{ $asiento }}.edad" 
+                                                       wire:change="calcularTotal"
+                                                       placeholder="Edad" 
+                                                       class="w-full border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-[#003366] focus:border-[#003366] transition-all shadow-sm">
+                                            </div>
                                         </div>
                                     </div>
+                                    
+                                    <div class="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
+                                        <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Precio:</span>
+                                        <span class="font-bold text-[#003366] text-sm">
+                                            ${{ number_format($datosPasajeros[$asiento]['precio'] ?? 0, 2) }}
+                                        </span>
+                                    </div>
                                 </div>
-                                
-                                <div class="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center group-hover:bg-blue-50/50 -mx-5 -mb-5 p-4 rounded-b-xl transition-colors">
-                                    <span class="text-xs text-gray-500 uppercase font-bold tracking-wider">Subtotal Asiento:</span>
-                                    <span class="font-extrabold text-[#003366] text-lg">
-                                        ${{ number_format($datosPasajeros[$asiento]['precio'] ?? 0, 2) }}
-                                    </span>
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
 
-                        <!-- Sección de Totales Finales -->
-                        <div class="bg-[#003366] rounded-xl p-6 text-white shadow-lg mt-8 relative overflow-hidden">
+                        <!-- Sección de Totales Finales (Fija abajo) -->
+                        <div class="bg-[#003366] rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
                             <!-- Patrón decorativo -->
                             <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]"></div>
                             
                             <div class="relative z-10">
-                                <div class="flex justify-between text-blue-200 text-sm font-medium mb-2">
+                                <div class="flex justify-between text-blue-200 text-xs font-medium mb-1">
                                     <span>Asientos seleccionados:</span>
-                                    <span class="bg-blue-800 px-2.5 py-0.5 rounded-full text-white">{{ count($asientosSeleccionados) }}</span>
+                                    <span class="bg-blue-800 px-2 py-0.5 rounded-full text-white">{{ count($asientosSeleccionados) }}</span>
                                 </div>
-                                <div class="flex justify-between items-end mt-4 pt-4 border-t border-blue-800">
-                                    <span class="text-lg font-medium text-blue-100 uppercase tracking-wider">Total a Pagar</span>
-                                    <span class="text-4xl font-extrabold tracking-tight text-white">${{ number_format($total, 2) }}</span>
+                                <div class="flex justify-between items-end mt-2 pt-2 border-t border-blue-800">
+                                    <span class="text-xs font-medium text-blue-100 uppercase tracking-wider">Total</span>
+                                    <span class="text-3xl font-extrabold tracking-tight text-white">${{ number_format($total, 2) }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <button type="submit" 
-                                class="w-full bg-[#CC0000] hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl mt-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:shadow-red-900/30 uppercase tracking-widest text-sm flex justify-center items-center group">
+                                class="w-full bg-[#CC0000] hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl mt-4 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:shadow-red-900/30 uppercase tracking-widest text-sm flex justify-center items-center group">
                             Confirmar y Pagar
                             <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                         </button>
@@ -175,6 +167,23 @@
                     </div>
                 @endif
             </div>
+
+            <style>
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #00336644;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #00336688;
+                }
+            </style>
             
             <div class="mt-6 flex flex-col items-center justify-center space-y-2 opacity-60 hover:opacity-100 transition-opacity duration-300">
                 <div class="flex items-center space-x-2 text-gray-500">

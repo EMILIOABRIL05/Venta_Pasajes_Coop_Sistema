@@ -1,7 +1,7 @@
 @props([
     'seatNumbers' => [],
     'occupiedSeats' => [],
-    'selectedSeat' => null,
+    'selectedSeats' => [],
     'name' => 'numero_asiento',
     'title' => 'Selector de asientos',
     'subtitle' => 'Los asientos ocupados aparecen bloqueados para evitar ventas duplicadas.',
@@ -9,7 +9,7 @@
 
 @php
     $occupiedSeats = collect($occupiedSeats)->map(fn ($seat) => (string) $seat)->values()->all();
-    $selectedSeat = filled($selectedSeat) ? (string) $selectedSeat : null;
+    $selectedSeats = collect($selectedSeats)->map(fn ($seat) => (string) $seat)->values()->all();
 @endphp
 
 <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60">
@@ -38,17 +38,20 @@
                 @php
                     $seatKey = (string) $seat;
                     $isOccupied = in_array($seatKey, $occupiedSeats, true);
-                    $isSelected = $selectedSeat === $seatKey;
+                    $isSelected = in_array($seatKey, $selectedSeats, true);
                 @endphp
 
-                <label class="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border px-3 py-4 text-center transition {{ $isOccupied ? 'border-[#CC0000]/30 bg-[#CC0000]/5 text-[#CC0000]' : 'border-emerald-200 bg-emerald-50/80 text-emerald-800 hover:-translate-y-0.5 hover:border-[#003366]/30 hover:bg-[#003366]/5' }} {{ $isSelected && ! $isOccupied ? 'ring-2 ring-[#003366] ring-offset-2' : '' }} {{ $isOccupied ? 'cursor-not-allowed opacity-90' : '' }}">
+                <label 
+                    wire:key="seat-{{ $seatKey }}"
+                    wire:click="seleccionarAsiento('{{ $seatKey }}')"
+                    class="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border px-3 py-4 text-center transition {{ $isOccupied ? 'border-[#CC0000]/30 bg-[#CC0000]/5 text-[#CC0000]' : 'border-emerald-200 bg-emerald-50/80 text-emerald-800 hover:-translate-y-0.5 hover:border-[#003366]/30 hover:bg-[#003366]/5' }} {{ $isSelected && ! $isOccupied ? 'ring-2 ring-[#003366] ring-offset-2' : '' }} {{ $isOccupied ? 'cursor-not-allowed opacity-90' : '' }}">
                     <input
                         type="radio"
                         name="{{ $name }}"
                         value="{{ $seatKey }}"
                         class="sr-only"
                         {{ $isOccupied ? 'disabled' : '' }}
-                        {{ $selectedSeat === $seatKey ? 'checked' : '' }}
+                        {{ in_array($seatKey, $selectedSeats, true) ? 'checked' : '' }}
                     >
 
                     <span class="text-lg font-black tracking-tight">{{ $seatKey }}</span>

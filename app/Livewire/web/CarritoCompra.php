@@ -7,14 +7,13 @@ use App\Models\Viaje;
 use App\Models\Pasajero;
 use App\Models\Venta;
 use App\Models\Boleto;
-use App\Traits\CalculaDescuentoPorEdad; // Trait de Manuel
+use App\Support\DescuentoPorEdad; // Clase estática de Manuel
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class CarritoCompra extends Component
 {
-    use CalculaDescuentoPorEdad;
 
     // Propiedades del Sprint 3
     public $viajeId;
@@ -32,13 +31,13 @@ class CarritoCompra extends Component
     public function mount($viajeId)
     {
         $this->viajeId = $viajeId;
-        // Cargamos el viaje con su frecuencia y ruta para obtener el precio base
-        $this->viaje = Viaje::with(['frecuencia.ruta'])->findOrFail($viajeId);
+        // Cargamos el viaje con su frecuencia, ruta, bus y boletos vendidos
+        $this->viaje = Viaje::with(['frecuencia.ruta', 'bus', 'boletos'])->findOrFail($viajeId);
     }
 
-    // Se activa cuando seleccionas un asiento en el x-seat-map
 public function seleccionarAsiento($numeroAsiento)
 {
+    if (!$numeroAsiento) return;
     $numeroAsiento = (string) $numeroAsiento;
 
     if (in_array($numeroAsiento, $this->asientosSeleccionados)) {
@@ -46,11 +45,15 @@ public function seleccionarAsiento($numeroAsiento)
         unset($this->datosPasajeros[$numeroAsiento]);
     } else {
         $this->asientosSeleccionados[] = $numeroAsiento;
+        
+        // Aseguramos que el precio base exista
+        $precioBase = $this->viaje->frecuencia->ruta->precio_base ?? 0;
+        
         $this->datosPasajeros[$numeroAsiento] = [
             'nombre' => '',
             'cedula' => '',
             'edad' => '',
-            'precio' => $this->viaje->frecuencia->ruta->precio_base
+            'precio' => $precioBase
         ];
     }
     
@@ -60,17 +63,17 @@ public function seleccionarAsiento($numeroAsiento)
     public function calcularTotal()
     {
         $this->total = 0;
+        $precioBase = $this->viaje->frecuencia->ruta->precio_base;
+
         foreach ($this->datosPasajeros as $key => $pasajero) {
-            if ($pasajero['edad'] !== '') {
-                // Usamos el Trait de Manuel para el descuento del 50%
-                $precioFinal = $this->obtenerPrecioConDescuento(
-                    $this->viaje->frecuencia->ruta->precio_base, 
-                    $pasajero['edad']
-                );
+            if ($pasajero['edad'] !== '' && is_numeric($pasajero['edad'])) {
+                // Usamos la clase estática de Manuel para el descuento por edad
+                $precioFinal = DescuentoPorEdad::precioFinal($precioBase, (int) $pasajero['edad']);
                 $this->datosPasajeros[$key]['precio'] = $precioFinal;
                 $this->total += $precioFinal;
             } else {
-                $this->total += $this->viaje->frecuencia->ruta->precio_base;
+                $this->datosPasajeros[$key]['precio'] = $precioBase;
+                $this->total += $precioBase;
             }
         }
     }
