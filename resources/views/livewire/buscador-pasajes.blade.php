@@ -3,24 +3,26 @@
 
     <form wire:submit.prevent="buscar" class="flex flex-col md:flex-row gap-4 items-end">
         
+        <!-- Origen Dinámico -->
         <div class="w-full md:w-1/4">
             <label for="origen" class="block text-sm font-bold text-gray-800 mb-2">Origen</label>
             <select wire:model="origen" id="origen" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-[#003366] focus:border-[#003366] text-gray-800 outline-none">
                 <option value="">Seleccione ciudad...</option>
-                <option value="Ambato">Ambato</option>
-                <option value="Quito">Quito</option>
-                <option value="Guayaquil">Guayaquil</option>
+                @foreach ($paradas as $parada)
+                    <option value="{{ $parada->id }}">{{ $parada->ciudad }}</option>
+                @endforeach
             </select>
             @error('origen') <span class="text-[#CC0000] text-xs font-semibold block mt-1">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Destino Dinámico -->
         <div class="w-full md:w-1/4">
             <label for="destino" class="block text-sm font-bold text-gray-800 mb-2">Destino</label>
             <select wire:model="destino" id="destino" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-[#003366] focus:border-[#003366] text-gray-800 outline-none">
                 <option value="">Seleccione ciudad...</option>
-                <option value="Ambato">Ambato</option>
-                <option value="Quito">Quito</option>
-                <option value="Guayaquil">Guayaquil</option>
+                @foreach ($paradas as $parada)
+                    <option value="{{ $parada->id }}">{{ $parada->ciudad }}</option>
+                @endforeach
             </select>
             @error('destino') <span class="text-[#CC0000] text-xs font-semibold block mt-1">{{ $message }}</span> @enderror
         </div>
@@ -70,10 +72,13 @@
                                     <p class="font-bold text-[#003366] text-xl">${{ number_format($viaje->frecuencia->ruta->precio_base, 2) }}</p>
                                 </div>
                             </div>
+                            
+                            <!-- Botón Corregido con Enlace al Carrito -->
                             <div class="px-4 py-4 bg-gray-50 border-t border-gray-200">
-                                <button class="w-full bg-[#CC0000] hover:bg-red-800 text-white font-bold py-2 px-4 rounded transition duration-200">
+                                <a href="{{ route('web.carrito', ['viajeId' => $viaje->id]) }}" 
+                                   class="w-full block text-center bg-[#CC0000] hover:bg-red-800 text-white font-bold py-2 px-4 rounded transition duration-200 shadow-sm">
                                     Comprar Pasaje
-                                </button>
+                                </a>
                             </div>
                         </div>
                     @endforeach
@@ -82,15 +87,12 @@
                 <div class="bg-red-50 border-l-4 border-[#CC0000] p-4 rounded-md">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <!-- Icono de alerta -->
                             <svg class="h-5 w-5 text-[#CC0000]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-[#CC0000] font-bold">
-                                No hay viajes programados para esta fecha.
-                            </p>
+                            <p class="text-sm text-[#CC0000] font-bold">No hay viajes programados para esta fecha.</p>
                             <p class="text-sm text-red-700 mt-1">Por favor, intenta buscar en otra fecha o con un origen/destino diferente.</p>
                         </div>
                     </div>
