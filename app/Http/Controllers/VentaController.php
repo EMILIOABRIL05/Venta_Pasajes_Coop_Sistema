@@ -11,19 +11,22 @@ use App\Models\Pago;
 use App\Models\Frecuencia;
 use App\Models\Pasajero;
 use App\Models\Boleto;
+use Barryvdh\DomPDF\Facade\Pdf;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class VentaController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Listado de ventas.
      */
     public function index()
     {
-        //
+        $ventas = Venta::with(['boletos.pasajero', 'user'])->latest()->get();
+        return view('ventas.index', compact('ventas'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Formulario para crear una nueva venta.
      */
     public function create(Request $request)
     {
@@ -56,7 +59,7 @@ class VentaController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Guardar la venta y generar el boleto con UUID.
      */
     public function store(Request $request)
     {
@@ -75,15 +78,7 @@ class VentaController extends Controller
         $bus = Bus::findOrFail($validated['bus_id']);
 
         if ($validated['precio_final'] != $frecuencia->ruta->precio_base) {
-            return back()
-                ->withInput()
-                ->withErrors(['precio_final' => 'El monto del pago no coincide con el precio de la frecuencia seleccionada.']);
-        }
-
-        if ($validated['numero_asiento'] > $bus->numero_asientos) {
-            return back()
-                ->withInput()
-                ->withErrors(['numero_asiento' => 'El asiento seleccionado está fuera del rango del bus.']);
+            return back()->withInput()->withErrors(['precio_final' => 'El monto no coincide con el precio de la ruta.']);
         }
 
         $seatString = (string) $validated['numero_asiento'];
@@ -92,9 +87,7 @@ class VentaController extends Controller
             ->exists();
 
         if ($seatTaken) {
-            return back()
-                ->withInput()
-                ->withErrors(['numero_asiento' => 'El asiento seleccionado ya está ocupado para esta frecuencia.']);
+            return back()->withInput()->withErrors(['numero_asiento' => 'El asiento ya está ocupado.']);
         }
 
         try {
@@ -105,7 +98,7 @@ class VentaController extends Controller
                 ]);
 
                 Boleto::create([
-                    'id' => (string) Str::uuid(),
+                    'id' => (string) Str::uuid(), // El UUID de Manolo
                     'venta_id' => $venta->id,
                     'pasajero_id' => $validated['pasajero_id'],
                     'frecuencia_id' => $validated['frecuencia_id'],
@@ -118,61 +111,43 @@ class VentaController extends Controller
                     'monto' => $validated['precio_final'],
                     'fecha' => now(),
                     'metodo_pago' => $validated['metodo_pago'] ?? 'efectivo',
-                    'referencia' => $validated['referencia'] ?? null,
-                    'observaciones' => $validated['observaciones'] ?? 'Pago registrado automáticamente al confirmar la venta.',
                 ]);
 
                 return $venta;
             });
 
-            return redirect()->route('ventas.show', $venta->id)
-                ->with('success', 'Venta completada exitosamente.');
+            return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta exitosa.');
         } catch (\Throwable $exception) {
-            report($exception);
-
-            return back()
-                ->withInput()
-                ->withErrors(['general' => 'No se pudo completar la venta. Intente nuevamente.']);
+            return back()->withInput()->withErrors(['general' => 'Error al procesar la venta.']);
         }
     }
 
     /**
-     * Display the specified resource.
+     * Ver el recibo digital.
      */
     public function show(Venta $venta)
     {
-        $venta->load([
-            'boletos.pasajero',
-            'boletos.frecuencia.ruta.origen',
-            'boletos.frecuencia.ruta.destino',
-            'user',
-            'pagos'
-        ]);
-
+        $venta->load(['boletos.pasajero', 'boletos.frecuencia.ruta', 'user', 'pagos']);
         return view('ventas.show', compact('venta'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * TU NUEVO MÉTODO: Descargar el boleto en PDF con código QR.
      */
-    public function edit(string $id)
+    public function descargarBoleto($id)
     {
-        //
-    }
+        // Buscamos el boleto por el UUID
+        $boleto = Boleto::with(['venta', 'pasajero', 'frecuencia.ruta'])->findOrFail($id);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        // Generamos el QR con el UUID contenido en $boleto->id
+        $qrCode = QrCode::size(200)->generate($boleto->id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $data = [
+            'boleto' => $boleto,
+            'qrCode' => $qrCode,
+        ];
+
+        $pdf = Pdf::loadView('ventas.boleto_pdf', $data);
+        return $pdf->download('boleto_' . $boleto->pasajero->cedula . '.pdf');
     }
 }

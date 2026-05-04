@@ -1,9 +1,8 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\VentaController; // Modificado por tus compañeros
-use App\Http\Controllers\BoletoValidacionController; // Sprint 3 - Luis
-use App\Http\Controllers\ReporteController; // Sprint 3 - Luis
+use App\Http\Controllers\VentaController;
+use App\Http\Controllers\BoletoValidacionController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
@@ -63,14 +62,17 @@ Route::middleware('auth')
     ->prefix('ventanilla')
     ->name('ventanilla.')
     ->group(function () {
-        // Usamos el VentaController que fusionaron tus compañeros
+
+
         Route::resource('ventas',     VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
     });
+
 
 // ─── Módulo Web (Sprint 3 - Estudiante 5 Anthony) ──────────────────────────────
 Route::get('/carrito/{viajeId}', CarritoCompra::class)
     ->middleware(['auth']) 
     ->name('web.carrito');
+
 
 require __DIR__.'/auth.php';
