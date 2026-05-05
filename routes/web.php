@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\BoletoValidacionController;
@@ -8,6 +7,7 @@ use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
+use App\Livewire\Web\CarritoCompra;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -62,9 +62,17 @@ Route::middleware('auth')
     ->prefix('ventanilla')
     ->name('ventanilla.')
     ->group(function () {
-        // Usamos el VentaController que fusionamos (root)
+
+
         Route::resource('ventas',     VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
     });
+
+
+// ─── Módulo Web (Sprint 3 - Estudiante 5 Anthony) ──────────────────────────────
+Route::get('/carrito/{viajeId}', CarritoCompra::class)
+    ->middleware(['auth']) 
+    ->name('web.carrito');
+
 
 require __DIR__.'/auth.php';
