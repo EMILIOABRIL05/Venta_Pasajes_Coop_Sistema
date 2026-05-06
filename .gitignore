@@ -22,8 +22,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
 /vendor/
 /node_modules/
-composer.lock
-package-lock.json
+# ✓ Registrar de forma obligatoria los archivos .lock para asegurar las mismas versiones en el equipo
+!composer.lock
+!package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
