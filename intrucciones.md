@@ -51,8 +51,16 @@ por Vista. Todos deben promediar mínimo 50 commits al final.
 
 PARTE 2: DISTRIBUCIÓN POR VERSIONES (SPRINTS)
 
+**Política de Versionado (SemVer + Regla Par/Impar):**
+Para mantener un estándar profesional, usamos "Semantic Versioning" (`MAJOR.MINOR.PATCH`) adaptado a ciclos de estabilización, muy común en plataformas como Node.js:
+- **MAJOR (1.x.x):** Lanzamientos estables para producción (ej. `v1.0.0`).
+- **MINOR IMPAR (0.1.0, 0.3.0, 0.5.0...):** Desarrollo de Sprints. Aquí se crean las nuevas funcionalidades.
+- **MINOR PAR (0.2.0, 0.4.0, 0.6.0...):** Fases de estabilización profundas y refactorización técnica. Si un sprint impar (ej. `0.3.0`) resulta muy estable, la versión par siguiente (`0.4.0`) simplemente se omite para ganar tiempo.
+- **PATCH (0.x.y):** Parches rápidos de seguridad o corrección de bugs menores (ej. `v0.1.1`).
+  *Nota del Líder sobre la v0.2.0:* Excepcionalmente, el hotfix de la fuga de keys se etiquetó como `v0.2.0` aprovechando el espacio de estabilización (aunque idealmente era un parche `v0.1.1`). De ahora en adelante, los bugs menores usarán el tercer dígito (PATCH), reservando las versiones pares (como `v0.6.0`) exclusivamente si necesitamos detenernos a refactorizar todo un sprint.
+
 Los plazos son estrictos. Cada entrega de versión se compila en la rama develop
-y es revisada por el Estudiante 1 (Líder).
+y es revisada por el Estudiante 1 (Líder). 
 
 🏷️ VERSIÓN 0.1.0 - SPRINT 1: Bases y Estructura
 
