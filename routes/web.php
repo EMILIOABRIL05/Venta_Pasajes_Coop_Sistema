@@ -74,5 +74,8 @@ Route::get('/carrito/{viajeId}', CarritoCompra::class)
     ->middleware(['auth']) 
     ->name('web.carrito');
 
+// Solicitud de Reembolso (Público)
+Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
+    ->name('solicitud.reembolso');
 
 require __DIR__.'/auth.php';
