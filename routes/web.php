@@ -23,6 +23,10 @@ Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
 
+Route::get('/admin/gestion-reembolsos', \App\Livewire\Admin\GestionReembolsos::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('admin.gestion-reembolsos');
+
 Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('catalogos.categorias-bus');
