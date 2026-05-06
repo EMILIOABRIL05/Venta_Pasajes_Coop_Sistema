@@ -23,6 +23,10 @@ Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
 
+Route::get('/admin/gestion-reembolsos', \App\Livewire\Admin\GestionReembolsos::class)
+    ->middleware(['auth', 'role:admin|oficinista'])
+    ->name('admin.gestion-reembolsos');
+
 Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('catalogos.categorias-bus');
@@ -74,5 +78,8 @@ Route::get('/carrito/{viajeId}', CarritoCompra::class)
     ->middleware(['auth']) 
     ->name('web.carrito');
 
+// Solicitud de Reembolso (Público)
+Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
+    ->name('solicitud.reembolso');
 
 require __DIR__.'/auth.php';
