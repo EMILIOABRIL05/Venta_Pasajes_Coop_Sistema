@@ -30,7 +30,7 @@ class GestionReembolsos extends Component
         });
 
         session()->flash('message', 'Reembolso aprobado y boletos anulados.');
-        $this->emit('refreshTable');
+        $this->dispatch('refreshTable');
     }
 
     public function rechazar($reembolsoId)
@@ -47,7 +47,7 @@ class GestionReembolsos extends Component
         ]);
 
         session()->flash('message', 'Reembolso rechazado.');
-        $this->emit('refreshTable');
+        $this->dispatch('refreshTable');
     }
 
     public function render()

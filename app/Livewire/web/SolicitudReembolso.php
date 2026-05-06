@@ -68,7 +68,7 @@ class SolicitudReembolso extends Component
 
             Reembolso::create([
                 'venta_id' => $boleto->venta_id,
-                'monto' => $boleto->precio_final,
+                'monto' => $boleto->venta->total,
                 'motivo' => $this->motivo,
                 'estado' => 'pendiente',
                 'comentarios' => $evidenciaPath ? 'Evidencia: ' . $evidenciaPath : null,
