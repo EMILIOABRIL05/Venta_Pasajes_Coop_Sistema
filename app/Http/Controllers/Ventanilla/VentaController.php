@@ -66,8 +66,11 @@ class VentaController extends Controller
         //    del boleto. El UUID se genera en Boleto::booted() durante el create().
         //    NO se incluye 'venta_id' porque Eloquent lo inyecta a través de
         //    la relación hasMany ($venta->boletos()->createMany(...)).
+        $frecuencia = \App\Models\Frecuencia::where('ruta_id', $validated['ruta_id'])->first();
+        
         $boletosPayload = array_map(fn (int $seat) => [
             'pasajero_id'    => $validated['pasajero_id'],  // FK → pasajeros.id ✓
+            'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
             'numero_asiento' => (string) $seat,
             'precio_final'   => $precioUnitario,
         ], $asientos);
@@ -191,7 +194,7 @@ class VentaController extends Controller
         //    Array en sesión en lugar de string para que la vista construya
         //    un resumen visual rico con todos los detalles de la operación.
         return redirect()
-            ->route('ventanilla.index')
+            ->route('ventanilla.ventas.index')
             ->with('venta_exitosa', [
                 'id'       => $venta->id,
                 'total'    => number_format($total, 2),

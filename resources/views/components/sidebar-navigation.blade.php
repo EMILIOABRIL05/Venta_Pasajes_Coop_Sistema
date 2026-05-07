@@ -30,6 +30,28 @@
                 </a>
             @endcan
 
+            <!-- Operativa -->
+            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                <a href="{{ route('operativa.hoja-ruta') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('operativa.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Operativa
+                </a>
+            @endif
+
+            <!-- Ventanilla -->
+            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                <a href="{{ route('ventanilla.ventas.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('ventanilla.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                    </svg>
+                    Módulo Ventanilla
+                </a>
+            @endif
+
             <!-- Catálogos Section -->
             @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
                 <div class="mb-4">
@@ -160,6 +182,28 @@
                         Panel Admin
                     </a>
                 @endcan
+
+                <!-- Operativa Mobile -->
+                @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                    <a href="{{ route('operativa.hoja-ruta') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('operativa.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Operativa
+                    </a>
+                @endif
+
+                <!-- Ventanilla Mobile -->
+                @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                    <a href="{{ route('ventanilla.ventas.index') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('ventanilla.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                        </svg>
+                        Módulo Ventanilla
+                    </a>
+                @endif
 
                 @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
                     <div class="mb-4">
