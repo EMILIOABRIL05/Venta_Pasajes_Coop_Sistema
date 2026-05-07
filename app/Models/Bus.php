@@ -116,7 +116,7 @@ class Bus extends Model
     // Scope útil: solo buses disponibles
     public function scopeDisponible($query)
     {
-        return $query->where('estado', 'disponible');
+        return $query->whereNotIn('estado', ['mantenimiento', 'en_ruta']);
     }
     
     public function getFotoUrlAttribute(): ?string
