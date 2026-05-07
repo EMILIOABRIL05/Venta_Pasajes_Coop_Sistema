@@ -55,14 +55,22 @@ class HojaRuta extends Component
             return;
         }
 
-        // Bloqueo Anti-Clonación
+        // 1. Obtener la frecuencia que se intenta programar para conocer su hora de salida
+        $frecuenciaNueva = Frecuencia::findOrFail($this->frecuencia_id);
+        $horaNueva = $frecuenciaNueva->hora_salida;
+
+        // 2. Bloqueo Anti-Clonación Real:
+        // Verificar si existe algún viaje del mismo bus en la misma fecha, 
+        // cuya frecuencia asociada tenga la misma hora de salida.
         $existingViaje = Viaje::where('fecha', $this->fecha)
-            ->where('frecuencia_id', $this->frecuencia_id)
             ->where('bus_id', $this->bus_id)
+            ->whereHas('frecuencia', function ($q) use ($horaNueva) {
+                $q->where('hora_salida', $horaNueva);
+            })
             ->exists();
 
         if ($existingViaje) {
-            session()->flash('error', 'El bus ya está ocupado para esa fecha y hora.');
+            session()->flash('error', 'El bus ya está ocupado en otro viaje programado a la misma hora.');
             return;
         }
 

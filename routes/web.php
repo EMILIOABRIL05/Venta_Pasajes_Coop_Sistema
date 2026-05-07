@@ -67,8 +67,7 @@ Route::middleware('auth')
     ->name('ventanilla.')
     ->group(function () {
 
-
-        Route::resource('ventas',     VentaController::class);
+        Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
     });
 
