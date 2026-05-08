@@ -1,4 +1,18 @@
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 py-10">
+    <div x-data="{ show: false, message: '', type: 'success' }"
+         x-on:flash-message.window="
+            message = $event.detail.message;
+            type = $event.detail.type;
+            show = true;
+            setTimeout(() => show = false, 3000);
+         "
+         x-show="show"
+         x-transition
+         class="fixed top-4 right-4 z-50 rounded-2xl px-6 py-4 shadow-xl text-sm font-medium"
+         :class="type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'">
+        <span x-text="message"></span>
+    </div>
+
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl shadow-slate-200/60 backdrop-blur">
             <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -8,18 +22,6 @@
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Genera viajes asignando buses a frecuencias existentes.</p>
                 </div>
             </div>
-
-            @if (session()->has('message'))
-                <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-                    {{ session('message') }}
-                </div>
-            @endif
-
-            @if (session()->has('error'))
-                <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
-                    {{ session('error') }}
-                </div>
-            @endif
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -78,7 +80,7 @@
 
                 <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                     @forelse ($viajes as $viaje)
-                        <article class="rounded-2xl border border-slate-200 p-5 transition hover:border-emerald-200 hover:shadow-md">
+                        <article class="rounded-2xl border border-slate-200 p-5 transition hover:border-emerald-200 hover:shadow-md {{ in_array($viaje->estado, ['Finalizada', 'cancelado']) ? 'opacity-75' : '' }}">
                             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
@@ -106,6 +108,7 @@
                                     <button type="button" 
                                         wire:click="cambiarEstado({{ $viaje->id }}, 'En Terminal')" 
                                         wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'En Terminal' ? 'bg-blue-600 text-white' : 'border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' }}">
                                         En Terminal
                                     </button>
@@ -113,6 +116,7 @@
                                     <button type="button" 
                                         wire:click="cambiarEstado({{ $viaje->id }}, 'En Curso')" 
                                         wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'En Curso' ? 'bg-amber-600 text-white' : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
                                         En Curso
                                     </button>
@@ -120,6 +124,7 @@
                                     <button type="button" 
                                         wire:click="cambiarEstado({{ $viaje->id }}, 'Finalizada')" 
                                         wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'Finalizada' ? 'bg-emerald-600 text-white' : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">
                                         Finalizada
                                     </button>
@@ -128,6 +133,8 @@
                                         <button type="button" 
                                             wire:click="cambiarEstado({{ $viaje->id }}, 'cancelado')" 
                                             wire:confirm="¿Cancelar este viaje?"
+                                            wire:loading.attr="disabled"
+                                            wire:loading.class="opacity-50 cursor-not-allowed"
                                             class="rounded-lg px-2 py-1 text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
                                             Cancelar
                                         </button>
