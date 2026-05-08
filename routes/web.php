@@ -7,6 +7,7 @@ use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
+use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,11 @@ Route::get('/catalogos/buses', BusesCrud::class)
 Route::get('/hoja-ruta', \App\Livewire\Operativa\HojaRuta::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('operativa.hoja-ruta');
+
+// Dashboard Chofer (Sprint 4 - Luis)
+Route::get('/chofer/dashboard', PanelPrincipal::class)
+    ->middleware(['auth', 'role:chofer|admin'])
+    ->name('chofer.dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
