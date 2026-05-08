@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 py-10">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 py-10" x-data="{ open: false, frecuenciaId: null }">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl shadow-slate-200/60 backdrop-blur">
             <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -89,7 +89,9 @@
                                     <button type="button" wire:click="editar({{ $frecuencia->id }})" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
                                         Editar
                                     </button>
-                                    <button type="button" wire:click="eliminar({{ $frecuencia->id }})" wire:confirm="¿Eliminar esta frecuencia?" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
+                                    <button type="button" 
+                                        @click="open = true; frecuenciaId = {{ $frecuencia->id }}" 
+                                        class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                                         Eliminar
                                     </button>
                                 </div>
@@ -102,6 +104,51 @@
                     @endforelse
                 </div>
             </section>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div x-show="open" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+         @click.self="open = false">
+        
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="scale-95 opacity-0"
+             x-transition:enter-end="scale-100 opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="scale-100 opacity-100"
+             x-transition:leave-end="scale-95 opacity-0"
+             class="mx-4 w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+            
+            <div class="flex flex-col items-center text-center">
+                <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+                    <svg class="h-8 w-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-slate-900">¿Eliminar esta frecuencia?</h3>
+                <p class="mt-2 text-sm text-slate-600">Esta acción no se puede deshacer.</p>
+                
+                <div class="mt-6 flex w-full gap-3">
+                    <button @click="open = false" 
+                            class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                        No, mantener
+                    </button>
+                    
+                    <button @click="$wire.eliminar(frecuenciaId); open = false" 
+                            class="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                        Sí, eliminar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
