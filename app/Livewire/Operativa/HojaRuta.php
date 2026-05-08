@@ -128,6 +128,8 @@ class HojaRuta extends Component
                 $viaje->bus()->update(['estado' => 'en_ruta']);
             } elseif ($nuevoEstado === 'Finalizada') {
                 $viaje->bus()->update(['estado' => 'disponible']);
+            } elseif ($nuevoEstado === 'cancelado') {
+                $viaje->bus()->update(['estado' => 'disponible']);
             }
         });
 

@@ -124,9 +124,9 @@
                                         Finalizada
                                     </button>
                                     
-                                    @if (!in_array($viaje->estado, ['Finalizada', 'cancelado']))
+                                    @if ($viaje->estado === 'En Terminal')
                                         <button type="button" 
-                                            wire:click="cancelarViaje({{ $viaje->id }})" 
+                                            wire:click="cambiarEstado({{ $viaje->id }}, 'cancelado')" 
                                             wire:confirm="¿Cancelar este viaje?"
                                             class="rounded-lg px-2 py-1 text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
                                             Cancelar
