@@ -93,7 +93,10 @@ public function seleccionarAsiento($numeroAsiento)
             // 1. Crear la Venta
             $venta = Venta::create([
                 'user_id' => Auth::id(), // Puede ser null si se permite compra de invitados, pero la ruta tiene middleware auth
+                'cliente_id' => Auth::id(),
                 'total' => $this->total,
+                'estado' => 'Pendiente', // Estado inicial de la venta web
+                'comprobante' => null,
             ]);
 
             // 2. Registrar/Actualizar Pasajeros y 3. Crear Boletos
