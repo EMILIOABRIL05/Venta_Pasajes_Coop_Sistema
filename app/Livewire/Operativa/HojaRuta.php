@@ -74,6 +74,19 @@ class HojaRuta extends Component
             return;
         }
 
+        // Bloqueo de Solapamiento de Horarios
+        $busOcupado = Viaje::join('frecuencias', 'viajes.frecuencia_id', '=', 'frecuencias.id')
+            ->where('viajes.bus_id', $this->bus_id)
+            ->where('viajes.fecha', $this->fecha)
+            ->where('frecuencias.hora_salida', Frecuencia::find($this->frecuencia_id)->hora_salida)
+            ->where('viajes.estado', '!=', 'cancelado')
+            ->exists();
+
+        if ($busOcupado) {
+            session()->flash('error', 'Este bus ya tiene un viaje asignado para esta hora');
+            return;
+        }
+
         Viaje::create([
             'fecha' => $this->fecha,
             'frecuencia_id' => $this->frecuencia_id,
