@@ -14,7 +14,10 @@ class Venta extends Model
      */
     protected $fillable = [
         'user_id',
+        'cliente_id',
         'total',
+        'estado',
+        'comprobante',
     ];
 
     // ─── Relaciones ──────────────────────────────────────────────────────────
@@ -24,7 +27,15 @@ class Venta extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * La venta pertenece a un cliente (usuario web).
+     */
+    public function cliente()
+    {
+        return $this->belongsTo(User::class, 'cliente_id');
     }
 
     /**

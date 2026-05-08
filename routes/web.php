@@ -9,6 +9,8 @@ use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
 use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
+use App\Livewire\Web\PagoWeb;
+use App\Livewire\Web\MisViajes;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -86,5 +88,9 @@ Route::get('/carrito/{viajeId}', CarritoCompra::class)
 // Solicitud de Reembolso (Público)
 Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
     ->name('solicitud.reembolso');
+
+// Pago Web y Historial (Anthony)
+Route::get('/pago/{ventaId}', PagoWeb::class)->middleware(['auth'])->name('pago');
+Route::get('/mis-viajes', MisViajes::class)->middleware(['auth'])->name('mis-viajes');
 
 require __DIR__.'/auth.php';
