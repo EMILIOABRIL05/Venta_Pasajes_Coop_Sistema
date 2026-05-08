@@ -4,6 +4,7 @@ namespace App\Livewire\Operativa;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Frecuencia;
 use App\Models\Bus;
 use App\Models\Viaje;
@@ -91,7 +92,7 @@ class HojaRuta extends Component
             'fecha' => $this->fecha,
             'frecuencia_id' => $this->frecuencia_id,
             'bus_id' => $this->bus_id,
-            'estado' => 'programado',
+            'estado' => 'En Terminal',
         ]);
 
         $this->reset(['fecha', 'frecuencia_id', 'bus_id']);
@@ -102,6 +103,36 @@ class HojaRuta extends Component
     public function loadViajes()
     {
         $this->viajes = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])->latest()->get();
+    }
+
+    public function cambiarEstado($id, $nuevoEstado)
+    {
+        $estadosPermitidos = ['En Terminal', 'En Curso', 'Finalizada', 'programado', 'cancelado'];
+
+        $viaje = Viaje::find($id);
+
+        if (!$viaje) {
+            session()->flash('error', 'Viaje no encontrado.');
+            return;
+        }
+
+        if (!in_array($nuevoEstado, $estadosPermitidos)) {
+            session()->flash('error', 'Estado no válido.');
+            return;
+        }
+
+        DB::transaction(function () use ($viaje, $nuevoEstado) {
+            $viaje->update(['estado' => $nuevoEstado]);
+
+            if ($nuevoEstado === 'En Curso') {
+                $viaje->bus()->update(['estado' => 'en_ruta']);
+            } elseif ($nuevoEstado === 'Finalizada') {
+                $viaje->bus()->update(['estado' => 'disponible']);
+            }
+        });
+
+        session()->flash('message', 'Estado actualizado correctamente.');
+        $this->loadViajes();
     }
 
     public function render()
