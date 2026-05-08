@@ -1,4 +1,4 @@
-<div x-data="{ open: false, catalogosOpen: false }">
+<div x-data="{ open: false, catalogosOpen: false, operativaOpen: false }">
     <!-- Sidebar Desktop -->
     <nav class="w-64 bg-[#003366] text-white min-h-screen flex flex-col shadow-xl hidden sm:flex transition-all duration-300 fixed left-0 top-0">
         <!-- Logo / Header -->
@@ -30,18 +30,7 @@
                 </a>
             @endcan
 
-            <!-- Operativa -->
-            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
-                <a href="{{ route('operativa.hoja-ruta') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('operativa.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Operativa
-                </a>
-            @endif
-
-            <!-- Ventanilla -->
+             <!-- Ventanilla -->
             @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
                 <a href="{{ route('ventanilla.ventas.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('ventanilla.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
@@ -50,6 +39,45 @@
                     </svg>
                     Módulo Ventanilla
                 </a>
+            @endif
+
+            <!-- Operativa -->
+            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                <div class="mb-4">
+                    <button @click="operativaOpen = !operativaOpen"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white group">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Operativa</span>
+                        </div>
+                        <svg :class="operativaOpen ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </button>
+
+                    <!-- Sub-items -->
+                    <div x-show="operativaOpen" @click.outside="operativaOpen = false" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
+                        <!-- Hojas de Ruta -->
+                        <a href="{{ route('operativa.hoja-ruta') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('operativa.hoja-ruta') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                            Hojas de Ruta
+                        </a>
+
+                        <!-- Gestión de Frecuencias -->
+                        <a href="{{ route('frecuencias.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('frecuencias.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Gestión de Frecuencias
+                        </a>
+                    </div>
+                </div>
             @endif
 
             <!-- Catálogos Section -->
@@ -185,13 +213,40 @@
 
                 <!-- Operativa Mobile -->
                 @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
-                    <a href="{{ route('operativa.hoja-ruta') }}" @click="open = false"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('operativa.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Operativa
-                    </a>
+                    <div class="mb-4">
+                        <button @click="operativaOpen = !operativaOpen"
+                            class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>Operativa</span>
+                            </div>
+                            <svg :class="operativaOpen ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                        </button>
+
+                        <div x-show="operativaOpen" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
+                            <!-- Hojas de Ruta -->
+                            <a href="{{ route('operativa.hoja-ruta') }}" @click="open = false"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('operativa.hoja-ruta') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                                Hojas de Ruta
+                            </a>
+
+                            <!-- Gestión de Frecuencias -->
+                            <a href="{{ route('frecuencias.index') }}" @click="open = false"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('frecuencias.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Gestión de Frecuencias
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
                 <!-- Ventanilla Mobile -->

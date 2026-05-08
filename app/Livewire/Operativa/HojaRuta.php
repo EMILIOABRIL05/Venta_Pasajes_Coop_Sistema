@@ -4,6 +4,7 @@ namespace App\Livewire\Operativa;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Frecuencia;
 use App\Models\Bus;
 use App\Models\Viaje;
@@ -70,7 +71,7 @@ class HojaRuta extends Component
             ->exists();
 
         if ($existingViaje) {
-            session()->flash('error', 'El bus ya está ocupado en otro viaje programado a la misma hora.');
+            $this->dispatch('flash-message', message: 'El bus ya está ocupado en otro viaje programado a la misma hora.', type: 'error');
             return;
         }
 
@@ -83,7 +84,7 @@ class HojaRuta extends Component
             ->exists();
 
         if ($busOcupado) {
-            session()->flash('error', 'Este bus ya tiene un viaje asignado para esta hora');
+            $this->dispatch('flash-message', message: 'Este bus ya tiene un viaje asignado para esta hora', type: 'error');
             return;
         }
 
@@ -91,17 +92,62 @@ class HojaRuta extends Component
             'fecha' => $this->fecha,
             'frecuencia_id' => $this->frecuencia_id,
             'bus_id' => $this->bus_id,
-            'estado' => 'programado',
+            'estado' => 'En Terminal',
         ]);
 
         $this->reset(['fecha', 'frecuencia_id', 'bus_id']);
-        session()->flash('message', 'Viaje generado exitosamente.');
+        $this->dispatch('flash-message', message: 'Viaje generado exitosamente.', type: 'success');
         $this->loadViajes();
     }
 
     public function loadViajes()
     {
         $this->viajes = Viaje::with(['frecuencia.ruta.origen', 'frecuencia.ruta.destino', 'bus'])->latest()->get();
+    }
+
+    public function cambiarEstado($id, $nuevoEstado)
+    {
+        $estadosPermitidos = ['En Terminal', 'En Curso', 'Finalizada', 'programado', 'cancelado'];
+
+        $viaje = Viaje::find($id);
+
+        if (!$viaje) {
+            $this->dispatch('flash-message', message: 'Viaje no encontrado.', type: 'error');
+            return;
+        }
+
+        if (!in_array($nuevoEstado, $estadosPermitidos)) {
+            $this->dispatch('flash-message', message: 'Estado no válido.', type: 'error');
+            return;
+        }
+
+        if (in_array($viaje->estado, ['Finalizada', 'cancelado'])) {
+            $this->dispatch('flash-message', message: 'Este viaje ya ha concluido y no puede ser modificado.', type: 'error');
+            return;
+        }
+
+        if ($viaje->estado === 'En Curso' && $nuevoEstado !== 'Finalizada') {
+            $this->dispatch('flash-message', message: 'Un viaje en curso solo puede ser finalizado.', type: 'error');
+            return;
+        }
+
+        if ($viaje->estado === 'En Terminal' && $nuevoEstado === 'Finalizada') {
+            $this->dispatch('flash-message', message: 'El viaje debe pasar por "En Curso" antes de ser finalizado.', type: 'error');
+            return;
+        }
+
+        DB::transaction(function () use ($viaje, $nuevoEstado) {
+            $viaje->update(['estado' => $nuevoEstado]);
+
+            if ($nuevoEstado === 'En Curso') {
+                $viaje->bus()->update(['estado' => 'en_ruta']);
+            } elseif (in_array($nuevoEstado, ['Finalizada', 'cancelado'])) {
+                $viaje->bus()->update(['estado' => 'disponible']);
+            }
+        });
+
+        $this->dispatch('flash-message', message: 'Estado actualizado correctamente.', type: 'success');
+        $this->loadViajes();
     }
 
     public function render()
