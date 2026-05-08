@@ -84,7 +84,15 @@
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h3 class="text-base font-bold text-slate-900">{{ $viaje->fecha->format('d/m/Y') }}</h3>
                                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $viaje->frecuencia?->hora_salida ?? 'Sin hora' }}</span>
-                                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">{{ $viaje->estado }}</span>
+                                        <span class="rounded-full px-3 py-1 text-xs font-semibold
+                                            @if($viaje->estado === 'En Terminal') bg-blue-100 text-blue-700
+                                            @elseif($viaje->estado === 'En Curso') bg-amber-100 text-amber-700
+                                            @elseif($viaje->estado === 'Finalizada') bg-emerald-100 text-emerald-700
+                                            @elseif($viaje->estado === 'cancelado') bg-rose-100 text-rose-700
+                                            @else bg-slate-100 text-slate-700
+                                            @endif">
+                                            {{ $viaje->estado }}
+                                        </span>
                                     </div>
                                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                                         {{ $viaje->frecuencia?->ruta->origen->nombre ?? 'Sin origen' }} a {{ $viaje->frecuencia?->ruta->destino->nombre ?? 'Sin destino' }}
@@ -94,10 +102,36 @@
                                     </p>
                                 </div>
 
-                                <div class="flex items-center gap-2">
-                                    <button type="button" wire:click="cancelarViaje({{ $viaje->id }})" wire:confirm="¿Cancelar este viaje?" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
-                                        Cancelar
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" 
+                                        wire:click="cambiarEstado({{ $viaje->id }}, 'En Terminal')" 
+                                        wire:loading.attr="disabled"
+                                        class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'En Terminal' ? 'bg-blue-600 text-white' : 'border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' }}">
+                                        En Terminal
                                     </button>
+                                    
+                                    <button type="button" 
+                                        wire:click="cambiarEstado({{ $viaje->id }}, 'En Curso')" 
+                                        wire:loading.attr="disabled"
+                                        class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'En Curso' ? 'bg-amber-600 text-white' : 'border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
+                                        En Curso
+                                    </button>
+                                    
+                                    <button type="button" 
+                                        wire:click="cambiarEstado({{ $viaje->id }}, 'Finalizada')" 
+                                        wire:loading.attr="disabled"
+                                        class="rounded-lg px-2 py-1 text-xs font-semibold transition {{ $viaje->estado === 'Finalizada' ? 'bg-emerald-600 text-white' : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">
+                                        Finalizada
+                                    </button>
+                                    
+                                    @if (!in_array($viaje->estado, ['Finalizada', 'cancelado']))
+                                        <button type="button" 
+                                            wire:click="cancelarViaje({{ $viaje->id }})" 
+                                            wire:confirm="¿Cancelar este viaje?"
+                                            class="rounded-lg px-2 py-1 text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+                                            Cancelar
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </article>
