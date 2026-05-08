@@ -71,7 +71,7 @@ class HojaRuta extends Component
             ->exists();
 
         if ($existingViaje) {
-            session()->flash('error', 'El bus ya está ocupado en otro viaje programado a la misma hora.');
+            $this->dispatch('flash-message', message: 'El bus ya está ocupado en otro viaje programado a la misma hora.', type: 'error');
             return;
         }
 
@@ -84,7 +84,7 @@ class HojaRuta extends Component
             ->exists();
 
         if ($busOcupado) {
-            session()->flash('error', 'Este bus ya tiene un viaje asignado para esta hora');
+            $this->dispatch('flash-message', message: 'Este bus ya tiene un viaje asignado para esta hora', type: 'error');
             return;
         }
 
@@ -96,7 +96,7 @@ class HojaRuta extends Component
         ]);
 
         $this->reset(['fecha', 'frecuencia_id', 'bus_id']);
-        session()->flash('message', 'Viaje generado exitosamente.');
+        $this->dispatch('flash-message', message: 'Viaje generado exitosamente.', type: 'success');
         $this->loadViajes();
     }
 
@@ -112,12 +112,27 @@ class HojaRuta extends Component
         $viaje = Viaje::find($id);
 
         if (!$viaje) {
-            session()->flash('error', 'Viaje no encontrado.');
+            $this->dispatch('flash-message', message: 'Viaje no encontrado.', type: 'error');
             return;
         }
 
         if (!in_array($nuevoEstado, $estadosPermitidos)) {
-            session()->flash('error', 'Estado no válido.');
+            $this->dispatch('flash-message', message: 'Estado no válido.', type: 'error');
+            return;
+        }
+
+        if (in_array($viaje->estado, ['Finalizada', 'cancelado'])) {
+            $this->dispatch('flash-message', message: 'Este viaje ya ha concluido y no puede ser modificado.', type: 'error');
+            return;
+        }
+
+        if ($viaje->estado === 'En Curso' && $nuevoEstado !== 'Finalizada') {
+            $this->dispatch('flash-message', message: 'Un viaje en curso solo puede ser finalizado.', type: 'error');
+            return;
+        }
+
+        if ($viaje->estado === 'En Terminal' && $nuevoEstado === 'Finalizada') {
+            $this->dispatch('flash-message', message: 'El viaje debe pasar por "En Curso" antes de ser finalizado.', type: 'error');
             return;
         }
 
@@ -126,14 +141,12 @@ class HojaRuta extends Component
 
             if ($nuevoEstado === 'En Curso') {
                 $viaje->bus()->update(['estado' => 'en_ruta']);
-            } elseif ($nuevoEstado === 'Finalizada') {
-                $viaje->bus()->update(['estado' => 'disponible']);
-            } elseif ($nuevoEstado === 'cancelado') {
+            } elseif (in_array($nuevoEstado, ['Finalizada', 'cancelado'])) {
                 $viaje->bus()->update(['estado' => 'disponible']);
             }
         });
 
-        session()->flash('message', 'Estado actualizado correctamente.');
+        $this->dispatch('flash-message', message: 'Estado actualizado correctamente.', type: 'success');
         $this->loadViajes();
     }
 
