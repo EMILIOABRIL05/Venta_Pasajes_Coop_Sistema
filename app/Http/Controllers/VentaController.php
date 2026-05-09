@@ -150,4 +150,56 @@ class VentaController extends Controller
         $pdf = Pdf::loadView('ventas.boleto_pdf', $data);
         return $pdf->download('boleto_' . $boleto->pasajero->cedula . '.pdf');
     }
+
+    /**
+     * Resumen del turno actual del usuario autenticado.
+     *
+     * Calcula el SUM(total) de ventas y el conteo de boletos
+     * del día actual, agrupando la recaudación por Ruta
+     * mediante relaciones de Eloquent.
+     */
+    public function resumenTurno()
+    {
+        $userId = auth()->id();
+        $hoy    = now()->toDateString();
+
+        // ── Ventas del día del usuario autenticado con relaciones ────────────
+        $ventas = Venta::with(['boletos.frecuencia.ruta.origen', 'boletos.frecuencia.ruta.destino'])
+            ->where('user_id', $userId)
+            ->whereDate('created_at', $hoy)
+            ->get();
+
+        // ── Agrupar la recaudación por Ruta ──────────────────────────────────
+        $recaudacionPorRuta = $ventas
+            ->flatMap(fn (Venta $venta) =>
+                $venta->boletos->map(fn (Boleto $boleto) => [
+                    'ruta_id'      => $boleto->frecuencia->ruta->id ?? null,
+                    'ruta_nombre'  => $boleto->frecuencia->ruta
+                        ? ($boleto->frecuencia->ruta->origen->nombre ?? '—')
+                          . ' → '
+                          . ($boleto->frecuencia->ruta->destino->nombre ?? '—')
+                        : 'Sin ruta',
+                    'precio_final' => (float) $boleto->precio_final,
+                    'venta_total'  => (float) $venta->total,
+                ])
+            )
+            ->groupBy('ruta_id')
+            ->map(fn ($grupo) => [
+                'ruta'           => $grupo->first()['ruta_nombre'],
+                'total_recaudado' => $grupo->sum('venta_total'),
+                'boletos_count'  => $grupo->count(),
+            ])
+            ->values();
+
+        // ── Totales generales ────────────────────────────────────────────────
+        $totalVentas  = $ventas->sum('total');
+        $totalBoletos = $ventas->sum(fn (Venta $v) => $v->boletos->count());
+
+        return view('ventas.resumen_turno', [
+            'recaudacionPorRuta' => $recaudacionPorRuta,
+            'totalVentas'        => $totalVentas,
+            'totalBoletos'       => $totalBoletos,
+            'fecha'              => $hoy,
+        ]);
+    }
 }

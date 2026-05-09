@@ -57,6 +57,9 @@ Route::middleware('auth')->group(function () {
     // Descargar boleto en PDF con QR
     Route::get('/ventas/boleto/{id}/descargar', [VentaController::class, 'descargarBoleto'])->name('ventas.boleto.descargar');
 
+    // Resumen del turno (Manolo)
+    Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])->name('ventas.resumen-turno');
+
     // Validar boleto (Escaneo QR)
     Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
 
