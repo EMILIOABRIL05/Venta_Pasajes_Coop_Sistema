@@ -11,6 +11,8 @@ use App\Models\Pago;
 use App\Models\Frecuencia;
 use App\Models\Pasajero;
 use App\Models\Boleto;
+use App\Models\Reembolso;
+use App\Models\CierreTurno;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -201,5 +203,139 @@ class VentaController extends Controller
             'totalBoletos'       => $totalBoletos,
             'fecha'              => $hoy,
         ]);
+    }
+
+    // =========================================================================
+    // CIERRE DE TURNO
+    // =========================================================================
+
+    /**
+     * Muestra el resumen consolidado previo al cierre de turno.
+     *
+     * Calcula ingresos brutos y netos del día actual para el cajero
+     * autenticado y detecta si ya existe un cierre registrado.
+     */
+    public function cierreTurno()
+    {
+        $userId = auth()->id();
+        $hoy    = now()->toDateString();
+
+        // ── ¿Ya existe un cierre para hoy? ────────────────────────────────────
+        $cierreExistente = CierreTurno::where('user_id', $userId)
+            ->where('fecha', $hoy)
+            ->first();
+
+        // ── Ventas del día del cajero (con relaciones para el desglose) ───────
+        $ventas = Venta::with([
+                'boletos.frecuencia.ruta.origen',
+                'boletos.frecuencia.ruta.destino',
+                'reembolsos',
+            ])
+            ->where('user_id', $userId)
+            ->whereDate('created_at', $hoy)
+            ->get();
+
+        // ── Ingresos brutos ───────────────────────────────────────────────────
+        $totalBruto  = $ventas->sum('total');
+        $totalBoletos = $ventas->sum(fn (Venta $v) => $v->boletos->count());
+
+        // ── Reembolsos aprobados del día que afectan a ventas de este cajero ──
+        // Se cuentan solo los reembolsos cuya venta pertenece al cajero actual
+        // y cuya fecha de resolución es hoy.
+        $totalReembolsos = $ventas->sum(
+            fn (Venta $v) => $v->reembolsos
+                ->where('estado', 'aprobado')
+                ->sum('monto')
+        );
+
+        // ── Ingreso neto ──────────────────────────────────────────────────────
+        $totalNeto = $totalBruto - $totalReembolsos;
+
+        // ── Recaudación por ruta (para la tabla de detalle) ───────────────────
+        $recaudacionPorRuta = $ventas
+            ->flatMap(fn (Venta $venta) =>
+                $venta->boletos->map(fn (Boleto $boleto) => [
+                    'ruta_id'      => optional(optional($boleto->frecuencia)->ruta)->id,
+                    'ruta_nombre'  => $boleto->frecuencia && $boleto->frecuencia->ruta
+                        ? (optional($boleto->frecuencia->ruta->origen)->nombre ?? '—')
+                          . ' → '
+                          . (optional($boleto->frecuencia->ruta->destino)->nombre ?? '—')
+                        : 'Sin ruta',
+                    'venta_total'  => (float) $venta->total,
+                ])
+            )
+            ->groupBy('ruta_id')
+            ->map(fn ($grupo) => [
+                'ruta'            => $grupo->first()['ruta_nombre'],
+                'total_recaudado' => $grupo->sum('venta_total'),
+                'boletos_count'   => $grupo->count(),
+            ])
+            ->values();
+
+        return view('ventas.cierre_turno', [
+            'cierreExistente'    => $cierreExistente,
+            'recaudacionPorRuta' => $recaudacionPorRuta,
+            'totalBruto'         => $totalBruto,
+            'totalReembolsos'    => $totalReembolsos,
+            'totalNeto'          => $totalNeto,
+            'totalBoletos'       => $totalBoletos,
+            'fecha'              => $hoy,
+        ]);
+    }
+
+    /**
+     * Persiste el cierre de turno del día actual.
+     *
+     * Guarda en DB::transaction para garantizar atomicidad.
+     * Verifica nuevamente la existencia del cierre (guarda contra
+     * doble-clic o peticiones concurrentes).
+     */
+    public function storeCierre(Request $request)
+    {
+        $userId = auth()->id();
+        $hoy    = now()->toDateString();
+
+        // ── Segunda verificación: guarda contra race conditions ───────────────
+        if (CierreTurno::existeParaHoy($userId, $hoy)) {
+            return redirect()
+                ->route('ventas.cierre-turno')
+                ->with('warning', 'Ya existe un cierre de turno registrado para hoy.');
+        }
+
+        try {
+            DB::transaction(function () use ($userId, $hoy) {
+                // Re-calcular dentro de la transacción para máxima consistencia
+                $ventas = Venta::with('boletos', 'reembolsos')
+                    ->where('user_id', $userId)
+                    ->whereDate('created_at', $hoy)
+                    ->get();
+
+                $totalBruto      = $ventas->sum('total');
+                $totalBoletos    = $ventas->sum(fn (Venta $v) => $v->boletos->count());
+                $totalReembolsos = $ventas->sum(
+                    fn (Venta $v) => $v->reembolsos
+                        ->where('estado', 'aprobado')
+                        ->sum('monto')
+                );
+
+                CierreTurno::create([
+                    'user_id'          => $userId,
+                    'fecha'            => $hoy,
+                    'total_bruto'      => $totalBruto,
+                    'total_reembolsos' => $totalReembolsos,
+                    'total_neto'       => $totalBruto - $totalReembolsos,
+                    'total_boletos'    => $totalBoletos,
+                ]);
+            });
+
+            return redirect()
+                ->route('ventas.cierre-turno')
+                ->with('success', 'Cierre de turno registrado correctamente.');
+
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('ventas.cierre-turno')
+                ->with('error', 'Error al registrar el cierre. Intente nuevamente.');
+        }
     }
 }

@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
     // Resumen del turno (Manolo)
     Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])->name('ventas.resumen-turno');
 
+    // Cierre de turno (Manolo - Sprint 4)
+    Route::get('/ventas/cierre-turno', [VentaController::class, 'cierreTurno'])->name('ventas.cierre-turno');
+    Route::post('/ventas/cierre-turno', [VentaController::class, 'storeCierre'])->name('ventas.cierre-turno.store');
+
     // Validar boleto (Escaneo QR)
     Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
 
