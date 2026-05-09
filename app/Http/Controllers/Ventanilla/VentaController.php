@@ -344,15 +344,55 @@ class VentaController extends Controller
             ])
             ->values();
 
+        // ── Últimas 10 transacciones (tabla histórica) ────────────────────────
+        $ultimasTransacciones = $ventas
+            ->sortByDesc('created_at')
+            ->take(10)
+            ->map(fn (Venta $v) => [
+                'id'         => $v->id,
+                'hora'       => $v->created_at->format('H:i'),
+                'total'      => (float) $v->total,
+                'boletos'    => $v->boletos->count(),
+                'asientos'   => $v->boletos->pluck('numero_asiento')->sort()->join(', '),
+                'pasajero'   => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
+                'ruta'       => $v->boletos->first()?->frecuencia?->ruta
+                    ? (optional($v->boletos->first()->frecuencia->ruta->origen)->nombre ?? '—')
+                      . ' → '
+                      . (optional($v->boletos->first()->frecuencia->ruta->destino)->nombre ?? '—')
+                    : 'Sin ruta',
+            ])
+            ->values();
+
+        // ── Progresión horaria (para Chart.js) ───────────────────────────────
+        // Crea 24 slots (0-23h). Cada slot acumula total y boletos_count.
+        $slotsHorarios = collect(range(0, 23))->mapWithKeys(fn ($h) => [
+            $h => ['total' => 0.0, 'boletos' => 0, 'label' => str_pad($h, 2, '0', STR_PAD_LEFT) . ':00'],
+        ]);
+
+        foreach ($ventas as $v) {
+            $hora = (int) $v->created_at->format('G'); // 0-23
+            $slotsHorarios[$hora]['total']   += (float) $v->total;
+            $slotsHorarios[$hora]['boletos'] += $v->boletos->count();
+        }
+
+        // Solo enviar al frontend los datos que Chart.js necesita
+        $chartHorario = [
+            'labels'  => $slotsHorarios->pluck('label')->values()->toArray(),
+            'totales' => $slotsHorarios->pluck('total')->map(fn ($v) => round($v, 2))->values()->toArray(),
+            'boletos' => $slotsHorarios->pluck('boletos')->values()->toArray(),
+        ];
+
         return view('ventanilla.cierre', [
-            'cierreExistente'    => $cierreExistente,
-            'totalBruto'         => $totalBruto,
-            'totalNeto'          => $totalNeto,
-            'totalReembolsos'    => $totalReembolsos,
-            'totalBoletos'       => $totalBoletos,
-            'promedioPorBoleto'  => $promedioPorBoleto,
-            'recaudacionPorRuta' => $recaudacionPorRuta,
-            'fecha'              => $hoy,
+            'cierreExistente'       => $cierreExistente,
+            'totalBruto'            => $totalBruto,
+            'totalNeto'             => $totalNeto,
+            'totalReembolsos'       => $totalReembolsos,
+            'totalBoletos'          => $totalBoletos,
+            'promedioPorBoleto'     => $promedioPorBoleto,
+            'recaudacionPorRuta'    => $recaudacionPorRuta,
+            'ultimasTransacciones'  => $ultimasTransacciones,
+            'chartHorario'          => $chartHorario,
+            'fecha'                 => $hoy,
         ]);
     }
 
