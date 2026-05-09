@@ -100,6 +100,9 @@ Route::middleware(['auth', 'role:oficinista|admin'])
         Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
             ->name('cierre');
 
+        Route::post('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'storeCierre'])
+            ->name('cierre.store');
+
         // Reporte PDF de cierre (Manolo - Sprint 4)
         Route::get('/cierre/reporte-pdf', [\App\Http\Controllers\Ventanilla\VentaController::class, 'reportePdf'])
             ->name('reporte-pdf');

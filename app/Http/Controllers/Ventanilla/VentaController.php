@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Ventanilla;
 use App\Http\Controllers\Controller;
 use App\Exports\CierreTurnoExport;
 use App\Models\Boleto;
+use App\Models\CierreTurno;
 use App\Models\Ruta;
 use App\Models\Venta;
 use App\Services\CierreTurnoService;
@@ -294,6 +295,83 @@ class VentaController extends Controller
         $resumen = $this->cierreService->resumenCompleto($userId, $hoy);
 
         return view('ventanilla.cierre', array_merge($resumen, ['fecha' => $hoy]));
+    }
+
+    /**
+     * Persiste el cierre de turno del cajero autenticado (POST).
+     *
+     * Flujo:
+     *  1. Guarda de duplicado — usa CierreTurno::existeParaHoy().
+     *  2. Obtiene totales del turno desde CierreTurnoService (SRP/DIP).
+     *  3. Crea el registro en DB::transaction() (atomicidad obligatoria, ver AGENTS.md).
+     *  4. Redirige con flash de éxito o back() con flash de error.
+     */
+    public function storeCierre(Request $request)
+    {
+        $userId = auth()->id();
+        $hoy    = now()->toDateString();
+
+        // ── 1. Guardia contra duplicado ───────────────────────────────────────
+        if (CierreTurno::existeParaHoy($userId, $hoy)) {
+            return back()->with(
+                'error',
+                'Error: Ya has registrado un cierre de caja para el turno de hoy.'
+            );
+        }
+
+        // ── 2. Obtener totales del servicio (sin lógica duplicada) ────────────
+        $resumen = $this->cierreService->resumenCompleto($userId, $hoy);
+
+        // ── 3. Persistencia atómica ───────────────────────────────────────────
+        try {
+            DB::transaction(function () use ($userId, $hoy, $resumen) {
+                // Segunda verificación dentro de la transacción para evitar
+                // condición de carrera si dos requests llegan casi simultáneamente.
+                if (CierreTurno::existeParaHoy($userId, $hoy)) {
+                    throw new \RuntimeException('duplicate_cierre');
+                }
+
+                CierreTurno::create([
+                    'user_id'          => $userId,
+                    'fecha'            => $hoy,
+                    'total_bruto'      => $resumen['totalBruto'],
+                    'total_reembolsos' => $resumen['totalReembolsos'],
+                    'total_neto'       => $resumen['totalNeto'],
+                    'total_boletos'    => $resumen['totalBoletos'],
+                ]);
+            });
+
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'duplicate_cierre') {
+                return back()->with(
+                    'error',
+                    'Error: Ya has registrado un cierre de caja para el turno de hoy.'
+                );
+            }
+            Log::error('[Ventanilla] storeCierre() — RuntimeException inesperada', [
+                'message' => $e->getMessage(),
+                'user_id' => $userId,
+                'fecha'   => $hoy,
+            ]);
+            return back()->with('error', 'Ocurrió un error inesperado. La operación fue cancelada de forma segura.');
+
+        } catch (Throwable $e) {
+            Log::critical('[Ventanilla] storeCierre() — Fallo crítico', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile() . ':' . $e->getLine(),
+                'user_id' => $userId,
+                'fecha'   => $hoy,
+            ]);
+            return back()->with(
+                'error',
+                'Error al guardar el cierre. Contacte al administrador e indique la hora: ' . now()->format('H:i:s d/m/Y') . '.'
+            );
+        }
+
+        // ── 4. Respuesta de éxito ─────────────────────────────────────────────
+        return redirect()
+            ->route('ventanilla.cierre')
+            ->with('success', '¡Cierre de turno guardado exitosamente!');
     }
 
     /**
