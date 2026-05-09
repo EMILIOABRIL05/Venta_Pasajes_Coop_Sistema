@@ -30,15 +30,83 @@
     <div class="py-10">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-7">
 
-            {{-- ── Alertas de sesión ───────────────────────────────────────── --}}
-            @foreach(['success' => 'emerald', 'warning' => 'amber', 'error' => 'red'] as $key => $color)
-                @if(session($key))
-                    <div x-data="{ show: true }" x-show="show" x-transition
-                         class="flex items-center gap-3 rounded-2xl border border-{{ $color }}-200 bg-{{ $color }}-50 px-5 py-4">
-                        <p class="flex-1 text-sm font-medium text-{{ $color }}-800">{{ session($key) }}</p>
-                        <button @click="show = false" class="text-{{ $color }}-400 hover:text-{{ $color }}-600">✕</button>
+            {{-- ── Toast de sesión (flotante, esquina inferior derecha) ────── --}}
+            @php
+                $toasts = [];
+                if (session('success'))  $toasts[] = ['key' => 'success', 'color' => 'emerald', 'msg' => session('success')];
+                if (session('error'))    $toasts[] = ['key' => 'error',   'color' => 'red',     'msg' => session('error')];
+                if (session('warning'))  $toasts[] = ['key' => 'warning', 'color' => 'amber',   'msg' => session('warning')];
+            @endphp
+
+            @foreach($toasts as $toast)
+            <div x-data="{
+                    show: true,
+                    progress: 100,
+                    timer: null,
+                    init() {
+                        this.timer = setInterval(() => {
+                            this.progress -= 2;
+                            if (this.progress <= 0) { clearInterval(this.timer); this.show = false; }
+                        }, 100);
+                    },
+                    dismiss() { clearInterval(this.timer); this.show = false; }
+                 }"
+                 x-init="init()"
+                 x-show="show"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                 x-cloak
+                 class="fixed bottom-6 right-6 z-[9999] w-80 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-{{ $toast['color'] }}-200">
+
+                {{-- Barra de progreso superior --}}
+                <div class="h-1 bg-{{ $toast['color'] }}-100">
+                    <div class="h-1 bg-{{ $toast['color'] }}-500 transition-all duration-100 ease-linear"
+                         :style="`width: ${progress}%`"></div>
+                </div>
+
+                <div class="flex items-start gap-3 px-4 py-3.5">
+                    {{-- Ícono según tipo --}}
+                    @if($toast['key'] === 'success')
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+                            <svg class="h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                    @elseif($toast['key'] === 'error')
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100">
+                            <svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                    @else
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+                            <svg class="h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                    @endif
+
+                    {{-- Mensaje --}}
+                    <div class="flex-1 min-w-0 pt-0.5">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-{{ $toast['color'] }}-600 mb-0.5">
+                            {{ $toast['key'] === 'success' ? 'Éxito' : ($toast['key'] === 'error' ? 'Error' : 'Aviso') }}
+                        </p>
+                        <p class="text-sm text-gray-700 leading-snug">{{ $toast['msg'] }}</p>
                     </div>
-                @endif
+
+                    {{-- Botón cerrar --}}
+                    <button @click="dismiss()"
+                            class="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             @endforeach
 
             @if($cierreExistente)
