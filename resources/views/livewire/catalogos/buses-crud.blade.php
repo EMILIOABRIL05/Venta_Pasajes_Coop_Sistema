@@ -166,7 +166,7 @@
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <h3 class="text-base font-bold text-slate-900">{{ $bus->placa }}</h3>
                                                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $bus->categoria?->nombre ?? 'Sin categoría' }}</span>
-                                                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $bus->estado === 'disponible' ? 'bg-emerald-100 text-emerald-700' : ($bus->estado === 'en_ruta' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700') }}">
+                                                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $bus->estado === 'disponible' ? 'bg-[#003366]/10 text-[#003366]' : ($bus->estado === 'en_ruta' ? 'bg-slate-200 text-slate-700' : 'bg-[#CC0000]/10 text-[#CC0000]') }}">
                                                     {{ ucfirst(str_replace('_', ' ', $bus->estado)) }}
                                                 </span>
                                             </div>
@@ -182,7 +182,7 @@
                                         </div>
 
                                         <div class="flex items-center gap-2">
-                                            <button type="button" wire:click="edit({{ $bus->id }})" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                                            <button type="button" wire:click="edit({{ $bus->id }})" class="rounded-xl border border-[#003366]/20 bg-[#003366]/10 px-4 py-2 text-sm font-semibold text-[#003366] transition hover:bg-[#003366]/20">
                                                 Editar
                                             </button>
                                             <button type="button" wire:click="delete({{ $bus->id }})" wire:confirm="¿Eliminar este bus?" class="rounded-xl border border-[#CC0000]/20 bg-[#CC0000]/10 px-4 py-2 text-sm font-semibold text-[#CC0000] transition hover:bg-[#CC0000]/20">

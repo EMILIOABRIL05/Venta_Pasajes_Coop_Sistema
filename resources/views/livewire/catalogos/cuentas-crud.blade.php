@@ -27,7 +27,7 @@
             </div>
 
             @if (session('message'))
-                <div class="mx-6 mb-6 rounded-2xl border border-emerald-300/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-100">
+                <div class="mx-6 mb-6 rounded-2xl border border-[#003366]/20 bg-[#003366]/10 px-4 py-3 text-sm font-medium text-[#003366]">
                     {{ session('message') }}
                 </div>
             @endif
@@ -160,7 +160,7 @@
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    <button type="button" wire:click="edit({{ $usuario->id }})" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                                    <button type="button" wire:click="edit({{ $usuario->id }})" class="rounded-xl border border-[#003366]/20 bg-[#003366]/10 px-4 py-2 text-sm font-semibold text-[#003366] transition hover:bg-[#003366]/20">
                                         Editar
                                     </button>
                                     <button type="button" wire:click="delete({{ $usuario->id }})" wire:confirm="¿Eliminar esta cuenta?" class="rounded-xl border border-[#CC0000]/20 bg-[#CC0000]/10 px-4 py-2 text-sm font-semibold text-[#CC0000] transition hover:bg-[#CC0000]/20">
