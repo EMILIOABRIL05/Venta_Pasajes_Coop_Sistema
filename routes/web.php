@@ -58,11 +58,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/ventas/boleto/{id}/descargar', [VentaController::class, 'descargarBoleto'])->name('ventas.boleto.descargar');
 
     // Resumen del turno (Manolo)
-    Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])->name('ventas.resumen-turno');
+    Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.resumen-turno');
 
     // Cierre de turno (Manolo - Sprint 4)
-    Route::get('/ventas/cierre-turno', [VentaController::class, 'cierreTurno'])->name('ventas.cierre-turno');
-    Route::post('/ventas/cierre-turno', [VentaController::class, 'storeCierre'])->name('ventas.cierre-turno.store');
+    Route::get('/ventas/cierre-turno', [VentaController::class, 'cierreTurno'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.cierre-turno');
+    Route::post('/ventas/cierre-turno', [VentaController::class, 'storeCierre'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.cierre-turno.store');
 
     // Validar boleto (Escaneo QR)
     Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
@@ -77,7 +83,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // ─── Módulo Ventanilla ────────────────────────────────────────────────────────
-Route::middleware('auth')
+Route::middleware(['auth', 'role:oficinista|admin'])
     ->prefix('ventanilla')
     ->name('ventanilla.')
     ->group(function () {

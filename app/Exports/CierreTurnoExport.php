@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Venta;
+use App\Services\CierreTurnoService;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -24,21 +24,13 @@ class CierreTurnoExport implements WithMultipleSheets
     ) {}
 
     /**
-     * Genera dos hojas: Transacciones + Resumen por Ruta.
+     * Genera dos hojas usando CierreTurnoService como fuente única de datos (DIP).
      */
     public function sheets(): array
     {
-        // ── Carga única de ventas compartida por ambas hojas ─────────────────
-        $ventas = Venta::with([
-                'boletos.frecuencia.ruta.origen',
-                'boletos.frecuencia.ruta.destino',
-                'boletos.pasajero',
-                'reembolsos',
-            ])
-            ->where('user_id', $this->userId)
-            ->whereDate('created_at', $this->fecha)
-            ->orderBy('created_at')
-            ->get();
+        // ── Una sola instancia del Service, una sola carga de ventas ─────────
+        $service = app(CierreTurnoService::class);
+        $ventas  = $service->cargarVentas($this->userId, $this->fecha);
 
         return [
             new TransaccionesSheet($ventas, $this->fecha, $this->cajeroNombre),

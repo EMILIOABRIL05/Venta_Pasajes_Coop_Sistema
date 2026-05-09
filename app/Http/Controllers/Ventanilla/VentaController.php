@@ -3,24 +3,27 @@
 namespace App\Http\Controllers\Ventanilla;
 
 use App\Http\Controllers\Controller;
+use App\Exports\CierreTurnoExport;
 use App\Models\Boleto;
-use App\Models\CierreTurno;
-use App\Models\Reembolso;
 use App\Models\Ruta;
 use App\Models\Venta;
-use App\Exports\CierreTurnoExport;
+use App\Services\CierreTurnoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
 
 class VentaController extends Controller
 {
+    // ─── Inyección de dependencia (DIP) ───────────────────────────────────────
+    public function __construct(
+        private readonly CierreTurnoService $cierreService,
+    ) {}
     // ─── Index ────────────────────────────────────────────────────────────────
 
     /**
@@ -275,236 +278,56 @@ class VentaController extends Controller
      */
     public function destroy(Venta $venta) {}
 
+    // ─── Cierre de turno ──────────────────────────────────────────────────────
+
     /**
      * Dashboard de Cierre de Turno (Sprint 4 - Manolo).
      *
-     * Calcula los KPIs del turno actual del cajero autenticado:
-     *   - Total cobrado (ingreso bruto)
-     *   - Boletos vendidos
-     *   - Promedio de venta por boleto
-     *   - Total reembolsos aprobados
-     *   - Ingreso neto (bruto - reembolsos)
-     *   - Desglose por ruta
-     *   - Estado del cierre (si ya fue registrado hoy)
+     * Delega todos los cálculos a CierreTurnoService (SRP).
+     * Los datos están aislados por user_id en el propio Service (DIP).
      */
     public function cierreTurno()
     {
-        $userId = auth()->id();
         $hoy    = now()->toDateString();
+        $userId = auth()->id();
 
-        // ── ¿Ya existe un cierre registrado para hoy? ─────────────────────────
-        $cierreExistente = CierreTurno::where('user_id', $userId)
-            ->where('fecha', $hoy)
-            ->first();
+        $resumen = $this->cierreService->resumenCompleto($userId, $hoy);
 
-        // ── Ventas del día con relaciones necesarias ──────────────────────────
-        $ventas = Venta::with([
-                'boletos.frecuencia.ruta.origen',
-                'boletos.frecuencia.ruta.destino',
-                'reembolsos',
-            ])
-            ->where('user_id', $userId)
-            ->whereDate('created_at', $hoy)
-            ->get();
-
-        // ── KPI: Ingreso bruto ────────────────────────────────────────────────
-        $totalBruto   = (float) $ventas->sum('total');
-        $totalBoletos = (int)   $ventas->sum(fn (Venta $v) => $v->boletos->count());
-
-        // ── KPI: Reembolsos aprobados ─────────────────────────────────────────
-        $totalReembolsos = (float) $ventas->sum(
-            fn (Venta $v) => $v->reembolsos
-                ->where('estado', 'aprobado')
-                ->sum('monto')
-        );
-
-        // ── KPI: Ingreso neto ─────────────────────────────────────────────────
-        $totalNeto = $totalBruto - $totalReembolsos;
-
-        // ── KPI: Promedio de venta por boleto ─────────────────────────────────
-        $promedioPorBoleto = $totalBoletos > 0
-            ? round($totalBruto / $totalBoletos, 2)
-            : 0.0;
-
-        // ── Desglose por Ruta ─────────────────────────────────────────────────
-        $recaudacionPorRuta = $ventas
-            ->flatMap(fn (Venta $venta) =>
-                $venta->boletos->map(fn ($boleto) => [
-                    'ruta_id'      => optional(optional($boleto->frecuencia)->ruta)->id,
-                    'ruta_nombre'  => $boleto->frecuencia && $boleto->frecuencia->ruta
-                        ? (optional($boleto->frecuencia->ruta->origen)->nombre ?? '—')
-                          . ' → '
-                          . (optional($boleto->frecuencia->ruta->destino)->nombre ?? '—')
-                        : 'Sin ruta',
-                    'venta_total'  => (float) $venta->total,
-                ])
-            )
-            ->groupBy('ruta_id')
-            ->map(fn ($grupo) => [
-                'ruta'            => $grupo->first()['ruta_nombre'],
-                'total_recaudado' => round($grupo->sum('venta_total'), 2),
-                'boletos_count'   => $grupo->count(),
-            ])
-            ->values();
-
-        // ── Últimas 10 transacciones (tabla histórica) ────────────────────────
-        $ultimasTransacciones = $ventas
-            ->sortByDesc('created_at')
-            ->take(10)
-            ->map(fn (Venta $v) => [
-                'id'         => $v->id,
-                'hora'       => $v->created_at->format('H:i'),
-                'total'      => (float) $v->total,
-                'boletos'    => $v->boletos->count(),
-                'asientos'   => $v->boletos->pluck('numero_asiento')->sort()->join(', '),
-                'pasajero'   => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
-                'ruta'       => $v->boletos->first()?->frecuencia?->ruta
-                    ? (optional($v->boletos->first()->frecuencia->ruta->origen)->nombre ?? '—')
-                      . ' → '
-                      . (optional($v->boletos->first()->frecuencia->ruta->destino)->nombre ?? '—')
-                    : 'Sin ruta',
-            ])
-            ->values();
-
-        // ── Progresión horaria (para Chart.js) ───────────────────────────────
-        // Crea 24 slots (0-23h). Cada slot acumula total y boletos_count.
-        $slotsHorarios = collect(range(0, 23))->mapWithKeys(fn ($h) => [
-            $h => ['total' => 0.0, 'boletos' => 0, 'label' => str_pad($h, 2, '0', STR_PAD_LEFT) . ':00'],
-        ]);
-
-        foreach ($ventas as $v) {
-            $hora = (int) $v->created_at->format('G'); // 0-23
-            $slotsHorarios[$hora]['total']   += (float) $v->total;
-            $slotsHorarios[$hora]['boletos'] += $v->boletos->count();
-        }
-
-        // Solo enviar al frontend los datos que Chart.js necesita
-        $chartHorario = [
-            'labels'  => $slotsHorarios->pluck('label')->values()->toArray(),
-            'totales' => $slotsHorarios->pluck('total')->map(fn ($v) => round($v, 2))->values()->toArray(),
-            'boletos' => $slotsHorarios->pluck('boletos')->values()->toArray(),
-        ];
-
-        return view('ventanilla.cierre', [
-            'cierreExistente'       => $cierreExistente,
-            'totalBruto'            => $totalBruto,
-            'totalNeto'             => $totalNeto,
-            'totalReembolsos'       => $totalReembolsos,
-            'totalBoletos'          => $totalBoletos,
-            'promedioPorBoleto'     => $promedioPorBoleto,
-            'recaudacionPorRuta'    => $recaudacionPorRuta,
-            'ultimasTransacciones'  => $ultimasTransacciones,
-            'chartHorario'          => $chartHorario,
-            'fecha'                 => $hoy,
-        ]);
+        return view('ventanilla.cierre', array_merge($resumen, ['fecha' => $hoy]));
     }
 
     /**
-     * Genera y descarga el reporte de cierre de turno en PDF (DomPDF).
-     *
-     * Reutiliza la misma lógica de cálculo de cierreTurno() para garantizar
-     * que los datos del PDF coincidan exactamente con el dashboard en pantalla.
+     * Genera y descarga el reporte PDF del cierre de turno.
+     * Los datos se obtienen del CierreTurnoService — sin lógica duplicada.
      */
     public function reportePdf()
     {
-        $userId = auth()->id();
-        $cajero = auth()->user();
-        $hoy    = now()->toDateString();
+        $cajero  = auth()->user();
+        $hoy     = now()->toDateString();
+        $resumen = $this->cierreService->resumenCompleto($cajero->id, $hoy);
 
-        $cierreExistente = CierreTurno::where('user_id', $userId)
-            ->where('fecha', $hoy)
-            ->first();
+        $pdf = Pdf::loadView(
+            'ventanilla.reporte_pdf',
+            array_merge($resumen, ['cajero' => $cajero, 'fecha' => $hoy])
+        )->setPaper('letter', 'portrait');
 
-        $ventas = Venta::with([
-                'boletos.frecuencia.ruta.origen',
-                'boletos.frecuencia.ruta.destino',
-                'boletos.pasajero',
-                'reembolsos',
-            ])
-            ->where('user_id', $userId)
-            ->whereDate('created_at', $hoy)
-            ->get();
-
-        $totalBruto      = (float) $ventas->sum('total');
-        $totalBoletos    = (int)   $ventas->sum(fn (Venta $v) => $v->boletos->count());
-        $totalReembolsos = (float) $ventas->sum(
-            fn (Venta $v) => $v->reembolsos->where('estado', 'aprobado')->sum('monto')
+        return $pdf->download(
+            'cierre_turno_' . str_replace(' ', '_', strtolower($cajero->name)) . "_{$hoy}.pdf"
         );
-        $totalNeto         = $totalBruto - $totalReembolsos;
-        $promedioPorBoleto = $totalBoletos > 0 ? round($totalBruto / $totalBoletos, 2) : 0.0;
-
-        $recaudacionPorRuta = $ventas
-            ->flatMap(fn (Venta $venta) =>
-                $venta->boletos->map(fn ($b) => [
-                    'ruta_id'      => optional(optional($b->frecuencia)->ruta)->id,
-                    'ruta_nombre'  => $b->frecuencia && $b->frecuencia->ruta
-                        ? (optional($b->frecuencia->ruta->origen)->nombre ?? '—') . ' → '
-                          . (optional($b->frecuencia->ruta->destino)->nombre ?? '—')
-                        : 'Sin ruta',
-                    'venta_total'  => (float) $venta->total,
-                ])
-            )
-            ->groupBy('ruta_id')
-            ->map(fn ($g) => [
-                'ruta'            => $g->first()['ruta_nombre'],
-                'total_recaudado' => round($g->sum('venta_total'), 2),
-                'boletos_count'   => $g->count(),
-            ])
-            ->values();
-
-        $ultimasTransacciones = $ventas
-            ->sortByDesc('created_at')
-            ->map(fn (Venta $v) => [
-                'id'       => $v->id,
-                'hora'     => $v->created_at->format('H:i'),
-                'total'    => (float) $v->total,
-                'boletos'  => $v->boletos->count(),
-                'pasajero' => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
-                'ruta'     => $v->boletos->first()?->frecuencia?->ruta
-                    ? (optional($v->boletos->first()->frecuencia->ruta->origen)->nombre ?? '—')
-                      . ' → '
-                      . (optional($v->boletos->first()->frecuencia->ruta->destino)->nombre ?? '—')
-                    : 'Sin ruta',
-            ])
-            ->values();
-
-        $pdf = Pdf::loadView('ventanilla.reporte_pdf', [
-            'cajero'               => $cajero,
-            'cierreExistente'      => $cierreExistente,
-            'totalBruto'           => $totalBruto,
-            'totalNeto'            => $totalNeto,
-            'totalReembolsos'      => $totalReembolsos,
-            'totalBoletos'         => $totalBoletos,
-            'promedioPorBoleto'    => $promedioPorBoleto,
-            'recaudacionPorRuta'   => $recaudacionPorRuta,
-            'ultimasTransacciones' => $ultimasTransacciones,
-            'fecha'                => $hoy,
-        ])
-        ->setPaper('letter', 'portrait');
-
-        $nombre = 'cierre_turno_'
-            . str_replace(' ', '_', strtolower($cajero->name))
-            . '_' . $hoy . '.pdf';
-
-        return $pdf->download($nombre);
     }
 
     /**
-     * Descarga el reporte de cierre del turno en formato Excel (.xlsx).
-     *
-     * Genera dos hojas: detalle de transacciones y resumen por ruta.
+     * Exporta el cierre del turno a Excel (.xlsx) con dos hojas.
+     * CierreTurnoExport reutiliza CierreTurnoService internamente.
      */
     public function exportarExcel()
     {
-        $cajero  = auth()->user();
-        $hoy     = now()->toDateString();
-        $nombre  = 'cierre_turno_'
-            . str_replace(' ', '_', strtolower($cajero->name))
-            . '_' . $hoy . '.xlsx';
+        $cajero = auth()->user();
+        $hoy    = now()->toDateString();
 
         return Excel::download(
-            new CierreTurnoExport(auth()->id(), $hoy, $cajero->name),
-            $nombre
+            new CierreTurnoExport($cajero->id, $hoy, $cajero->name),
+            'cierre_turno_' . str_replace(' ', '_', strtolower($cajero->name)) . "_{$hoy}.xlsx"
         );
     }
 
