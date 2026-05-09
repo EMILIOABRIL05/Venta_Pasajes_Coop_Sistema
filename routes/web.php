@@ -7,6 +7,7 @@ use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
 use App\Livewire\Catalogos\CategoriasBusCrud;
+use App\Livewire\Catalogos\CuentasCrud;
 use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
 use App\Livewire\Web\PagoWeb;
@@ -37,6 +38,10 @@ Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
 Route::get('/catalogos/buses', BusesCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('catalogos.buses');
+
+Route::get('/catalogos/cuentas', CuentasCrud::class)
+    ->middleware(['auth', 'role:admin'])
+    ->name('catalogos.cuentas');
 
 // Hoja de Ruta (Sprint 2 - Kevin)
 Route::get('/hoja-ruta', \App\Livewire\Operativa\HojaRuta::class)
