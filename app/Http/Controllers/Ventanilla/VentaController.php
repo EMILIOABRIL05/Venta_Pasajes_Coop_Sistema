@@ -8,8 +8,10 @@ use App\Models\CierreTurno;
 use App\Models\Reembolso;
 use App\Models\Ruta;
 use App\Models\Venta;
+use App\Exports\CierreTurnoExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -485,6 +487,25 @@ class VentaController extends Controller
             . '_' . $hoy . '.pdf';
 
         return $pdf->download($nombre);
+    }
+
+    /**
+     * Descarga el reporte de cierre del turno en formato Excel (.xlsx).
+     *
+     * Genera dos hojas: detalle de transacciones y resumen por ruta.
+     */
+    public function exportarExcel()
+    {
+        $cajero  = auth()->user();
+        $hoy     = now()->toDateString();
+        $nombre  = 'cierre_turno_'
+            . str_replace(' ', '_', strtolower($cajero->name))
+            . '_' . $hoy . '.xlsx';
+
+        return Excel::download(
+            new CierreTurnoExport(auth()->id(), $hoy, $cajero->name),
+            $nombre
+        );
     }
 
     // ─── Privados ─────────────────────────────────────────────────────────────

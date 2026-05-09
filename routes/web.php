@@ -92,6 +92,10 @@ Route::middleware('auth')
         // Reporte PDF de cierre (Manolo - Sprint 4)
         Route::get('/cierre/reporte-pdf', [\App\Http\Controllers\Ventanilla\VentaController::class, 'reportePdf'])
             ->name('reporte-pdf');
+
+        // Exportar Excel de cierre (Manolo - Sprint 4)
+        Route::get('/cierre/exportar-excel', [\App\Http\Controllers\Ventanilla\VentaController::class, 'exportarExcel'])
+            ->name('exportar-excel');
     });
 
 
