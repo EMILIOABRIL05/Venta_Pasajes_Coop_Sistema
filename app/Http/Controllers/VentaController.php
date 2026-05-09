@@ -297,9 +297,8 @@ class VentaController extends Controller
 
         // ── Segunda verificación: guarda contra race conditions ───────────────
         if (CierreTurno::existeParaHoy($userId, $hoy)) {
-            return redirect()
-                ->route('ventas.cierre-turno')
-                ->with('warning', 'Ya existe un cierre de turno registrado para hoy.');
+            return back()
+                ->with('error', 'Ya has registrado un cierre de caja para el día de hoy.');
         }
 
         try {
