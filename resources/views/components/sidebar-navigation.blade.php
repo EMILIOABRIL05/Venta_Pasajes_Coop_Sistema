@@ -119,6 +119,18 @@
                                 Categorías
                             </a>
                         @endif
+
+                        <!-- Cuentas Operativas (Solo Admin) -->
+                        @if (auth()->user()->hasRole('admin'))
+                            <a href="{{ route('catalogos.cuentas') }}"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.cuentas') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A10 10 0 1118.9 4.02 10 10 0 015.12 17.804z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Cuentas
+                            </a>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -293,6 +305,17 @@
                                         <path d="M9 2a1 1 0 000 2h2V2H9zM7 4a1 1 0 000 2h10V4H7zm-2 4a1 1 0 000 2h14V8H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5z" />
                                     </svg>
                                     Categorías
+                                </a>
+                            @endif
+
+                            @if (auth()->user()->hasRole('admin'))
+                                <a href="{{ route('catalogos.cuentas') }}" @click="open = false"
+                                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.cuentas') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A10 10 0 1118.9 4.02 10 10 0 015.12 17.804z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Cuentas
                                 </a>
                             @endif
                         </div>
