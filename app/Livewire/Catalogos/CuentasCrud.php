@@ -6,6 +6,7 @@ use App\Livewire\Traits\RequiresRole;
 use App\Models\User;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -71,23 +72,25 @@ class CuentasCrud extends Component
             $payload['password'] = $data['password'];
         }
 
-        Role::firstOrCreate([
-            'name' => $payload['tipo_usuario'],
-            'guard_name' => 'web',
-        ]);
+        DB::transaction(function () use ($payload): void {
+            Role::firstOrCreate([
+                'name' => $payload['tipo_usuario'],
+                'guard_name' => 'web',
+            ]);
 
-        if ($this->userId) {
-            $user = User::query()->findOrFail($this->userId);
-            $user->update($payload);
-            $user->syncRoles([$payload['tipo_usuario']]);
+            if ($this->userId) {
+                $user = User::query()->findOrFail($this->userId);
+                $user->update($payload);
+                $user->syncRoles([$payload['tipo_usuario']]);
 
-            session()->flash('message', 'Cuenta actualizada correctamente.');
-        } else {
-            $user = User::create($payload);
-            $user->assignRole($payload['tipo_usuario']);
+                session()->flash('message', 'Cuenta actualizada correctamente.');
+            } else {
+                $user = User::create($payload);
+                $user->assignRole($payload['tipo_usuario']);
 
-            session()->flash('message', 'Cuenta creada correctamente.');
-        }
+                session()->flash('message', 'Cuenta creada correctamente.');
+            }
+        });
 
         $this->resetForm();
         $this->resetPage();
