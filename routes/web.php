@@ -88,6 +88,10 @@ Route::middleware('auth')
         // Cierre de turno (Manolo - Sprint 4)
         Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
             ->name('cierre');
+
+        // Reporte PDF de cierre (Manolo - Sprint 4)
+        Route::get('/cierre/reporte-pdf', [\App\Http\Controllers\Ventanilla\VentaController::class, 'reportePdf'])
+            ->name('reporte-pdf');
     });
 
 

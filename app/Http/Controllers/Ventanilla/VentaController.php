@@ -8,6 +8,7 @@ use App\Models\CierreTurno;
 use App\Models\Reembolso;
 use App\Models\Ruta;
 use App\Models\Venta;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -394,6 +395,96 @@ class VentaController extends Controller
             'chartHorario'          => $chartHorario,
             'fecha'                 => $hoy,
         ]);
+    }
+
+    /**
+     * Genera y descarga el reporte de cierre de turno en PDF (DomPDF).
+     *
+     * Reutiliza la misma lógica de cálculo de cierreTurno() para garantizar
+     * que los datos del PDF coincidan exactamente con el dashboard en pantalla.
+     */
+    public function reportePdf()
+    {
+        $userId = auth()->id();
+        $cajero = auth()->user();
+        $hoy    = now()->toDateString();
+
+        $cierreExistente = CierreTurno::where('user_id', $userId)
+            ->where('fecha', $hoy)
+            ->first();
+
+        $ventas = Venta::with([
+                'boletos.frecuencia.ruta.origen',
+                'boletos.frecuencia.ruta.destino',
+                'boletos.pasajero',
+                'reembolsos',
+            ])
+            ->where('user_id', $userId)
+            ->whereDate('created_at', $hoy)
+            ->get();
+
+        $totalBruto      = (float) $ventas->sum('total');
+        $totalBoletos    = (int)   $ventas->sum(fn (Venta $v) => $v->boletos->count());
+        $totalReembolsos = (float) $ventas->sum(
+            fn (Venta $v) => $v->reembolsos->where('estado', 'aprobado')->sum('monto')
+        );
+        $totalNeto         = $totalBruto - $totalReembolsos;
+        $promedioPorBoleto = $totalBoletos > 0 ? round($totalBruto / $totalBoletos, 2) : 0.0;
+
+        $recaudacionPorRuta = $ventas
+            ->flatMap(fn (Venta $venta) =>
+                $venta->boletos->map(fn ($b) => [
+                    'ruta_id'      => optional(optional($b->frecuencia)->ruta)->id,
+                    'ruta_nombre'  => $b->frecuencia && $b->frecuencia->ruta
+                        ? (optional($b->frecuencia->ruta->origen)->nombre ?? '—') . ' → '
+                          . (optional($b->frecuencia->ruta->destino)->nombre ?? '—')
+                        : 'Sin ruta',
+                    'venta_total'  => (float) $venta->total,
+                ])
+            )
+            ->groupBy('ruta_id')
+            ->map(fn ($g) => [
+                'ruta'            => $g->first()['ruta_nombre'],
+                'total_recaudado' => round($g->sum('venta_total'), 2),
+                'boletos_count'   => $g->count(),
+            ])
+            ->values();
+
+        $ultimasTransacciones = $ventas
+            ->sortByDesc('created_at')
+            ->map(fn (Venta $v) => [
+                'id'       => $v->id,
+                'hora'     => $v->created_at->format('H:i'),
+                'total'    => (float) $v->total,
+                'boletos'  => $v->boletos->count(),
+                'pasajero' => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
+                'ruta'     => $v->boletos->first()?->frecuencia?->ruta
+                    ? (optional($v->boletos->first()->frecuencia->ruta->origen)->nombre ?? '—')
+                      . ' → '
+                      . (optional($v->boletos->first()->frecuencia->ruta->destino)->nombre ?? '—')
+                    : 'Sin ruta',
+            ])
+            ->values();
+
+        $pdf = Pdf::loadView('ventanilla.reporte_pdf', [
+            'cajero'               => $cajero,
+            'cierreExistente'      => $cierreExistente,
+            'totalBruto'           => $totalBruto,
+            'totalNeto'            => $totalNeto,
+            'totalReembolsos'      => $totalReembolsos,
+            'totalBoletos'         => $totalBoletos,
+            'promedioPorBoleto'    => $promedioPorBoleto,
+            'recaudacionPorRuta'   => $recaudacionPorRuta,
+            'ultimasTransacciones' => $ultimasTransacciones,
+            'fecha'                => $hoy,
+        ])
+        ->setPaper('letter', 'portrait');
+
+        $nombre = 'cierre_turno_'
+            . str_replace(' ', '_', strtolower($cajero->name))
+            . '_' . $hoy . '.pdf';
+
+        return $pdf->download($nombre);
     }
 
     // ─── Privados ─────────────────────────────────────────────────────────────

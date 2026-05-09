@@ -303,6 +303,10 @@
                             class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
                         🖨️ Imprimir
                     </button>
+                    <a href="{{ route('ventanilla.reporte-pdf') }}"
+                       class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100 active:scale-95 transition-all">
+                        📄 Descargar PDF
+                    </a>
                     <a href="{{ route('ventanilla.ventas.index') }}"
                        class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
                         ← Volver
