@@ -295,114 +295,235 @@
                 @endif
             </div>
 
-            {{-- ── Panel de acciones ─────────────────────────────────────────── --}}
-            <div x-data="{ loadingPdf: false, loadingExcel: false }"
-                 class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 px-6 py-4">
+            {{-- ── Panel de acciones + Modal de confirmación (Alpine.js) ─────── --}}
+            <div x-data="{
+                    loadingPdf:   false,
+                    loadingExcel: false,
+                    modalOpen:    false,
+                    submitting:   false,
+                    submitForm() {
+                        this.submitting = true;
+                        this.$refs.formCierre.submit();
+                    }
+                 }"
+                 class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4
+                        rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 px-4 sm:px-6 py-4">
 
-                <div>
+                {{-- Lado izquierdo: info --}}
+                <div class="min-w-0">
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Exportar reporte</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Actualizado: {{ now()->format('d/m/Y H:i:s') }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5 truncate">Actualizado: {{ now()->format('d/m/Y H:i:s') }}</p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3">
+                {{-- Botones --}}
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
 
                     {{-- Imprimir --}}
                     <button onclick="window.print()"
-                            class="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5
+                            class="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2
                                    text-sm font-medium text-gray-600 shadow-sm
-                                   hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 hover:shadow-md
-                                   active:scale-95 transition-all duration-150">
-                        <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                                   hover:border-gray-300 hover:bg-gray-50 hover:shadow-md active:scale-95 transition-all duration-150">
+                        <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
                         </svg>
-                        Imprimir
+                        <span class="hidden sm:inline">Imprimir</span>
                     </button>
 
-                    {{-- Descargar PDF --}}
+                    {{-- PDF --}}
                     <a href="{{ route('ventanilla.reporte-pdf') }}"
                        @click="loadingPdf = true; setTimeout(() => loadingPdf = false, 4000)"
-                       class="group relative inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5
+                       class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 sm:px-4 py-2
                               text-sm font-semibold text-red-700 shadow-sm
-                              hover:bg-red-600 hover:text-white hover:border-red-600 hover:shadow-lg hover:shadow-red-100
-                              active:scale-95 transition-all duration-200">
-
-                        {{-- Spinner de carga --}}
-                        <span x-show="loadingPdf" x-cloak>
-                            <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                        </span>
-
-                        {{-- Ícono PDF --}}
-                        <span x-show="!loadingPdf">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                            </svg>
-                        </span>
-
-                        <span x-text="loadingPdf ? 'Generando PDF…' : 'Descargar PDF'"></span>
+                              hover:bg-red-600 hover:text-white hover:border-red-600 hover:shadow-lg active:scale-95 transition-all duration-200">
+                        <svg x-show="loadingPdf" class="h-4 w-4 animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <svg x-show="!loadingPdf" class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                        </svg>
+                        <span x-text="loadingPdf ? 'Generando…' : 'PDF'"></span>
                     </a>
 
-                    {{-- Descargar Excel --}}
+                    {{-- Excel --}}
                     <a href="{{ route('ventanilla.exportar-excel') }}"
                        @click="loadingExcel = true; setTimeout(() => loadingExcel = false, 4000)"
-                       class="group relative inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5
+                       class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 sm:px-4 py-2
                               text-sm font-semibold text-emerald-700 shadow-sm
-                              hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-lg hover:shadow-emerald-100
-                              active:scale-95 transition-all duration-200">
-
-                        <span x-show="loadingExcel" x-cloak>
-                            <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                        </span>
-
-                        <span x-show="!loadingExcel">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c-.621 0-1.125.504-1.125 1.125v1.5m2.25-2.625h7.5M3.375 12h7.5" />
-                            </svg>
-                        </span>
-
-                        <span x-text="loadingExcel ? 'Generando Excel…' : 'Exportar Excel'"></span>
+                              hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-lg active:scale-95 transition-all duration-200">
+                        <svg x-show="loadingExcel" class="h-4 w-4 animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <svg x-show="!loadingExcel" class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c-.621 0-1.125.504-1.125 1.125v1.5m2.25-2.625h7.5M3.375 12h7.5" />
+                        </svg>
+                        <span x-text="loadingExcel ? 'Generando…' : 'Excel'"></span>
                     </a>
 
-                    {{-- Divider --}}
                     <div class="hidden sm:block h-8 w-px bg-gray-200"></div>
 
                     {{-- Volver --}}
                     <a href="{{ route('ventanilla.ventas.index') }}"
-                       class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5
+                       class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2
                               text-sm font-medium text-gray-600 shadow-sm
                               hover:bg-gray-50 hover:border-gray-300 active:scale-95 transition-all duration-150">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                         </svg>
-                        Volver
+                        <span class="hidden sm:inline">Volver</span>
                     </a>
 
+                    {{-- Botón: abre el modal (solo si no hay cierre) --}}
                     @if(!$cierreExistente)
-                        <form method="POST" action="{{ route('ventas.cierre-turno.store') }}"
-                              onsubmit="return confirm('¿Registrar el cierre del turno? Esta acción no se puede deshacer.')">
+                        {{-- Formulario oculto — lo envía Alpine desde el modal --}}
+                        <form x-ref="formCierre" method="POST"
+                              action="{{ route('ventas.cierre-turno.store') }}" class="hidden">
                             @csrf
-                            <button type="submit"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5
-                                           text-sm font-semibold text-white shadow-md
-                                           hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200
-                                           active:scale-95 transition-all duration-200">
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                                </svg>
-                                Registrar Cierre
-                            </button>
                         </form>
+
+                        <button type="button"
+                                @click="modalOpen = true"
+                                class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 sm:px-5 py-2
+                                       text-sm font-semibold text-white shadow-md
+                                       hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200
+                                       active:scale-95 transition-all duration-200">
+                            <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                            <span class="hidden xs:inline">Registrar Cierre</span>
+                            <span class="xs:hidden">Cerrar</span>
+                        </button>
+
+                        {{-- ════════════════════════════════════════════════════
+                             MODAL DE CONFIRMACIÓN DE CIERRE DE TURNO
+                             Overlay + tarjeta centrada con Alpine.js
+                        ════════════════════════════════════════════════════ --}}
+                        <div x-show="modalOpen"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                             @keydown.escape.window="modalOpen = false"
+                             x-cloak>
+
+                            {{-- Backdrop --}}
+                            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                                 @click="modalOpen = false"></div>
+
+                            {{-- Tarjeta del modal --}}
+                            <div x-show="modalOpen"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200 overflow-hidden"
+                                 @click.stop>
+
+                                {{-- Banda de alerta --}}
+                                <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                                            <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                            </svg>
+                                        </span>
+                                        <div>
+                                            <p class="text-white font-bold text-base">Confirmar Cierre de Turno</p>
+                                            <p class="text-indigo-200 text-xs mt-0.5">Esta acción no se puede deshacer</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Cuerpo --}}
+                                <div class="px-6 py-5 space-y-4">
+                                    <p class="text-sm text-gray-600 leading-relaxed">
+                                        Estás a punto de registrar el cierre de caja del turno correspondiente al
+                                        <strong class="text-gray-900">{{ \Carbon\Carbon::parse($fecha)->format('d \d\e F \d\e Y') }}</strong>.
+                                        Una vez confirmado, el sistema sellará los datos y no podrán modificarse.
+                                    </p>
+
+                                    {{-- Resumen financiero --}}
+                                    <div class="rounded-xl bg-gray-50 ring-1 ring-gray-200 divide-y divide-gray-200">
+                                        <div class="flex items-center justify-between px-4 py-3">
+                                            <span class="text-xs font-medium text-gray-500">Cajero</span>
+                                            <span class="text-xs font-semibold text-gray-800">{{ auth()->user()->name }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between px-4 py-3">
+                                            <span class="text-xs font-medium text-gray-500">Boletos vendidos</span>
+                                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                                                {{ $totalBoletos }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between px-4 py-3">
+                                            <span class="text-xs font-medium text-gray-500">Ingreso bruto</span>
+                                            <span class="text-xs font-semibold text-gray-800">${{ number_format($totalBruto, 2) }}</span>
+                                        </div>
+                                        @if($totalReembolsos > 0)
+                                        <div class="flex items-center justify-between px-4 py-3">
+                                            <span class="text-xs font-medium text-gray-500">Reembolsos</span>
+                                            <span class="text-xs font-semibold text-red-600">−${{ number_format($totalReembolsos, 2) }}</span>
+                                        </div>
+                                        @endif
+                                        <div class="flex items-center justify-between px-4 py-3 bg-indigo-50 rounded-b-xl">
+                                            <span class="text-sm font-bold text-indigo-800">Ingreso neto final</span>
+                                            <span class="text-base font-extrabold text-indigo-700">${{ number_format($totalNeto, 2) }}</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-xs text-gray-400 flex items-start gap-1.5">
+                                        <svg class="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Solo puede realizarse un cierre por día. Después de confirmar, los botones de exportación seguirán disponibles.
+                                    </p>
+                                </div>
+
+                                {{-- Pie del modal: acciones --}}
+                                <div class="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+                                    <button type="button"
+                                            @click="modalOpen = false"
+                                            :disabled="submitting"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2
+                                                   text-sm font-medium text-gray-600 shadow-sm
+                                                   hover:bg-gray-100 active:scale-95 transition-all duration-150
+                                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Cancelar
+                                    </button>
+                                    <button type="button"
+                                            @click="submitForm()"
+                                            :disabled="submitting"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2
+                                                   text-sm font-semibold text-white shadow-md
+                                                   hover:bg-indigo-700 hover:shadow-indigo-200/60
+                                                   active:scale-95 transition-all duration-200
+                                                   disabled:opacity-70 disabled:cursor-not-allowed">
+                                        <svg x-show="submitting" class="h-4 w-4 animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        <svg x-show="!submitting" class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                        </svg>
+                                        <span x-text="submitting ? 'Procesando…' : 'Sí, registrar cierre'"></span>
+                                    </button>
+                                </div>
+
+                            </div>{{-- /tarjeta modal --}}
+                        </div>{{-- /modal overlay --}}
+
                     @else
-                        <span class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
-                            <svg class="h-4 w-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 sm:px-5 py-2
+                                     text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
+                            <svg class="h-4 w-4 text-emerald-500 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
                             </svg>
-                            Turno cerrado
+                            <span class="hidden sm:inline">Turno cerrado</span>
                         </span>
                     @endif
 
@@ -411,6 +532,8 @@
 
         </div>{{-- /container --}}
     </div>
+
+
 
     {{-- ── Chart.js: Progresión Horaria ────────────────────────────────────── --}}
     <script>

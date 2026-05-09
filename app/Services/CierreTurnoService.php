@@ -79,7 +79,11 @@ class CierreTurnoService
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * Recupera el registro de cierre del día, o null si no existe.
+     * Recupera el registro de cierre oficial del día, o null si el turno sigue abierto.
+     *
+     * @param  int     $userId  ID del cajero autenticado
+     * @param  string  $fecha   Fecha en formato Y-m-d
+     * @return CierreTurno|null  Registro persistido o null si no existe
      */
     public function obtenerCierre(int $userId, string $fecha): ?CierreTurno
     {
@@ -90,12 +94,18 @@ class CierreTurnoService
 
     /**
      * Carga las ventas del cajero para la fecha indicada con eager-load completo.
-     * La query filtra por user_id → aislamiento de datos garantizado en BD.
+     *
+     * La cláusula `where('user_id', $userId)` garantiza el **aislamiento de datos**:
+     * ningún cajero puede acceder a las ventas de otro aunque comparta el mismo turno.
+     *
+     * @param  int     $userId  ID del cajero — restricción de propietario aplicada en BD
+     * @param  string  $fecha   Fecha en formato Y-m-d (usa `whereDate` para ignorar la hora)
+     * @return \Illuminate\Support\Collection<int, Venta>  Colección hidratada con relaciones
      */
     public function cargarVentas(int $userId, string $fecha): Collection
     {
         return Venta::with(self::RELATIONS)
-            ->where('user_id', $userId)          // ← restricción de propietario
+            ->where('user_id', $userId)
             ->whereDate('created_at', $fecha)
             ->orderBy('created_at')
             ->get();
@@ -105,16 +115,37 @@ class CierreTurnoService
     // Métricas KPI — todos trabajan sobre la Collection en memoria
     // ──────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Calcula el ingreso bruto como suma de `total` de todas las ventas del turno.
+     *
+     * @param  Collection  $ventas  Colección de ventas del turno
+     * @return float  Total bruto redondeado a 2 decimales
+     */
     public function calcularBruto(Collection $ventas): float
     {
         return round((float) $ventas->sum('total'), 2);
     }
 
+    /**
+     * Cuenta el número total de boletos emitidos en el turno.
+     *
+     * @param  Collection  $ventas  Colección de ventas del turno
+     * @return int  Suma de boletos de todas las ventas
+     */
     public function contarBoletos(Collection $ventas): int
     {
         return (int) $ventas->sum(fn (Venta $v) => $v->boletos->count());
     }
 
+    /**
+     * Suma los montos de reembolsos con estado `aprobado` sobre las ventas del turno.
+     *
+     * Solo se consideran reembolsos en estado 'aprobado' para respetar el flujo
+     * de aprobación definido en el módulo de gestión de reembolsos.
+     *
+     * @param  Collection  $ventas  Colección de ventas del turno
+     * @return float  Total de reembolsos aprobados, redondeado a 2 decimales
+     */
     public function calcularReembolsos(Collection $ventas): float
     {
         return round(
@@ -125,6 +156,15 @@ class CierreTurnoService
         );
     }
 
+    /**
+     * Calcula el precio promedio por boleto vendido.
+     *
+     * Evita la división por cero devolviendo 0.0 cuando no hay boletos.
+     *
+     * @param  float  $bruto    Ingreso bruto del turno
+     * @param  int    $boletos  Número de boletos vendidos
+     * @return float  Promedio redondeado a 2 decimales, o 0.0 si $boletos = 0
+     */
     public function calcularPromedio(float $bruto, int $boletos): float
     {
         return $boletos > 0 ? round($bruto / $boletos, 2) : 0.0;
