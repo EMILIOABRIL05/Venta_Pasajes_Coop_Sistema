@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Ventanilla;
 
 use App\Http\Controllers\Controller;
 use App\Models\Boleto;
+use App\Models\CierreTurno;
+use App\Models\Reembolso;
 use App\Models\Ruta;
 use App\Models\Venta;
 use Illuminate\Database\QueryException;
@@ -269,6 +271,90 @@ class VentaController extends Controller
      * @return void
      */
     public function destroy(Venta $venta) {}
+
+    /**
+     * Dashboard de Cierre de Turno (Sprint 4 - Manolo).
+     *
+     * Calcula los KPIs del turno actual del cajero autenticado:
+     *   - Total cobrado (ingreso bruto)
+     *   - Boletos vendidos
+     *   - Promedio de venta por boleto
+     *   - Total reembolsos aprobados
+     *   - Ingreso neto (bruto - reembolsos)
+     *   - Desglose por ruta
+     *   - Estado del cierre (si ya fue registrado hoy)
+     */
+    public function cierreTurno()
+    {
+        $userId = auth()->id();
+        $hoy    = now()->toDateString();
+
+        // ── ¿Ya existe un cierre registrado para hoy? ─────────────────────────
+        $cierreExistente = CierreTurno::where('user_id', $userId)
+            ->where('fecha', $hoy)
+            ->first();
+
+        // ── Ventas del día con relaciones necesarias ──────────────────────────
+        $ventas = Venta::with([
+                'boletos.frecuencia.ruta.origen',
+                'boletos.frecuencia.ruta.destino',
+                'reembolsos',
+            ])
+            ->where('user_id', $userId)
+            ->whereDate('created_at', $hoy)
+            ->get();
+
+        // ── KPI: Ingreso bruto ────────────────────────────────────────────────
+        $totalBruto   = (float) $ventas->sum('total');
+        $totalBoletos = (int)   $ventas->sum(fn (Venta $v) => $v->boletos->count());
+
+        // ── KPI: Reembolsos aprobados ─────────────────────────────────────────
+        $totalReembolsos = (float) $ventas->sum(
+            fn (Venta $v) => $v->reembolsos
+                ->where('estado', 'aprobado')
+                ->sum('monto')
+        );
+
+        // ── KPI: Ingreso neto ─────────────────────────────────────────────────
+        $totalNeto = $totalBruto - $totalReembolsos;
+
+        // ── KPI: Promedio de venta por boleto ─────────────────────────────────
+        $promedioPorBoleto = $totalBoletos > 0
+            ? round($totalBruto / $totalBoletos, 2)
+            : 0.0;
+
+        // ── Desglose por Ruta ─────────────────────────────────────────────────
+        $recaudacionPorRuta = $ventas
+            ->flatMap(fn (Venta $venta) =>
+                $venta->boletos->map(fn ($boleto) => [
+                    'ruta_id'      => optional(optional($boleto->frecuencia)->ruta)->id,
+                    'ruta_nombre'  => $boleto->frecuencia && $boleto->frecuencia->ruta
+                        ? (optional($boleto->frecuencia->ruta->origen)->nombre ?? '—')
+                          . ' → '
+                          . (optional($boleto->frecuencia->ruta->destino)->nombre ?? '—')
+                        : 'Sin ruta',
+                    'venta_total'  => (float) $venta->total,
+                ])
+            )
+            ->groupBy('ruta_id')
+            ->map(fn ($grupo) => [
+                'ruta'            => $grupo->first()['ruta_nombre'],
+                'total_recaudado' => round($grupo->sum('venta_total'), 2),
+                'boletos_count'   => $grupo->count(),
+            ])
+            ->values();
+
+        return view('ventanilla.cierre', [
+            'cierreExistente'    => $cierreExistente,
+            'totalBruto'         => $totalBruto,
+            'totalNeto'          => $totalNeto,
+            'totalReembolsos'    => $totalReembolsos,
+            'totalBoletos'       => $totalBoletos,
+            'promedioPorBoleto'  => $promedioPorBoleto,
+            'recaudacionPorRuta' => $recaudacionPorRuta,
+            'fecha'              => $hoy,
+        ]);
+    }
 
     // ─── Privados ─────────────────────────────────────────────────────────────
 

@@ -84,6 +84,10 @@ Route::middleware('auth')
 
         Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
+
+        // Cierre de turno (Manolo - Sprint 4)
+        Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
+            ->name('cierre');
     });
 
 
