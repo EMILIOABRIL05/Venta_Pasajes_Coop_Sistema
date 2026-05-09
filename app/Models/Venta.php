@@ -45,4 +45,12 @@ class Venta extends Model
     {
         return $this->hasMany(Boleto::class);
     }
+
+    /**
+     * Una venta puede tener reembolsos asociados.
+     */
+    public function reembolsos()
+    {
+        return $this->hasMany(Reembolso::class);
+    }
 }

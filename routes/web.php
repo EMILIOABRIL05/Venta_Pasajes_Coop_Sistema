@@ -62,6 +62,19 @@ Route::middleware('auth')->group(function () {
     // Descargar boleto en PDF con QR
     Route::get('/ventas/boleto/{id}/descargar', [VentaController::class, 'descargarBoleto'])->name('ventas.boleto.descargar');
 
+    // Resumen del turno (Manolo)
+    Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.resumen-turno');
+
+    // Cierre de turno (Manolo - Sprint 4)
+    Route::get('/ventas/cierre-turno', [VentaController::class, 'cierreTurno'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.cierre-turno');
+    Route::post('/ventas/cierre-turno', [VentaController::class, 'storeCierre'])
+        ->middleware('role:oficinista|admin')
+        ->name('ventas.cierre-turno.store');
+
     // Validar boleto (Escaneo QR)
     Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
 
@@ -75,13 +88,28 @@ Route::middleware('auth')->group(function () {
 });
 
 // ─── Módulo Ventanilla ────────────────────────────────────────────────────────
-Route::middleware('auth')
+Route::middleware(['auth', 'role:oficinista|admin'])
     ->prefix('ventanilla')
     ->name('ventanilla.')
     ->group(function () {
 
         Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
+
+        // Cierre de turno (Manolo - Sprint 4)
+        Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
+            ->name('cierre');
+
+        Route::post('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'storeCierre'])
+            ->name('cierre.store');
+
+        // Reporte PDF de cierre (Manolo - Sprint 4)
+        Route::get('/cierre/reporte-pdf', [\App\Http\Controllers\Ventanilla\VentaController::class, 'reportePdf'])
+            ->name('reporte-pdf');
+
+        // Exportar Excel de cierre (Manolo - Sprint 4)
+        Route::get('/cierre/exportar-excel', [\App\Http\Controllers\Ventanilla\VentaController::class, 'exportarExcel'])
+            ->name('exportar-excel');
     });
 
 
