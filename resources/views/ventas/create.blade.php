@@ -102,14 +102,26 @@
                     <div class="grid gap-6 md:grid-cols-3">
                         <div>
                             <label for="metodo_pago" class="block text-sm font-medium text-gray-700">Método de pago</label>
-                            <input
-                                type="text"
+                            <select
                                 name="metodo_pago"
                                 id="metodo_pago"
-                                value="{{ old('metodo_pago', 'efectivo') }}"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="efectivo"
                             >
+                                @php
+                                    $metodosPago = [
+                                        'efectivo' => 'Efectivo',
+                                        'transferencia' => 'Transferencia',
+                                        'deposito' => 'Deposito',
+                                        'pago_movil' => 'Pago movil',
+                                        'tarjeta_simulada' => 'Tarjeta (simulada)',
+                                    ];
+                                @endphp
+                                @foreach ($metodosPago as $valor => $label)
+                                    <option value="{{ $valor }}" {{ old('metodo_pago', 'efectivo') === $valor ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div>

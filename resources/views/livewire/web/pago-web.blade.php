@@ -27,10 +27,10 @@
                 <div class="bg-blue-50 border-l-4 border-[#003366] p-6 mb-8 rounded-r-lg">
                     <h3 class="font-bold text-[#003366] mb-2 flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Instrucciones de Depósito/Transferencia
+                        Instrucciones de Pago
                     </h3>
                     <p class="text-gray-700 text-sm leading-relaxed">
-                        Por favor, realice el pago a la siguiente cuenta y suba una foto o captura del comprobante:
+                        Si eliges transferencia, deposito o pago movil, usa la siguiente cuenta y sube el comprobante:
                     </p>
                     <div class="mt-4 bg-white p-4 rounded border border-blue-100 font-mono text-sm text-[#003366]">
                         {{ $banco_destino }} <br>
@@ -40,6 +40,42 @@
 
                 <!-- Formulario de Carga -->
                 <form wire:submit.prevent="guardarPago" class="space-y-6">
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-[#1F2937]" for="metodo_pago">
+                                Metodo de pago
+                            </label>
+                            <select
+                                id="metodo_pago"
+                                wire:model="metodo_pago"
+                                class="mt-1 block w-full rounded-xl border-gray-300 text-sm focus:border-[#003366] focus:ring-[#003366]"
+                            >
+                                @foreach ($metodosPago as $valor => $label)
+                                    <option value="{{ $valor }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('metodo_pago')
+                                <span class="text-[#CC0000] text-xs font-semibold mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-[#1F2937]" for="referencia">
+                                Referencia (opcional)
+                            </label>
+                            <input
+                                id="referencia"
+                                type="text"
+                                wire:model="referencia"
+                                placeholder="Ej: 123ABC"
+                                class="mt-1 block w-full rounded-xl border-gray-300 text-sm focus:border-[#003366] focus:ring-[#003366]"
+                            >
+                            @error('referencia')
+                                <span class="text-[#CC0000] text-xs font-semibold mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-[#1F2937]">
                             Subir Comprobante (JPG, PNG - Máx. 2MB)
