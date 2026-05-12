@@ -7,6 +7,7 @@ use App\Models\BoletoValidacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class BoletoValidacionController extends Controller
 {
@@ -15,10 +16,21 @@ class BoletoValidacionController extends Controller
      */
     public function validar(Request $request)
     {
-        $uuid = $request->input('uuid');
+        $validator = Validator::make($request->all(), [
+            'uuid' => ['required', 'uuid', 'exists:boletos,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'UUID invalido o boleto no existe',
+                'details' => $validator->errors(),
+            ], 422);
+        }
+
+        $uuid = $validator->validated()['uuid'];
 
         // Buscar el boleto por UUID
-        $boleto = Boleto::where('id', $uuid)->first();
+        $boleto = Boleto::find($uuid);
 
         if (!$boleto) {
             return response()->json(['error' => 'Boleto no encontrado'], 404);
@@ -28,7 +40,7 @@ class BoletoValidacionController extends Controller
         $validacionExistente = BoletoValidacion::where('boleto_id', $boleto->id)->first();
 
         if ($validacionExistente) {
-            return response()->json(['error' => 'Este boleto ya fue utilizado'], 400);
+            return response()->json(['error' => 'Este boleto ya fue utilizado'], 409);
         }
 
         // Registrar la validación en una transacción
@@ -37,6 +49,7 @@ class BoletoValidacionController extends Controller
                 'boleto_id' => $boleto->id,
                 'usuario_id' => Auth::id(),
                 'fecha_validacion' => now(),
+                'estado' => 'validado',
             ]);
         });
 
