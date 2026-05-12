@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use App\Models\Venta;
 use App\Models\Bus;
 use App\Models\Pago;
@@ -65,13 +66,21 @@ class VentaController extends Controller
      */
     public function store(Request $request)
     {
+        $metodosPago = [
+            'efectivo',
+            'transferencia',
+            'deposito',
+            'pago_movil',
+            'tarjeta_simulada',
+        ];
+
         $validated = $request->validate([
             'frecuencia_id' => ['required', 'exists:frecuencias,id'],
             'bus_id' => ['required', 'exists:buses,id'],
             'pasajero_id' => ['required', 'exists:pasajeros,id'],
             'numero_asiento' => ['required', 'integer', 'min:1'],
             'precio_final' => ['required', 'numeric', 'min:0'],
-            'metodo_pago' => ['nullable', 'string', 'max:50'],
+            'metodo_pago' => ['nullable', 'string', 'max:50', Rule::in($metodosPago)],
             'referencia' => ['nullable', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string'],
         ]);
