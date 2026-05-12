@@ -22,7 +22,7 @@ Stack Tecnológico:
   - Backend: Laravel 11.
   - Frontend: Livewire 3 + Alpine.js + Tailwind CSS.
   - Base de Datos: PostgreSQL.
-  - Infraestructura: Docker (Obligatorio a partir de la v0.9.0 - docker-compose
+  - Infraestructura: Docker (Obligatorio a partir de la v1.0.0 - docker-compose
     con App y DB).
 
 Arquitectura de Datos (Reglas Estrictas):
@@ -138,43 +138,53 @@ contabilidad de oficinistas.
     el oficinista logueado ve "Total cobrado en mi turno" y exporta un reporte.
   - Estudiante 5 (Web): Integra módulo de pago en web: Opción de subir
     comprobante bancario (imagen) y pasarela simulada. Panel de historial de
-    cliente ("Mis Viajes").
+    cliente ("Mis Viajes"). Si se decide usar PayPal, esa integración puede
+    arrancarse desde el inicio del sprint como mejora paralela, pero sigue
+    siendo opcional y no bloquea el flujo base.
   - Estudiante 6 (Móvil/Post): Maquetación de la interfaz móvil (Responsive)
     para el Chofer (Botones grandes, fácil lectura en celular).
 
-🏷️ VERSIÓN 0.9.0 - SPRINT 5: Docker y App Chofer
 
-Timebox: 9 de Mayo al 11 de Mayo. Objetivo: Entorno dockerizado y escaneo de
-boletos en el bus.
+🏷️ VERSIÓN 0.9.0 - SPRINT 5: App Chofer y Lectura QR
+
+Timebox: 9 de Mayo al 11 de Mayo. Objetivo: Escaneo de QR y ventas express en
+el bus (sin Docker aún).
+
+  - Estudiante 1 (Líder): Documenta el flujo de QR. Configura la tabla
+    Boleto_Validacion para registrar check-ins. Prepara Git para la rama v0.9.0.
+  - Estudiante 2 (Catálogos): Crea helpers para cálculo de asientos disponibles
+    en tiempo real (usado por Est. 6 en venta express).
+  - Estudiante 3 (Operativa): Implementa regla de negocio: Si bus está "En
+    Curso", bloquea venta en ventanilla (Est. 4 no puede vender asientos).
+  - Estudiante 4 (Ventanilla): Integra bloqueo de Est. 3: verifica estado "En
+    Curso" y muestra mensaje de "Ruta en viaje, no se pueden vender pasajes".
+  - Estudiante 5 (Web): Descarga de PDF con QR: El cliente web descarga su
+    boleto con QR desde "Mis Viajes".
+  - Estudiante 6 (Móvil/Post): Integra librería QR (html5-qrcode vía Alpine.js).
+    El chofer escanea QR, registra "Pasajero a bordo" en Boleto_Validacion, y
+    suma $X en Venta Express sin pedir datos completos.
+  - **Nota importante:** Después del merge a develop, Líder actualiza
+    instrucciones.md para indicar que Docker es obligatorio en v1.0.0.
+
+🏷️ VERSIÓN 1.0.0 - SPRINT 6: Docker y Entrega Final
+
+Timebox: 12 de Mayo al 13 de Mayo. (Quedan 2 días de colchón para imprevistos).
+Objetivo: Entorno dockerizado, datos reales y estabilidad perfecta.
 
   - Estudiante 1 (Líder) - OBLIGATORIO: Crea Dockerfile (PHP 8.3/Nginx) y
     docker-compose.yml integrando PostgreSQL. Verifica que el sistema corra con
-    un solo comando.
-  - Estudiante 2 y 4 (Catálogos y Ventanilla): QA Conjunto: Pruebas de "Race
-    Conditions" (Qué pasa si dos personas clican el mismo asiento a la misma vez
-    en diferentes PCs).
-  - Estudiante 3 (Operativa): Integra regla de negocio: Si el bus de Ambato a
-    Quito cambia a estado "En Curso", bloquear la venta desde Ambato en la
-    ventanilla del Est 4.
-  - Estudiante 5 (Web): Conecta el PDF generado por Est. 6 en el panel web para
-    que el cliente descargue su boleto con QR en cualquier momento.
-  - Estudiante 6 (Móvil/Post): Check-in QR: Integra librería JS (ej.
-    html5-qrcode) vía Alpine.js. El celular del chofer lee el QR del boleto
-    web/físico y marca "Pasajero a bordo". Agrega botón de Venta Express (Suma
-    $X, resta un asiento libre sin pedir datos).
-
-🏷️ VERSIÓN 1.0.0 - SPRINT 6: Pulido y Entrega Final
-
-Timebox: 12 de Mayo al 13 de Mayo. (Quedan 2 días de colchón para imprevistos).
-Objetivo: Estabilidad perfecta y datos reales.
-
-  - Estudiante 1 (Líder): Limpieza final de código. Verifica que todos los
-    Sprints estén en main. Genera el Release v1.0.0.
-  - Estudiantes 2, 3, 4, 5, 6:
-      - Llenar los Seeders con datos 100% reales de Cooperativa Ambato (Destinos
-        reales: Baños, Puyo, Tena, Guayaquil).
-      - Subir fotografías reales de autobuses.
-      - Revisiones de Responsividad (Mobile-first) en vistas clave.
+    un solo comando `docker-compose up`. Limpieza final de código. Genera el
+    Release v1.0.0.
+  - Estudiante 2 (Catálogos): Seeders con datos reales de Categorías de buses.
+    Fotos reales de autobuses de Cooperativa Ambato.
+  - Estudiante 3 (Operativa): Seeders con datos reales de Rutas y Frecuencias
+    (Ambato-Baños, Ambato-Puyo, Ambato-Tena, Ambato-Guayaquil).
+  - Estudiante 4 (Ventanilla): Seeders de Paradas reales. Revisión de interfaz
+    de ventanilla responsive.
+  - Estudiante 5 (Web): Revisión de landing page y buscador web en mobile.
+    Validar que PDF con QR descargue correctamente en Docker.
+  - Estudiante 6 (Móvil/Post): Revisión de app Chofer en diferentes tamaños de
+    pantalla. Prueba de lectura QR con códigos reales.
 
 
 lider : emilio abril 
