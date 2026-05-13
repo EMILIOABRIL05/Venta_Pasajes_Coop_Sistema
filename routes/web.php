@@ -76,7 +76,9 @@ Route::middleware('auth')->group(function () {
         ->name('ventas.cierre-turno.store');
 
     // Validar boleto (Escaneo QR)
-    Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])->name('validar.boleto');
+    Route::post('/validar-boleto', [BoletoValidacionController::class, 'validar'])
+        ->middleware(['role:chofer|admin', 'permission:scan_qr'])
+        ->name('validar.boleto');
 
     // Dashboard de Reportes Administrativos
     Route::get('/admin/reportes', [ReporteController::class, 'index'])->middleware(['auth', 'role:admin'])->name('admin.reportes');
