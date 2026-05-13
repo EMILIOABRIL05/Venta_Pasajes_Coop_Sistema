@@ -62,6 +62,17 @@
                         @error('bus_id') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700" for="chofer_user_id">Chofer (opcional)</label>
+                        <select id="chofer_user_id" wire:model="chofer_user_id" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <option value="">Sin asignar</option>
+                            @foreach($choferes as $chofer)
+                                <option value="{{ $chofer->id }}">{{ $chofer->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('chofer_user_id') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="flex gap-3">
                         <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                             Generar Viaje
@@ -101,6 +112,9 @@
                                     </p>
                                     <p class="mt-1 text-xs text-slate-500">
                                         Bus: {{ $viaje->bus->placa }} (Asientos: {{ $viaje->bus->numero_asientos }})
+                                        @if ($viaje->chofer)
+                                            · Chofer: {{ $viaje->chofer->name }}
+                                        @endif
                                     </p>
                                 </div>
 
