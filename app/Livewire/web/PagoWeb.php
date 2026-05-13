@@ -15,6 +15,7 @@ class PagoWeb extends Component
 
     public $venta;
     public $comprobante;
+    public $metodo_pago = 'transferencia';
     public $banco_destino = "Banco del Austro - Cuenta Corriente: 123456789";
     public $mensaje_exito = "";
 
@@ -76,7 +77,13 @@ class PagoWeb extends Component
 
     public function render()
     {
-        return view('livewire.web.pago-web')
+        $metodosPago = [
+            'transferencia' => 'Transferencia Bancaria',
+            'deposito' => 'Depósito en Ventanilla',
+            'pago_movil' => 'Pago Móvil / Deuna'
+        ];
+        
+        return view('livewire.web.pago-web', compact('metodosPago'))
             ->layout('layouts.carrito'); 
     }
 }
