@@ -69,6 +69,16 @@
                                                     <span class="font-bold">RUTA:</span> {{ $boleto->frecuencia->ruta->origen->ciudad }} &rarr; {{ $boleto->frecuencia->ruta->destino->ciudad }}
                                                 </p>
                                                 <p class="text-[10px] text-gray-400 mt-1">COD: {{ $boleto->codigo_reserva }}</p>
+                                                
+                                                @if($venta->estado === 'pagada')
+                                                    <button wire:click="descargarBoleto('{{ $boleto->id }}')" 
+                                                            wire:loading.attr="disabled"
+                                                            class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-[#003366] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#002244] transition-colors shadow-sm">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                                        <span>Descargar Boleto</span>
+                                                        <div wire:loading wire:target="descargarBoleto('{{ $boleto->id }}')" class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                    </button>
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
