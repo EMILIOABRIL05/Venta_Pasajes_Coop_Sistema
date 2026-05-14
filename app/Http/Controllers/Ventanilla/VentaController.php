@@ -199,6 +199,15 @@ class VentaController extends Controller
             collect($locks)->each(fn ($lock) => $lock->release());
         }
 
+        // ── 3.5 Enviar correos de confirmación en segundo plano ───────────────
+        $venta->load('boletos.pasajero');
+        foreach ($venta->boletos as $boleto) {
+            if (!empty($boleto->pasajero->correo)) {
+                \Illuminate\Support\Facades\Mail::to($boleto->pasajero->correo)
+                    ->send(new \App\Mail\BoletoVendido($boleto));
+            }
+        }
+
         // ── 4. Respuesta de éxito: Flash estructurado ─────────────────────────
         //    Array en sesión en lugar de string para que la vista construya
         //    un resumen visual rico con todos los detalles de la operación.
