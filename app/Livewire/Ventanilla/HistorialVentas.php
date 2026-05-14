@@ -81,8 +81,41 @@ class HistorialVentas extends Component
 
         $ventas = $query->paginate(10);
 
+        // --- Estadísticas del Panel Superior ---
+        $userId = auth()->id();
+
+        // 1. Total histórico recaudado
+        $totalHistorico = \App\Models\Venta::where('user_id', $userId)->sum('total');
+
+        // 2. Ruta más vendida
+        $rutaMasVendidaObj = \Illuminate\Support\Facades\DB::table('boletos')
+            ->join('ventas', 'boletos.venta_id', '=', 'ventas.id')
+            ->join('frecuencias', 'boletos.frecuencia_id', '=', 'frecuencias.id')
+            ->join('rutas', 'frecuencias.ruta_id', '=', 'rutas.id')
+            ->join('paradas as origen', 'rutas.origen_id', '=', 'origen.id')
+            ->join('paradas as destino', 'rutas.destino_id', '=', 'destino.id')
+            ->where('ventas.user_id', $userId)
+            ->whereNull('boletos.deleted_at')
+            ->select('origen.nombre as origen_nombre', 'destino.nombre as destino_nombre', \Illuminate\Support\Facades\DB::raw('count(boletos.id) as total_boletos'))
+            ->groupBy('origen.nombre', 'destino.nombre')
+            ->orderByDesc('total_boletos')
+            ->first();
+
+        $rutaMasVendida = $rutaMasVendidaObj ? "{$rutaMasVendidaObj->origen_nombre} - {$rutaMasVendidaObj->destino_nombre}" : 'Sin ventas aún';
+
+        // 3. Porcentaje de ocupación promedio en sus ventas
+        // Calculado como: (Promedio de boletos vendidos por venta / Capacidad estándar del bus 40) * 100
+        $totalVentasUser = \App\Models\Venta::where('user_id', $userId)->count();
+        $totalBoletosUser = \App\Models\Boleto::whereHas('venta', fn($q) => $q->where('user_id', $userId))->count();
+        
+        $promedioBoletosPorVenta = $totalVentasUser > 0 ? ($totalBoletosUser / $totalVentasUser) : 0;
+        $porcentajeOcupacion = min(100, ($promedioBoletosPorVenta / 40) * 100);
+
         return view('livewire.ventanilla.historial-ventas', [
-            'ventas' => $ventas
+            'ventas' => $ventas,
+            'totalHistorico' => $totalHistorico,
+            'rutaMasVendida' => $rutaMasVendida,
+            'porcentajeOcupacion' => $porcentajeOcupacion
         ])->layout('components.layouts.app', ['title' => 'Historial de Ventas']);
     }
 }

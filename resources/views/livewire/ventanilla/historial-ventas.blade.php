@@ -15,6 +15,42 @@
             </div>
         @endif
 
+        {{-- Panel Superior de Estadísticas --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {{-- Ruta más vendida --}}
+            <div class="bg-gradient-to-br from-[#003366] to-indigo-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-indigo-200 text-sm font-semibold uppercase tracking-wider mb-1">Ruta más vendida</p>
+                    <h3 class="text-2xl font-bold leading-tight">{{ $rutaMasVendida }}</h3>
+                </div>
+                <svg class="absolute -bottom-4 -right-4 w-24 h-24 text-white opacity-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            </div>
+
+            {{-- Total histórico recaudado --}}
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-emerald-100 text-sm font-semibold uppercase tracking-wider mb-1">Total Histórico</p>
+                    <h3 class="text-3xl font-extrabold tracking-tight">${{ number_format($totalHistorico, 2) }}</h3>
+                </div>
+                <svg class="absolute -bottom-4 -right-4 w-24 h-24 text-white opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+
+            {{-- Porcentaje de ocupación promedio --}}
+            <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-amber-100 text-sm font-semibold uppercase tracking-wider mb-1">Ocupación Promedio (Tus ventas)</p>
+                    <h3 class="text-3xl font-extrabold tracking-tight">{{ number_format($porcentajeOcupacion, 1) }}%</h3>
+                </div>
+                <svg class="absolute -bottom-4 -right-4 w-24 h-24 text-white opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+        </div>
+
         {{-- Header & Filtros --}}
         <div class="bg-white shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-100 p-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
