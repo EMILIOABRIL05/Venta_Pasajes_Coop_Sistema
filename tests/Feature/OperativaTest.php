@@ -2,22 +2,28 @@
 
 namespace Tests\Feature;
 
-use App\Models\CategoriaBus;
-use App\Models\User;
+use App\Livewire\Operativa\HojaRuta;
 use App\Models\Bus;
-use App\Models\Ruta;
-use App\Models\Parada;
+use App\Models\CategoriaBus;
 use App\Models\Frecuencia;
-use App\Models\Viaje;
+use App\Models\Parada;
+use App\Models\Ruta;
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
-use Livewire\Livewire;
-use App\Livewire\Operativa\HojaRuta;
 
 class OperativaTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RolesAndPermissionsSeeder::class);
+    }
 
     private function makeAdminUser(): User
     {
@@ -39,7 +45,7 @@ class OperativaTest extends TestCase
 
         $categoria = CategoriaBus::create([
             'nombre' => 'Ejecutivo',
-            'descripcion' => 'Cat'
+            'descripcion' => 'Cat',
         ]);
 
         $bus = Bus::create([
@@ -50,7 +56,7 @@ class OperativaTest extends TestCase
             'anio' => 2020,
             'numero_asientos' => 40,
             'estado' => 'disponible',
-            'mapa_asientos' => Bus::generarEstructuraAsientos(10, true)
+            'mapa_asientos' => Bus::generarEstructuraAsientos(10, true),
         ]);
 
         $origen1 = Parada::create(['nombre' => 'Ambato', 'ciudad' => 'Ambato']);
@@ -74,7 +80,7 @@ class OperativaTest extends TestCase
         $this->assertDatabaseHas('viajes', [
             'frecuencia_id' => $frecuencia1->id,
             'bus_id' => $bus->id,
-            'fecha' => '2026-05-10'
+            'fecha' => '2026-05-10',
         ]);
 
         // 2. Intentamos asignar el MISMO bus, el MISMO día, a la MISMA hora, pero a OTRA frecuencia
@@ -84,11 +90,11 @@ class OperativaTest extends TestCase
             ->set('frecuencia_id', $frecuencia2->id)
             ->set('bus_id', $bus->id)
             ->call('saveViaje');
-        
+
         $this->assertDatabaseMissing('viajes', [
             'frecuencia_id' => $frecuencia2->id,
             'bus_id' => $bus->id,
-            'fecha' => '2026-05-10'
+            'fecha' => '2026-05-10',
         ]);
     }
 }
