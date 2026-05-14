@@ -204,7 +204,7 @@ class VentaController extends Controller
         foreach ($venta->boletos as $boleto) {
             if (!empty($boleto->pasajero->correo)) {
                 \Illuminate\Support\Facades\Mail::to($boleto->pasajero->correo)
-                    ->send(new \App\Mail\BoletoVendido($boleto));
+                    ->queue(new \App\Mail\BoletoVendido($boleto));
             }
         }
 
