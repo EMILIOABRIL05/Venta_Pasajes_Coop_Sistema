@@ -95,6 +95,7 @@ Route::middleware(['auth', 'role:oficinista|admin'])
     ->name('ventanilla.')
     ->group(function () {
 
+        Route::get('/historial', \App\Livewire\Ventanilla\HistorialVentas::class)->name('historial');
         Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class);
         Route::resource('pasajeros', PasajeroController::class);
 
