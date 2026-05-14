@@ -21,9 +21,14 @@ use Throwable;
 
 class VentaController extends Controller
 {
-    // ─── Inyección de dependencia (DIP) ───────────────────────────────────────
+    /**
+     * Constructor del controlador.
+     * Inyecta el servicio de cierre de turno.
+     *
+     * @param \App\Services\CierreTurnoService $servicioCierre
+     */
     public function __construct(
-        private readonly CierreTurnoService $cierreService,
+        private readonly CierreTurnoService $servicioCierre,
     ) {}
     // ─── Index ────────────────────────────────────────────────────────────────
 
@@ -56,7 +61,7 @@ class VentaController extends Controller
     {
         // ── 1. Validación estricta de entrada ─────────────────────────────────
         //    'distinct' rechaza que el frontend envíe el mismo número dos veces.
-        $validated = $request->validate([
+        $datosValidados = $request->validate([
             'ruta_id'         => ['required', 'integer', 'exists:rutas,id'],
             'pasajero_id'     => ['required', 'integer', 'exists:pasajeros,id'],
             'asientos'        => ['required', 'array', 'min:1', 'max:40'],
@@ -67,20 +72,20 @@ class VentaController extends Controller
         // ── 2. Preparación de datos (fuera del lock transaccional) ────────────
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
-        $asientos       = array_values(array_unique($validated['asientos']));
-        $precioUnitario = (float) $validated['precio_unitario'];
+        $asientos       = array_values(array_unique($datosValidados['asientos']));
+        $precioUnitario = (float) $datosValidados['precio_unitario'];
         $total          = round($precioUnitario * count($asientos), 2);
 
         //    Payload para createMany(): cada elemento es un array con los campos
         //    del boleto. El UUID se genera en Boleto::booted() durante el create().
         //    NO se incluye 'venta_id' porque Eloquent lo inyecta a través de
         //    la relación hasMany ($venta->boletos()->createMany(...)).
-        $frecuencia = \App\Models\Frecuencia::where('ruta_id', $validated['ruta_id'])->first();
+        $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
         
-        $boletosPayload = array_map(fn (int $seat) => [
-            'pasajero_id'    => $validated['pasajero_id'],  // FK → pasajeros.id ✓
+        $datosBoletos = array_map(fn (int $asiento) => [
+            'pasajero_id'    => $datosValidados['pasajero_id'],  // FK → pasajeros.id ✓
             'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
-            'numero_asiento' => (string) $seat,
+            'numero_asiento' => (string) $asiento,
             'precio_final'   => $precioUnitario,
         ], $asientos);
 
@@ -88,17 +93,17 @@ class VentaController extends Controller
         //    Doble capa de protección contra ventas simultáneas del mismo asiento:
         //      a) Cache::lock()  → bloqueo atómico (evita race conditions)
         //      b) Query 60s      → red de seguridad contra boletos recién creados
-        [$conflict, $locks] = $this->verifyAsientosDisponibles($asientos);
+        [$conflicto, $bloqueos] = $this->verifyAsientosDisponibles($asientos);
 
-        if ($conflict !== null) {
+        if ($conflicto !== null) {
             return back()
                 ->withInput()
-                ->with('error', $conflict);
+                ->with('error', $conflicto);
         }
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($boletosPayload, $total) {
+            $venta = DB::transaction(function () use ($datosBoletos, $total) {
 
                 // 3a. Cabecera de la venta ─────────────────────────────────────
                 //     FK: ventas.user_id → users.id (cajero autenticado)
@@ -118,21 +123,21 @@ class VentaController extends Controller
                 //     Si CUALQUIER insert falla (FK rota, duplicado, etc.),
                 //     Eloquent lanza una excepción → MySQL ejecuta ROLLBACK
                 //     completo → ni la Venta ni ningún Boleto queda persistido.
-                $venta->boletos()->createMany($boletosPayload);
+                $venta->boletos()->createMany($datosBoletos);
 
                 // Devolver el modelo hidratado (sin query adicional al cliente)
                 return $venta->load('boletos');
 
             }, 2); // ← 2 reintentos automáticos ante deadlock de InnoDB
 
-        } catch (QueryException $e) {
-            $sqlState = $e->getCode();
+        } catch (QueryException $excepcion) {
+            $estadoSql = $excepcion->getCode();
 
-            $logContext = [
-                'sqlstate'  => $sqlState,
-                'sql'       => $e->getSql(),
-                'bindings'  => $e->getBindings(),
-                'message'   => $e->getMessage(),
+            $contextoLog = [
+                'sqlstate'  => $estadoSql,
+                'sql'       => $excepcion->getSql(),
+                'bindings'  => $excepcion->getBindings(),
+                'message'   => $excepcion->getMessage(),
                 'user'      => [
                     'id'    => auth()->id(),
                     'name'  => auth()->user()->name  ?? 'N/A',
@@ -142,36 +147,36 @@ class VentaController extends Controller
                     'ip'      => $request->ip(),
                     'url'     => $request->fullUrl(),
                     'payload' => [
-                        'ruta_id'     => $validated['ruta_id']     ?? null,
-                        'pasajero_id' => $validated['pasajero_id'] ?? null,
-                        'asientos'    => $asientos                 ?? [],
-                        'total'       => $total                    ?? 0,
+                        'ruta_id'     => $datosValidados['ruta_id']     ?? null,
+                        'pasajero_id' => $datosValidados['pasajero_id'] ?? null,
+                        'asientos'    => $asientos                      ?? [],
+                        'total'       => $total                         ?? 0,
                     ],
                 ],
             ];
 
-            if ($sqlState === '23000') {
-                Log::error('[Ventanilla] store() — Integrity constraint violation', $logContext);
+            if ($estadoSql === '23000') {
+                Log::error('[Ventanilla] store() — Integrity constraint violation', $contextoLog);
                 return back()
                     ->withInput()
                     ->with('error', 'Error de integridad en base de datos. Uno de los datos ingresados viola una restricción del sistema (llave foránea o valor duplicado). Verifique los datos del pasajero y la ruta seleccionada.');
-            } elseif ($sqlState === '40001') {
-                Log::warning('[Ventanilla] store() — Deadlock tras reintentos', $logContext);
+            } elseif ($estadoSql === '40001') {
+                Log::warning('[Ventanilla] store() — Deadlock tras reintentos', $contextoLog);
                 return back()
                     ->withInput()
                     ->with('error', 'Conflicto de concurrencia. Otro cajero procesó una venta al mismo tiempo. Espere unos segundos e intente de nuevo.');
             } else {
-                Log::error('[Ventanilla] store() — QueryException genérica', $logContext);
+                Log::error('[Ventanilla] store() — QueryException genérica', $contextoLog);
                 return back()
                     ->withInput()
                     ->with('error', 'Ocurrió un problema al guardar la venta en la base de datos. Intente nuevamente o contacte al soporte técnico.');
             }
 
-        } catch (Throwable $e) {
+        } catch (Throwable $excepcion) {
             Log::critical('[Ventanilla] store() — Fallo crítico inesperado', [
-                'message'   => $e->getMessage(),
-                'file'      => $e->getFile() . ':' . $e->getLine(),
-                'trace'     => $e->getTraceAsString(),
+                'message'   => $excepcion->getMessage(),
+                'file'      => $excepcion->getFile() . ':' . $excepcion->getLine(),
+                'trace'     => $excepcion->getTraceAsString(),
                 'user'      => [
                     'id'    => auth()->id(),
                     'name'  => auth()->user()->name  ?? 'N/A',
@@ -196,7 +201,9 @@ class VentaController extends Controller
             //    El bloque finally se ejecuta tanto si la transacción fue exitosa
             //    como si lanzó cualquier excepción, garantizando que los asientos
             //    queden disponibles para el siguiente intento.
-            collect($locks)->each(fn ($lock) => $lock->release());
+            if (isset($bloqueos)) {
+                collect($bloqueos)->each(fn ($bloqueo) => $bloqueo->release());
+            }
         }
 
         // ── 3.5 Enviar correos de confirmación en segundo plano ───────────────
@@ -343,9 +350,9 @@ class VentaController extends Controller
     public function cierreTurno()
     {
         $hoy    = now()->toDateString();
-        $userId = auth()->id();
+        $idUsuario = auth()->id();
 
-        $resumen = $this->cierreService->resumenCompleto($userId, $hoy);
+        $resumen = $this->servicioCierre->resumenCompleto($idUsuario, $hoy);
 
         return view('ventanilla.cierre', array_merge($resumen, ['fecha' => $hoy]));
     }
@@ -361,11 +368,11 @@ class VentaController extends Controller
      */
     public function storeCierre(Request $request)
     {
-        $userId = auth()->id();
+        $idUsuario = auth()->id();
         $hoy    = now()->toDateString();
 
         // ── 1. Guardia contra duplicado ───────────────────────────────────────
-        if (CierreTurno::existeParaHoy($userId, $hoy)) {
+        if (CierreTurno::existeParaHoy($idUsuario, $hoy)) {
             return back()->with(
                 'error',
                 'Error: Ya has registrado un cierre de caja para el turno de hoy.'
@@ -373,19 +380,19 @@ class VentaController extends Controller
         }
 
         // ── 2. Obtener totales del servicio (sin lógica duplicada) ────────────
-        $resumen = $this->cierreService->resumenCompleto($userId, $hoy);
+        $resumen = $this->servicioCierre->resumenCompleto($idUsuario, $hoy);
 
         // ── 3. Persistencia atómica ───────────────────────────────────────────
         try {
-            DB::transaction(function () use ($userId, $hoy, $resumen) {
+            DB::transaction(function () use ($idUsuario, $hoy, $resumen) {
                 // Segunda verificación dentro de la transacción para evitar
                 // condición de carrera si dos requests llegan casi simultáneamente.
-                if (CierreTurno::existeParaHoy($userId, $hoy)) {
+                if (CierreTurno::existeParaHoy($idUsuario, $hoy)) {
                     throw new \RuntimeException('duplicate_cierre');
                 }
 
                 CierreTurno::create([
-                    'user_id'          => $userId,
+                    'user_id'          => $idUsuario,
                     'fecha'            => $hoy,
                     'total_bruto'      => $resumen['totalBruto'],
                     'total_reembolsos' => $resumen['totalReembolsos'],
@@ -394,25 +401,25 @@ class VentaController extends Controller
                 ]);
             });
 
-        } catch (\RuntimeException $e) {
-            if ($e->getMessage() === 'duplicate_cierre') {
+        } catch (\RuntimeException $excepcion) {
+            if ($excepcion->getMessage() === 'duplicate_cierre') {
                 return back()->with(
                     'error',
                     'Error: Ya has registrado un cierre de caja para el turno de hoy.'
                 );
             }
             Log::error('[Ventanilla] storeCierre() — RuntimeException inesperada', [
-                'message' => $e->getMessage(),
-                'user_id' => $userId,
+                'message' => $excepcion->getMessage(),
+                'user_id' => $idUsuario,
                 'fecha'   => $hoy,
             ]);
             return back()->with('error', 'Ocurrió un error inesperado. La operación fue cancelada de forma segura.');
 
-        } catch (Throwable $e) {
+        } catch (Throwable $excepcion) {
             Log::critical('[Ventanilla] storeCierre() — Fallo crítico', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile() . ':' . $e->getLine(),
-                'user_id' => $userId,
+                'message' => $excepcion->getMessage(),
+                'file'    => $excepcion->getFile() . ':' . $excepcion->getLine(),
+                'user_id' => $idUsuario,
                 'fecha'   => $hoy,
             ]);
             return back()->with(
@@ -430,12 +437,14 @@ class VentaController extends Controller
     /**
      * Genera y descarga el reporte PDF del cierre de turno.
      * Los datos se obtienen del CierreTurnoService — sin lógica duplicada.
+     *
+     * @return \Illuminate\Http\Response
      */
     public function reportePdf()
     {
         $cajero  = auth()->user();
         $hoy     = now()->toDateString();
-        $resumen = $this->cierreService->resumenCompleto($cajero->id, $hoy);
+        $resumen = $this->servicioCierre->resumenCompleto($cajero->id, $hoy);
 
         $pdf = Pdf::loadView(
             'ventanilla.reporte_pdf',
@@ -479,30 +488,30 @@ class VentaController extends Controller
      */
     private function verifyAsientosDisponibles(array $asientos): array
     {
-        $LOCK_TTL  = 60; // segundos
-        $WINDOW_S  = 60; // ventana de detección en BD
+        $TIEMPO_BLOQUEO  = 60; // segundos
+        $VENTANA_SEGUNDOS  = 60; // ventana de detección en BD
 
         // ── Capa 1: Cache locks atómicos ──────────────────────────────────────
-        $locks      = [];
+        $bloqueos      = [];
         $bloqueados = [];
 
-        foreach ($asientos as $seat) {
-            $lock = Cache::lock("asiento:{$seat}", $LOCK_TTL);
+        foreach ($asientos as $asiento) {
+            $bloqueo = Cache::lock("asiento:{$asiento}", $TIEMPO_BLOQUEO);
 
-            if ($lock->get()) {
-                $locks[] = $lock;          // Adquirido: guardar para liberar luego
+            if ($bloqueo->get()) {
+                $bloqueos[] = $bloqueo;          // Adquirido: guardar para liberar luego
             } else {
-                $bloqueados[] = $seat;     // Otro cajero lo está procesando ahora
+                $bloqueados[] = $asiento;     // Otro cajero lo está procesando ahora
             }
         }
 
         if (!empty($bloqueados)) {
             // Liberar los locks que SÍ adquirimos antes de abortar
-            collect($locks)->each(fn ($l) => $l->release());
+            collect($bloqueos)->each(fn ($l) => $l->release());
 
             $lista = implode(', ', array_map(fn ($s) => "#{$s}", $bloqueados));
             return [
-                "Los asientos {$lista} están siendo procesados por otro cajero. Intente en {$LOCK_TTL} segundos.",
+                "Los asientos {$lista} están siendo procesados por otro cajero. Intente en {$TIEMPO_BLOQUEO} segundos.",
                 [],
             ];
         }
@@ -510,25 +519,25 @@ class VentaController extends Controller
         // ── Capa 2: Ventana de 60s en BD ──────────────────────────────────────
         //    Detecta boletos creados recientemente aunque el lock ya se liberó
         //    (p.ej. venta exitosa hace 30s → lock liberado → asiento bloqueado aún).
-        $vendidosReciente = Boleto::whereIn(
+        $vendidosRecientemente = Boleto::whereIn(
                 'numero_asiento',
                 array_map('strval', $asientos)
             )
-            ->where('created_at', '>=', now()->subSeconds($WINDOW_S))
+            ->where('created_at', '>=', now()->subSeconds($VENTANA_SEGUNDOS))
             ->pluck('numero_asiento');
 
-        if ($vendidosReciente->isNotEmpty()) {
-            collect($locks)->each(fn ($l) => $l->release());
+        if ($vendidosRecientemente->isNotEmpty()) {
+            collect($bloqueos)->each(fn ($l) => $l->release());
 
-            $lista = $vendidosReciente->map(fn ($s) => "#{$s}")->join(', ');
+            $lista = $vendidosRecientemente->map(fn ($s) => "#{$s}")->join(', ');
             return [
-                "Los asientos {$lista} ya fueron vendidos en los últimos {$WINDOW_S} segundos. Seleccione otros asientos.",
+                "Los asientos {$lista} ya fueron vendidos en los últimos {$VENTANA_SEGUNDOS} segundos. Seleccione otros asientos.",
                 [],
             ];
         }
 
         // Sin conflictos: devolver locks para que el llamador los libere en finally
-        return [null, $locks];
+        return [null, $bloqueos];
     }
 }
 

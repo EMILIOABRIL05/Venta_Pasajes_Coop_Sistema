@@ -54,7 +54,7 @@ class PasajeroController extends Controller
         //    unique:pasajeros,cedula valida unicidad a nivel de Laravel.
         //    La segunda capa (BD) actúa como red de seguridad ante condiciones
         //    de carrera (dos cajeros registrando la misma cédula en paralelo).
-        $validated = $request->validate([
+        $datosValidados = $request->validate([
             'cedula'          => [
                 'required',
                 'string',
@@ -74,9 +74,9 @@ class PasajeroController extends Controller
         //    el create() en try/catch sobre QueryException (SQLSTATE 23000).
         try {
             $pasajero = Pasajero::create([
-                'cedula'          => $validated['cedula'],
-                'nombre_completo' => $validated['nombre_completo'],
-                'edad'            => $validated['edad'],
+                'cedula'          => $datosValidados['cedula'],
+                'nombre_completo' => $datosValidados['nombre_completo'],
+                'edad'            => $datosValidados['edad'],
             ]);
 
             return response()->json([
@@ -85,16 +85,16 @@ class PasajeroController extends Controller
                 'pasajero' => $pasajero,
             ], 201);
 
-        } catch (QueryException $e) {
+        } catch (QueryException $excepcion) {
             // Solo manejamos violación de unicidad (SQLSTATE 23000).
             // Cualquier otro error de BD se re-lanza para no silenciarlo.
-            if ($e->getCode() !== '23000') {
+            if ($excepcion->getCode() !== '23000') {
                 Log::error('[PasajeroController@store] QueryException inesperada', [
-                    'cedula'  => $validated['cedula'],
-                    'sql'     => $e->getSql(),
-                    'message' => $e->getMessage(),
+                    'cedula'  => $datosValidados['cedula'],
+                    'sql'     => $excepcion->getSql(),
+                    'message' => $excepcion->getMessage(),
                 ]);
-                throw $e;
+                throw $excepcion;
             }
         }
 
@@ -102,15 +102,15 @@ class PasajeroController extends Controller
         //    withTrashed() garantiza que también encontremos registros con
         //    soft-delete activo (deleted_at IS NOT NULL).
         $pasajero = Pasajero::withTrashed()
-            ->where('cedula', $validated['cedula'])
+            ->where('cedula', $datosValidados['cedula'])
             ->firstOrFail();
 
         // ── 3a. Registro borrado lógicamente → restaurar y actualizar ─────────
         if ($pasajero->trashed()) {
             $pasajero->restore();
             $pasajero->update([
-                'nombre_completo' => $validated['nombre_completo'],
-                'edad'            => $validated['edad'],
+                'nombre_completo' => $datosValidados['nombre_completo'],
+                'edad'            => $datosValidados['edad'],
             ]);
 
             return response()->json([

@@ -13,31 +13,45 @@ class HistorialVentas extends Component
     use WithPagination;
 
     // Propiedades de estado para los filtros
-    public $search = '';
+    public $busqueda = '';
     public $filtroFecha = 'todas'; // 'hoy', 'mes', 'todas'
 
-    // Actualiza la paginación cuando se busca algo
-    public function updatingSearch()
+    /**
+     * Resetea la paginación al actualizar la búsqueda.
+     */
+    public function updatingBusqueda()
     {
         $this->resetPage();
     }
 
+    /**
+     * Resetea la paginación al actualizar el filtro de fecha.
+     */
     public function updatingFiltroFecha()
     {
         $this->resetPage();
     }
 
-    // Funciones para filtros rápidos
+    /**
+     * Asigna un filtro rápido de fecha y resetea la paginación.
+     *
+     * @param string $filtro
+     */
     public function setFiltroFecha($filtro)
     {
         $this->filtroFecha = $filtro;
         $this->resetPage();
     }
 
+    /**
+     * Renderiza el componente con los datos y estadísticas procesadas.
+     *
+     * @return \Illuminate\View\View
+     */
     public function render()
     {
         // Construir la consulta base
-        $query = Venta::with([
+        $consulta = Venta::with([
             'user', 
             'boletos.pasajero', 
             'boletos.frecuencia.ruta.origen',
@@ -47,45 +61,45 @@ class HistorialVentas extends Component
 
         // Aplicar filtro rápido de fechas
         if ($this->filtroFecha === 'hoy') {
-            $query->whereDate('created_at', Carbon::today());
+            $consulta->whereDate('created_at', Carbon::today());
         } elseif ($this->filtroFecha === 'mes') {
-            $query->whereMonth('created_at', Carbon::now()->month)
-                  ->whereYear('created_at', Carbon::now()->year);
+            $consulta->whereMonth('created_at', Carbon::now()->month)
+                     ->whereYear('created_at', Carbon::now()->year);
         }
 
         // Aplicar búsqueda (nombre de pasajero, placa de bus o código de reserva)
-        if (!empty($this->search)) {
-            $search = '%' . strtolower($this->search) . '%';
+        if (!empty($this->busqueda)) {
+            $busqueda = '%' . strtolower($this->busqueda) . '%';
 
-            $query->where(function (Builder $q) use ($search) {
+            $consulta->where(function (Builder $c) use ($busqueda) {
                 // Buscar por usuario cajero
-                $q->whereHas('user', function (Builder $qUser) use ($search) {
-                    $qUser->whereRaw('LOWER(name) LIKE ?', [$search]);
+                $c->whereHas('user', function (Builder $cUsuario) use ($busqueda) {
+                    $cUsuario->whereRaw('LOWER(name) LIKE ?', [$busqueda]);
                 })
                 // O buscar por datos del boleto
-                ->orWhereHas('boletos', function (Builder $qBoleto) use ($search) {
+                ->orWhereHas('boletos', function (Builder $cBoleto) use ($busqueda) {
                     // Por código de reserva
-                    $qBoleto->whereRaw('LOWER(codigo_reserva) LIKE ?', [$search])
+                    $cBoleto->whereRaw('LOWER(codigo_reserva) LIKE ?', [$busqueda])
                         // Por pasajero
-                        ->orWhereHas('pasajero', function (Builder $qPasajero) use ($search) {
-                            $qPasajero->whereRaw('LOWER(nombre_completo) LIKE ?', [$search])
-                                      ->orWhereRaw('LOWER(cedula) LIKE ?', [$search]);
+                        ->orWhereHas('pasajero', function (Builder $cPasajero) use ($busqueda) {
+                            $cPasajero->whereRaw('LOWER(nombre_completo) LIKE ?', [$busqueda])
+                                      ->orWhereRaw('LOWER(cedula) LIKE ?', [$busqueda]);
                         })
                         // Por bus a través de viaje y frecuencia
-                        ->orWhereHas('frecuencia.viajes.bus', function (Builder $qBus) use ($search) {
-                            $qBus->whereRaw('LOWER(placa) LIKE ?', [$search]);
+                        ->orWhereHas('frecuencia.viajes.bus', function (Builder $cBus) use ($busqueda) {
+                            $cBus->whereRaw('LOWER(placa) LIKE ?', [$busqueda]);
                         });
                 });
             });
         }
 
-        $ventas = $query->paginate(10);
+        $ventas = $consulta->paginate(10);
 
         // --- Estadísticas del Panel Superior ---
-        $userId = auth()->id();
+        $idUsuario = auth()->id();
 
         // 1. Total histórico recaudado
-        $totalHistorico = \App\Models\Venta::where('user_id', $userId)->sum('total');
+        $totalHistorico = \App\Models\Venta::where('user_id', $idUsuario)->sum('total');
 
         // 2. Ruta más vendida
         $rutaMasVendidaObj = \Illuminate\Support\Facades\DB::table('boletos')
@@ -94,7 +108,7 @@ class HistorialVentas extends Component
             ->join('rutas', 'frecuencias.ruta_id', '=', 'rutas.id')
             ->join('paradas as origen', 'rutas.origen_id', '=', 'origen.id')
             ->join('paradas as destino', 'rutas.destino_id', '=', 'destino.id')
-            ->where('ventas.user_id', $userId)
+            ->where('ventas.user_id', $idUsuario)
             ->whereNull('boletos.deleted_at')
             ->select('origen.nombre as origen_nombre', 'destino.nombre as destino_nombre', \Illuminate\Support\Facades\DB::raw('count(boletos.id) as total_boletos'))
             ->groupBy('origen.nombre', 'destino.nombre')
@@ -105,10 +119,10 @@ class HistorialVentas extends Component
 
         // 3. Porcentaje de ocupación promedio en sus ventas
         // Calculado como: (Promedio de boletos vendidos por venta / Capacidad estándar del bus 40) * 100
-        $totalVentasUser = \App\Models\Venta::where('user_id', $userId)->count();
-        $totalBoletosUser = \App\Models\Boleto::whereHas('venta', fn($q) => $q->where('user_id', $userId))->count();
+        $totalVentasUsuario = \App\Models\Venta::where('user_id', $idUsuario)->count();
+        $totalBoletosUsuario = \App\Models\Boleto::whereHas('venta', fn($c) => $c->where('user_id', $idUsuario))->count();
         
-        $promedioBoletosPorVenta = $totalVentasUser > 0 ? ($totalBoletosUser / $totalVentasUser) : 0;
+        $promedioBoletosPorVenta = $totalVentasUsuario > 0 ? ($totalBoletosUsuario / $totalVentasUsuario) : 0;
         $porcentajeOcupacion = min(100, ($promedioBoletosPorVenta / 40) * 100);
 
         return view('livewire.ventanilla.historial-ventas', [
