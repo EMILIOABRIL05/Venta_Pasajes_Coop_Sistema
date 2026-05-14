@@ -183,6 +183,7 @@ credentials/
 Homestead.json
 Homestead.yaml
 node_modules
+node_modules/.vite/
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 🚀 DEPLOYMENT Y RELEASES
