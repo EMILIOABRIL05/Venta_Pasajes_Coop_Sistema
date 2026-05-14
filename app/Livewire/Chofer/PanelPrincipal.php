@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\Pasajero;
 use App\Models\Venta;
 use App\Models\Viaje;
+use App\Support\AsientosDisponibles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -248,22 +249,7 @@ class PanelPrincipal extends Component
                     ->with(['bus', 'frecuencia.ruta'])
                     ->firstOrFail();
 
-                $capacidad = (int) ($viaje->bus->numero_asientos ?? 40);
-                $ocupados = Boleto::query()
-                    ->where('frecuencia_id', $viaje->frecuencia_id)
-                    ->lockForUpdate()
-                    ->pluck('numero_asiento')
-                    ->map(fn ($n) => (string) $n)
-                    ->all();
-
-                $asientoLibre = null;
-                for ($i = 1; $i <= $capacidad; $i++) {
-                    $seat = (string) $i;
-                    if (! in_array($seat, $ocupados, true)) {
-                        $asientoLibre = $seat;
-                        break;
-                    }
-                }
+                $asientoLibre = AsientosDisponibles::primerDisponible($viaje, true);
 
                 if ($asientoLibre === null) {
                     throw ValidationException::withMessages([
@@ -320,6 +306,7 @@ class PanelPrincipal extends Component
     {
         $pasajerosAbordo = 0;
         $capacidadTotal = 40;
+        $resumenAsientos = null;
 
         if ($this->viajeActual) {
             $capacidadTotal = (int) ($this->viajeActual->bus->numero_asientos ?? 40);
@@ -329,11 +316,14 @@ class PanelPrincipal extends Component
                     $q->where('frecuencia_id', $this->viajeActual->frecuencia_id);
                 })
                 ->count();
+
+            $resumenAsientos = AsientosDisponibles::resumen($this->viajeActual);
         }
 
         return view('livewire.chofer.panel-principal', [
             'pasajerosAbordo' => $pasajerosAbordo,
             'capacidadTotal' => $capacidadTotal,
+            'resumenAsientos' => $resumenAsientos,
         ])->layout('layouts.app');
     }
 }
