@@ -290,10 +290,14 @@ class VentaController extends Controller
     public function anularBoleto($id)
     {
         try {
-            DB::transaction(function () use ($id) {
-                // Obtener el boleto
-                $boleto = Boleto::findOrFail($id);
+            $boleto = Boleto::findOrFail($id);
 
+            // Regla de negocio: Límite de 30 minutos para anular
+            if ($boleto->created_at->diffInMinutes(now()) > 30) {
+                return back()->with('error', 'Tiempo límite de anulación excedido.');
+            }
+
+            DB::transaction(function () use ($boleto) {
                 // 1. Cambiar estado a 'Anulado'
                 $boleto->estado = 'Anulado';
                 
