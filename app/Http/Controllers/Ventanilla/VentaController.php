@@ -279,6 +279,46 @@ class VentaController extends Controller
      */
     public function destroy(Venta $venta) {}
 
+    /**
+     * Anula un boleto específico, cambiando su estado a 'Anulado',
+     * registrando la fecha de cancelación y liberando el asiento.
+     * Usa DB::transaction para garantizar la integridad.
+     *
+     * @param string $id UUID del boleto
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function anularBoleto($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                // Obtener el boleto
+                $boleto = Boleto::findOrFail($id);
+
+                // 1. Cambiar estado a 'Anulado'
+                $boleto->estado = 'Anulado';
+                
+                // 2. Registrar la fecha de cancelación
+                $boleto->fecha_cancelacion = now();
+                $boleto->save();
+
+                // 3. Liberar el asiento en la base de datos
+                // El trait SoftDeletes establece deleted_at, lo que excluye al
+                // boleto de las consultas normales de disponibilidad.
+                $boleto->delete();
+            });
+
+            return back()->with('success', 'Boleto anulado correctamente. El asiento ha sido liberado.');
+        } catch (\Exception $e) {
+            Log::error('[Ventanilla] Error al anular boleto', [
+                'boleto_id' => $id,
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+            
+            return back()->with('error', 'Ocurrió un problema al anular el boleto. Verifique que el boleto exista e inténtelo de nuevo.');
+        }
+    }
+
     // ─── Cierre de turno ──────────────────────────────────────────────────────
 
     /**

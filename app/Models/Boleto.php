@@ -34,6 +34,8 @@ class Boleto extends Model
         'frecuencia_id',
         'numero_asiento',
         'precio_final',
+        'estado',
+        'fecha_cancelacion',
     ];
 
     // ─── Generación automática de identificadores ─────────────────────────────
