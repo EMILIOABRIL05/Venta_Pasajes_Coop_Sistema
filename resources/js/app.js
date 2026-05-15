@@ -77,6 +77,8 @@ const choferQrScanner = (livewireId) => ({
 	},
 });
 
+window.choferQrScanner = choferQrScanner;
+
 function registrarChoferQrScanner(AlpineRef) {
 	if (!AlpineRef || typeof AlpineRef.data !== 'function') {
 		return;
@@ -84,14 +86,17 @@ function registrarChoferQrScanner(AlpineRef) {
 	AlpineRef.data('choferQrScanner', choferQrScanner);
 }
 
-document.addEventListener('livewire:init', () => {
+document.addEventListener('alpine:init', () => {
 	registrarChoferQrScanner(window.Alpine);
 });
 
-if (!window.Alpine) {
-	window.Alpine = Alpine;
-	registrarChoferQrScanner(Alpine);
-	Alpine.start();
-} else {
+const paginaLivewire =
+	document.querySelector('[wire\\:id], [wire\\:snapshot], [wire\\:initial-data]') !== null;
+
+if (window.Alpine) {
 	registrarChoferQrScanner(window.Alpine);
+} else if (!paginaLivewire) {
+	window.Alpine = Alpine;
+	registrarChoferQrScanner(window.Alpine);
+	window.Alpine.start();
 }
