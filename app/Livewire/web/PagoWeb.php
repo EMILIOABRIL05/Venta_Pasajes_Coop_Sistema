@@ -75,8 +75,14 @@ class PagoWeb extends Component
     }
 
     public function render()
-    {
-        return view('livewire.web.pago-web')
-            ->layout('layouts.carrito'); 
-    }
+{
+    $metodosPago = [
+        'transferencia' => 'Transferencia Bancaria',
+        'efectivo' => 'Pago en Ventanilla'
+    ];
+
+    return view('livewire.web.pago-web', [
+        'metodosPago' => $metodosPago
+    ]);
+}
 }

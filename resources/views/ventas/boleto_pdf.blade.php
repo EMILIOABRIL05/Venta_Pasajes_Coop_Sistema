@@ -71,7 +71,7 @@
         <div class="datos">
             <div class="dato">
                 <span class="label">Pasajero:</span>
-                <span class="valor">{{ $boleto->pasajero->nombre }} {{ $boleto->pasajero->apellido }}</span>
+                <span class="valor">{{ $boleto->pasajero->nombre_completo }}</span>
             </div>
             <div class="dato">
                 <span class="label">Asiento:</span>
@@ -80,8 +80,8 @@
             <div class="dato">
                 <span class="label">Ruta:</span>
                 <span class="valor">
-                    @if($boleto->venta && $boleto->venta->viaje && $boleto->venta->viaje->frecuencia)
-                        {{ $boleto->venta->viaje->frecuencia->ruta->origen }} - {{ $boleto->venta->viaje->frecuencia->ruta->destino }}
+                    @if($boleto->frecuencia && $boleto->frecuencia->ruta)
+                        {{ $boleto->frecuencia->ruta->origen->nombre }} - {{ $boleto->frecuencia->ruta->destino->nombre }}
                     @else
                         Ruta no disponible
                     @endif

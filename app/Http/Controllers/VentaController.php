@@ -147,8 +147,17 @@ class VentaController extends Controller
      */
     public function descargarBoleto($id)
     {
-        // Buscamos el boleto por el UUID
-        $boleto = Boleto::with(['venta', 'pasajero', 'frecuencia.ruta'])->findOrFail($id);
+        // Buscamos el boleto por el UUID y validamos propiedad
+        // Si es admin o oficinista puede descargar cualquiera, si es cliente solo los suyos
+        $query = Boleto::with(['venta', 'pasajero', 'frecuencia.ruta.origen', 'frecuencia.ruta.destino']);
+
+        if (auth()->user()->hasRole('admin|oficinista')) {
+            $boleto = $query->findOrFail($id);
+        } else {
+            $boleto = $query->whereHas('venta', function ($q) {
+                $q->where('cliente_id', auth()->id());
+            })->findOrFail($id);
+        }
 
         // Generamos el QR con el UUID contenido en $boleto->id
         $qrCode = QrCode::size(200)->generate($boleto->id);
@@ -159,7 +168,7 @@ class VentaController extends Controller
         ];
 
         $pdf = Pdf::loadView('ventas.boleto_pdf', $data);
-        return $pdf->download('boleto_' . $boleto->pasajero->cedula . '.pdf');
+        return $pdf->download('Boleto-Ambato-' . $boleto->id . '.pdf');
     }
 
     /**

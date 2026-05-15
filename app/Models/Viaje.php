@@ -14,6 +14,7 @@ class Viaje extends Model
         'fecha',
         'frecuencia_id',
         'bus_id',
+        'chofer_user_id',
         'estado',
     ];
 
@@ -29,6 +30,11 @@ class Viaje extends Model
     public function bus()
     {
         return $this->belongsTo(Bus::class);
+    }
+
+    public function chofer()
+    {
+        return $this->belongsTo(User::class, 'chofer_user_id');
     }
 
     /**
