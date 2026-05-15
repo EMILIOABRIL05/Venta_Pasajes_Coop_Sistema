@@ -20,22 +20,24 @@
                 @include('components.sidebar-navigation')
             @endauth
 
-            <div class="flex flex-col {{ auth()->check() ? 'sm:ml-64' : '' }}">
-                <x-ui.navbar />
+            <div class="relative flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 {{ auth()->check() ? 'sm:pl-64' : '' }}">
+                <div class="relative z-20">
+                    <x-ui.navbar />
+                </div>
 
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                     <x-ui.alert />
                 </div>
 
                 @isset($header)
-                    <header class="bg-gray-100 border-b border-[#003366]/10">
+                    <header class="relative z-10 border-b border-[#003366]/10 bg-gray-100">
                         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                             {{ $header }}
                         </div>
                     </header>
                 @endisset
 
-                <main class="py-6">
+                <main class="relative z-0 flex-1 min-w-0 overflow-x-hidden py-6">
                     {{ $slot }}
                 </main>
             </div>
