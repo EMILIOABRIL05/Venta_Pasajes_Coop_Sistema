@@ -16,6 +16,11 @@ class HistorialVentas extends Component
     public $busqueda = '';
     public $filtroFecha = 'todas'; // 'hoy', 'mes', 'todas'
 
+    public function mount()
+    {
+        abort_unless(auth()->user()->hasAnyRole(['admin', 'oficinista']), 403, 'Acceso denegado');
+    }
+
     /**
      * Resetea la paginación al actualizar la búsqueda.
      */

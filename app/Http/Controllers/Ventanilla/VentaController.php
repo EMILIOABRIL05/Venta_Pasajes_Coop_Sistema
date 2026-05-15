@@ -77,8 +77,8 @@ class VentaController extends Controller
 
         $viajeBloqueado = Viaje::where('fecha', $hoy)
             ->whereIn('estado', ['En Curso', 'Finalizada'])
-            ->whereHas('frecuencia', function ($q) use ($validated) {
-                $q->where('ruta_id', $validated['ruta_id']);
+            ->whereHas('frecuencia', function ($q) use ($datosValidados) {
+                $q->where('ruta_id', $datosValidados['ruta_id']);
             })
             ->exists();
 
@@ -290,6 +290,10 @@ class VentaController extends Controller
      */
     public function show(Venta $venta)
     {
+        if ($venta->user_id !== auth()->id()) {
+            abort(403, 'Acceso denegado');
+        }
+
         $venta->load('boletos.pasajero');
 
         return view('ventanilla.ventas.show', compact('venta'));

@@ -88,6 +88,15 @@ class VentaController extends Controller
         $frecuencia = Frecuencia::with('ruta')->findOrFail($validated['frecuencia_id']);
         $bus = Bus::findOrFail($validated['bus_id']);
 
+        $viajeBloqueado = \App\Models\Viaje::where('frecuencia_id', $validated['frecuencia_id'])
+            ->where('fecha', now()->toDateString())
+            ->whereIn('estado', ['En Curso', 'Finalizada'])
+            ->exists();
+
+        if ($viajeBloqueado) {
+            return back()->withInput()->withErrors(['general' => 'No se pueden vender pasajes: el viaje ya se encuentra en curso o ha finalizado.']);
+        }
+
         if ($validated['precio_final'] != $frecuencia->ruta->precio_base) {
             return back()->withInput()->withErrors(['precio_final' => 'El monto no coincide con el precio de la ruta.']);
         }
@@ -138,6 +147,10 @@ class VentaController extends Controller
      */
     public function show(Venta $venta)
     {
+        if ($venta->user_id !== auth()->id()) {
+            abort(403, 'Acceso denegado');
+        }
+
         $venta->load(['boletos.pasajero', 'boletos.frecuencia.ruta', 'user', 'pagos']);
         return view('ventas.show', compact('venta'));
     }
