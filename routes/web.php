@@ -95,8 +95,9 @@ Route::middleware(['auth', 'role:oficinista|admin'])
     ->name('ventanilla.')
     ->group(function () {
 
-        Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class);
-        Route::resource('pasajeros', PasajeroController::class);
+        Route::get('/historial', \App\Livewire\Ventanilla\HistorialVentas::class)->name('historial');
+        Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('pasajeros', PasajeroController::class)->only(['store', 'show', 'destroy']);
 
         // Cierre de turno (Manolo - Sprint 4)
         Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
