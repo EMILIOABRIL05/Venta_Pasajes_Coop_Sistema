@@ -299,33 +299,7 @@ class VentaController extends Controller
         return view('ventanilla.ventas.show', compact('venta'));
     }
 
-    /**
-     * Muestra el formulario para editar una venta.
-     * (Método pendiente de implementar)
-     *
-     * @param  \App\Models\Venta  $venta
-     * @return void
-     */
-    public function edit(Venta $venta) {}
 
-    /**
-     * Actualiza los datos de una venta en almacenamiento.
-     * (Método pendiente de implementar)
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Venta  $venta
-     * @return void
-     */
-    public function update(Request $request, Venta $venta) {}
-
-    /**
-     * Elimina una venta del almacenamiento (soft delete).
-     * (Método pendiente de implementar)
-     *
-     * @param  \App\Models\Venta  $venta
-     * @return void
-     */
-    public function destroy(Venta $venta) {}
 
     /**
      * Anula un boleto específico, cambiando su estado a 'Anulado',
@@ -357,6 +331,14 @@ class VentaController extends Controller
                 // El trait SoftDeletes establece deleted_at, lo que excluye al
                 // boleto de las consultas normales de disponibilidad.
                 $boleto->delete();
+
+                // 4. Registrar log de cambios
+                \Illuminate\Support\Facades\Log::info('[Ventanilla] Boleto anulado y asiento liberado.', [
+                    'boleto_id' => $boleto->id,
+                    'numero_asiento' => $boleto->numero_asiento,
+                    'venta_id' => $boleto->venta_id,
+                    'usuario_id' => auth()->id(),
+                ]);
             });
 
             return back()->with('success', 'Boleto anulado correctamente. El asiento ha sido liberado.');

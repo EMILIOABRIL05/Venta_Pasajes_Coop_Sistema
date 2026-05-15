@@ -11,23 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class PasajeroController extends Controller
 {
-    // ─── Index / Create ───────────────────────────────────────────────────────
 
-    /**
-     * Muestra el listado de pasajeros.
-     * (Método pendiente de implementar)
-     *
-     * @return void
-     */
-    public function index()  {}
-
-    /**
-     * Muestra el formulario para registrar un pasajero.
-     * (Método pendiente de implementar)
-     *
-     * @return void
-     */
-    public function create() {}
 
     // ─── Store ────────────────────────────────────────────────────────────────
 
@@ -142,24 +126,7 @@ class PasajeroController extends Controller
         return response()->json($pasajero->load('boletos'));
     }
 
-    /**
-     * Muestra el formulario para editar un pasajero.
-     * (Método pendiente de implementar)
-     *
-     * @param  \App\Models\Pasajero  $pasajero
-     * @return void
-     */
-    public function edit(Pasajero $pasajero)   {}
 
-    /**
-     * Actualiza la información de un pasajero.
-     * (Método pendiente de implementar)
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Pasajero  $pasajero
-     * @return void
-     */
-    public function update(Request $request, Pasajero $pasajero) {}
 
     /**
      * Realiza un borrado lógico (soft delete) del pasajero.
