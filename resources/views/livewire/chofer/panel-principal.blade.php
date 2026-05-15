@@ -111,6 +111,38 @@
             </div>
         </section>
 
+        <section class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
+            <h2 class="text-xl font-extrabold text-[#003366]">
+                Asientos en tiempo real
+            </h2>
+
+            <div class="mt-3 rounded-lg bg-gray-50 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-wide text-gray-500">Disponibles</p>
+                        <p class="mt-1 text-3xl font-black text-[#003366]">
+                            {{ count($resumenAsientos['asientos_disponibles'] ?? []) }}
+                        </p>
+                    </div>
+
+                    <div class="text-right">
+                        <p class="text-sm font-semibold uppercase tracking-wide text-gray-500">Siguiente asiento</p>
+                        <p class="mt-1 text-2xl font-black text-gray-900">
+                            {{ $resumenAsientos['asientos_disponibles'][0] ?? 'Lleno' }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
+                    <div class="h-full rounded-full bg-[#003366]" style="width: {{ min(100, (float) ($resumenAsientos['ocupacion'] ?? 0)) }}%"></div>
+                </div>
+
+                <p class="mt-2 text-sm text-gray-600">
+                    Ocupación actual: {{ number_format((float) ($resumenAsientos['ocupacion'] ?? 0), 2) }}%
+                </p>
+            </div>
+        </section>
+
         <section class="rounded-xl border-2 border-dashed border-[#003366] bg-white p-4 shadow-sm">
             <h2 class="text-xl font-extrabold text-[#003366]">
                 Escaneo QR (abordaje)
