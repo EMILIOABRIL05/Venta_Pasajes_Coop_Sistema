@@ -7,6 +7,7 @@ use App\Exports\CierreTurnoExport;
 use App\Models\Boleto;
 use App\Models\CierreTurno;
 use App\Models\Ruta;
+use App\Models\Viaje;
 use App\Models\Venta;
 use App\Services\CierreTurnoService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -64,7 +65,25 @@ class VentaController extends Controller
             'precio_unitario' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        // ── 2. Preparación de datos (fuera del lock transaccional) ────────────
+        // ── 2. Bloqueo de ruta por viaje en curso o finalizado ────────────────
+        //    Regla de negocio: si algún viaje de hoy para esta ruta está 'En Curso' o
+        //    'Finalizada', se bloquea la venta de pasajes para toda la ruta.
+        $hoy = now()->toDateString();
+
+        $viajeBloqueado = Viaje::where('fecha', $hoy)
+            ->whereIn('estado', ['En Curso', 'Finalizada'])
+            ->whereHas('frecuencia', function ($q) use ($validated) {
+                $q->where('ruta_id', $validated['ruta_id']);
+            })
+            ->exists();
+
+        if ($viajeBloqueado) {
+            return back()
+                ->withInput()
+                ->with('error', 'No se pueden vender pasajes: el viaje para esta ruta ya se encuentra en curso o fue finalizado.');
+        }
+
+        // ── 3. Preparación de datos (fuera del lock transaccional) ───────────
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
         $asientos       = array_values(array_unique($validated['asientos']));
@@ -231,11 +250,20 @@ class VentaController extends Controller
      */
     public function create()
     {
+        $hoy = now()->toDateString();
+
+        $rutasBloqueadas = Viaje::where('fecha', $hoy)
+            ->whereIn('estado', ['En Curso', 'Finalizada'])
+            ->with('frecuencia.ruta')
+            ->get()
+            ->pluck('frecuencia.ruta_id')
+            ->unique();
+
         $rutas = Ruta::with(['origen', 'destino'])
             ->orderBy('precio_base')
             ->get();
 
-        return view('ventanilla.ventas.create', compact('rutas'));
+        return view('ventanilla.ventas.create', compact('rutas', 'rutasBloqueadas'));
     }
 
     /**

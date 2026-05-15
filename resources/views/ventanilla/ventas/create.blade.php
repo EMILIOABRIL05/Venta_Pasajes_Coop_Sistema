@@ -8,7 +8,7 @@
                 </h2>
                 <p class="mt-1 text-sm text-gray-500">Complete los datos del pasajero, seleccione la ruta y los asientos.</p>
             </div>
-            <a href="{{ route('ventanilla.index') }}"
+            <a href="{{ route('ventanilla.ventas.index') }}"
                class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-all">
                 ← Volver
             </a>
@@ -188,10 +188,15 @@
                                            {{ $errors->has('ruta_id') ? 'border-red-400 bg-red-50' : '' }}">
                                 <option value="">— Seleccione una ruta —</option>
                                 @foreach ($rutas as $ruta)
+                                    @php
+                                        $bloqueada = $rutasBloqueadas->contains($ruta->id);
+                                    @endphp
                                     <option value="{{ $ruta->id }}"
+                                        {{ $bloqueada ? 'disabled' : '' }}
                                         {{ old('ruta_id') == $ruta->id ? 'selected' : '' }}>
                                         {{ $ruta->origen->nombre ?? '?' }} → {{ $ruta->destino->nombre ?? '?' }}
                                         (${{ number_format($ruta->precio_base, 2) }})
+                                        {{ $bloqueada ? '— 🚫 Bus en Ruta ' : '' }}
                                     </option>
                                 @endforeach
                             </select>
