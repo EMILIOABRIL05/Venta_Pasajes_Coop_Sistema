@@ -83,7 +83,7 @@ class VentaController extends Controller
                 ->with('error', 'No se pueden vender pasajes: el viaje para esta ruta ya se encuentra en curso o fue finalizado.');
         }
 
-        // ── 3. Preparación de datos (fuera del lock transaccional) ────────────
+        // ── 3. Preparación de datos (fuera del lock transaccional) ───────────
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
         $asientos       = array_values(array_unique($validated['asientos']));

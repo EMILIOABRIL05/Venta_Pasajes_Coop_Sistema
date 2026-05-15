@@ -196,7 +196,7 @@
                                         {{ old('ruta_id') == $ruta->id ? 'selected' : '' }}>
                                         {{ $ruta->origen->nombre ?? '?' }} → {{ $ruta->destino->nombre ?? '?' }}
                                         (${{ number_format($ruta->precio_base, 2) }})
-                                        {{ $bloqueada ? '— 🚫 Bus en Ruta' : '' }}
+                                        {{ $bloqueada ? '— 🚫 Bus en Ruta ' : '' }}
                                     </option>
                                 @endforeach
                             </select>
