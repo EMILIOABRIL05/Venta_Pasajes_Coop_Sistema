@@ -332,7 +332,17 @@ class VentaController extends Controller
                 // boleto de las consultas normales de disponibilidad.
                 $boleto->delete();
 
-                // 4. Registrar log de cambios
+                // 4. Crear un reembolso automático aprobado para cuadrar el cierre de caja
+                \App\Models\Reembolso::create([
+                    'venta_id'         => $boleto->venta_id,
+                    'monto'            => $boleto->precio_final,
+                    'motivo'           => 'Anulación directa en ventanilla (dentro de 30 min)',
+                    'estado'           => 'aprobado',
+                    'fecha_solicitud'  => now(),
+                    'fecha_resolucion' => now(),
+                ]);
+
+                // 5. Registrar log de cambios
                 \Illuminate\Support\Facades\Log::info('[Ventanilla] Boleto anulado y asiento liberado.', [
                     'boleto_id' => $boleto->id,
                     'numero_asiento' => $boleto->numero_asiento,
