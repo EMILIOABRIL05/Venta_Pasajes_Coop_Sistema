@@ -1,14 +1,14 @@
 <div x-data="{ open: false, catalogosOpen: false, operativaOpen: false }">
     <!-- Sidebar Desktop -->
-    <nav class="w-64 bg-[#003366] text-white min-h-screen flex flex-col shadow-xl hidden sm:flex transition-all duration-300 fixed left-0 top-0">
+    <nav class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden bg-[#003366] text-white shadow-xl transition-all duration-300 sm:flex" aria-label="Sidebar principal">
         <!-- Logo / Header -->
-        <div class="p-6 border-b border-blue-700">
+        <div class="shrink-0 border-b border-blue-700 p-6">
             <h1 class="text-xl font-bold tracking-tight">Cooperativa Ambato</h1>
             <p class="text-xs text-blue-200 mt-1">Sistema de Pasajes</p>
         </div>
 
         <!-- Navigation Items -->
-        <div class="flex-1 overflow-y-auto py-6 px-3">
+        <div class="flex-1 overflow-y-auto px-3 py-6">
             <!-- Dashboard -->
             <a href="{{ route('dashboard') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
@@ -19,7 +19,7 @@
             </a>
 
             <!-- Admin Panel -->
-            @can('manage_buses')
+            @if (auth()->user()->hasRole('admin'))
                 <a href="{{ route('admin.panel') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.panel') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
                     </svg>
                     Panel Admin
                 </a>
-            @endcan
+            @endif
 
              <!-- Ventanilla -->
             @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
@@ -137,7 +137,7 @@
         </div>
 
         <!-- Footer / User Info -->
-        <div class="p-6 border-t border-blue-700">
+        <div class="shrink-0 border-t border-blue-700 p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
                     <span class="font-bold text-white">{{ substr(auth()->user()->name, 0, 1) }}</span>
@@ -157,7 +157,7 @@
     </nav>
 
     <!-- Mobile Sidebar Toggle Button (Visible only on mobile) -->
-    <div class="sm:hidden fixed bottom-6 right-6 z-50">
+    <div class="fixed bottom-6 right-6 z-50 sm:hidden">
         <button @click="open = !open"
             class="w-14 h-14 bg-[#003366] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors duration-200">
             <svg :class="open ? 'hidden' : 'block'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +177,7 @@
         leave-active-class="transition ease-in duration-200"
         leave-from-class="opacity-100"
         leave-to-class="opacity-0">
-        <div x-show="open" @click="open = false" class="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+        <div x-show="open" @click="open = false" class="fixed inset-0 z-40 bg-black bg-opacity-50 sm:hidden"></div>
     </transition>
 
     <!-- Mobile Sidebar Menu -->
@@ -188,7 +188,7 @@
         leave-active-class="transition ease-in duration-200 transform"
         leave-from-class="translate-x-0"
         leave-to-class="translate-x-full">
-        <nav x-show="open" class="sm:hidden fixed right-0 top-0 h-screen w-64 bg-[#003366] text-white shadow-2xl flex flex-col z-40">
+        <nav x-show="open" class="fixed right-0 top-0 z-50 flex h-screen w-64 flex-col bg-[#003366] text-white shadow-2xl sm:hidden">
             <!-- Mobile Header -->
             <div class="p-6 border-b border-blue-700 flex justify-between items-center">
                 <div>
@@ -212,7 +212,7 @@
                     Dashboard
                 </a>
 
-                @can('manage_buses')
+                @if (auth()->user()->hasRole('admin'))
                     <a href="{{ route('admin.panel') }}" @click="open = false"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.panel') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,7 +221,7 @@
                         </svg>
                         Panel Admin
                     </a>
-                @endcan
+                @endif
 
                 <!-- Operativa Mobile -->
                 @if (auth()->user()->hasAnyRole('admin', 'oficinista'))

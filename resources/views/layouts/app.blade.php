@@ -14,27 +14,45 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased bg-gray-100 text-gray-800">
         <div class="min-h-screen bg-gray-100">
             @auth
                 @include('components.sidebar-navigation')
             @endauth
 
-            <div class="flex flex-col sm:ml-64">
-                @include('layouts.navigation')
+            <div class="relative flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 {{ auth()->check() ? 'sm:pl-64' : '' }}">
+                <div class="relative z-20">
+                    <x-ui.navbar />
+                </div>
+
+                <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <x-ui.alert />
+                </div>
 
                 <!-- Page Heading -->
                 @isset($header)
-                    <header class="bg-white shadow">
+                    <header class="relative z-10 border-b border-[#003366]/10 bg-gray-100">
                         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                             {{ $header }}
                         </div>
                     </header>
                 @endisset
 
+                @hasSection('header')
+                    <header class="relative z-10 border-b border-[#003366]/10 bg-gray-100">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            @yield('header')
+                        </div>
+                    </header>
+                @endif
+
                 <!-- Page Content -->
-                <main class="flex-1">
-                    {{ $slot }}
+                <main class="relative z-0 flex-1 min-w-0 overflow-x-hidden py-6">
+                    @hasSection('content')
+                        @yield('content')
+                    @else
+                        {{ $slot ?? '' }}
+                    @endif
                 </main>
             </div>
         </div>
