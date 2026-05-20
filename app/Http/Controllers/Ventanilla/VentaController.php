@@ -9,6 +9,7 @@ use App\Models\CierreTurno;
 use App\Models\Ruta;
 use App\Models\Viaje;
 use App\Models\Venta;
+use App\Models\Pasajero;
 use App\Services\CierreTurnoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
@@ -64,10 +65,18 @@ class VentaController extends Controller
         //    'distinct' rechaza que el frontend envíe el mismo número dos veces.
         $datosValidados = $request->validate([
             'ruta_id'         => ['required', 'integer', 'exists:rutas,id'],
-            'pasajero_id'     => ['required', 'integer', 'exists:pasajeros,id'],
+            'cedula'          => ['required', 'string', 'regex:/^\d{10}$/'],
+            'nombre_completo' => ['required', 'string', 'max:255'],
+            'edad'            => ['required', 'integer', 'min:0', 'max:120'],
             'asientos'        => ['required', 'array', 'min:1', 'max:40'],
             'asientos.*'      => ['required', 'integer', 'between:1,40', 'distinct'],
             'precio_unitario' => ['required', 'numeric', 'min:0.01'],
+        ], [
+            'cedula.regex' => 'La cédula debe contener exactamente 10 dígitos numéricos.',
+            'nombre_completo.required' => 'El nombre completo del pasajero es obligatorio.',
+            'edad.required' => 'La edad del pasajero es obligatoria.',
+            'edad.min' => 'La edad no puede ser negativa.',
+            'edad.max' => 'La edad ingresada no es válida.',
         ]);
 
         // ── 2. Bloqueo de ruta por viaje en curso o finalizado ────────────────
@@ -95,18 +104,7 @@ class VentaController extends Controller
         $precioUnitario = (float) $datosValidados['precio_unitario'];
         $total          = round($precioUnitario * count($asientos), 2);
 
-        //    Payload para createMany(): cada elemento es un array con los campos
-        //    del boleto. El UUID se genera en Boleto::booted() durante el create().
-        //    NO se incluye 'venta_id' porque Eloquent lo inyecta a través de
-        //    la relación hasMany ($venta->boletos()->createMany(...)).
         $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
-        
-        $datosBoletos = array_map(fn (int $asiento) => [
-            'pasajero_id'    => $datosValidados['pasajero_id'],  // FK → pasajeros.id ✓
-            'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
-            'numero_asiento' => (string) $asiento,
-            'precio_final'   => $precioUnitario,
-        ], $asientos);
 
         // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
         //    Doble capa de protección contra ventas simultáneas del mismo asiento:
@@ -122,26 +120,44 @@ class VentaController extends Controller
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($datosBoletos, $total) {
+            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioUnitario, $total, $frecuencia) {
 
-                // 3a. Cabecera de la venta ─────────────────────────────────────
+                // 3a. Resolver, crear o restaurar pasajero
+                $pasajero = Pasajero::withTrashed()->where('cedula', $datosValidados['cedula'])->first();
+                if (!$pasajero) {
+                    $pasajero = Pasajero::create([
+                        'cedula'          => $datosValidados['cedula'],
+                        'nombre_completo' => $datosValidados['nombre_completo'],
+                        'edad'            => $datosValidados['edad'],
+                    ]);
+                } else {
+                    if ($pasajero->trashed()) {
+                        $pasajero->restore();
+                    }
+                    $pasajero->update([
+                        'nombre_completo' => $datosValidados['nombre_completo'],
+                        'edad'            => $datosValidados['edad'],
+                    ]);
+                }
+
+                // 3b. Cabecera de la venta ─────────────────────────────────────
                 //     FK: ventas.user_id → users.id (cajero autenticado)
                 $venta = Venta::create([
                     'user_id' => auth()->id(),
                     'total'   => $total,
                 ]);
 
-                // 3b. Inserción masiva de boletos ──────────────────────────────
+                // 3c. Preparación de datos de boletos
+                $datosBoletos = array_map(fn (int $asiento) => [
+                    'pasajero_id'    => $pasajero->id,  // FK → pasajeros.id ✓
+                    'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
+                    'numero_asiento' => (string) $asiento,
+                    'precio_final'   => $precioUnitario,
+                ], $asientos);
+
+                // 3d. Inserción masiva de boletos ──────────────────────────────
                 //     createMany() itera el payload y llama create() por cada
                 //     elemento, disparando Boleto::booted() → UUID automático.
-                //
-                //     Garantías de integridad referencial:
-                //       · boletos.venta_id    → ventas.id    ✓ vía relación Eloquent
-                //       · boletos.pasajero_id → pasajeros.id ✓ validado con exists:
-                //
-                //     Si CUALQUIER insert falla (FK rota, duplicado, etc.),
-                //     Eloquent lanza una excepción → MySQL ejecuta ROLLBACK
-                //     completo → ni la Venta ni ningún Boleto queda persistido.
                 $venta->boletos()->createMany($datosBoletos);
 
                 // Devolver el modelo hidratado (sin query adicional al cliente)
@@ -166,10 +182,12 @@ class VentaController extends Controller
                     'ip'      => $request->ip(),
                     'url'     => $request->fullUrl(),
                     'payload' => [
-                        'ruta_id'     => $datosValidados['ruta_id']     ?? null,
-                        'pasajero_id' => $datosValidados['pasajero_id'] ?? null,
-                        'asientos'    => $asientos                      ?? [],
-                        'total'       => $total                         ?? 0,
+                        'ruta_id'         => $datosValidados['ruta_id']         ?? null,
+                        'cedula'          => $datosValidados['cedula']          ?? null,
+                        'nombre_completo' => $datosValidados['nombre_completo'] ?? null,
+                        'edad'            => $datosValidados['edad']            ?? null,
+                        'asientos'        => $asientos                          ?? [],
+                        'total'           => $total                             ?? 0,
                     ],
                 ],
             ];
