@@ -76,7 +76,7 @@ class VentaController extends Controller
         $hoy = now()->toDateString();
 
         $viajeBloqueado = Viaje::where('fecha', $hoy)
-            ->whereIn('estado', ['En Curso', 'Finalizada'])
+            ->where('estado', 'En Curso')
             ->whereHas('frecuencia', function ($q) use ($datosValidados) {
                 $q->where('ruta_id', $datosValidados['ruta_id']);
             })
@@ -85,7 +85,7 @@ class VentaController extends Controller
         if ($viajeBloqueado) {
             return back()
                 ->withInput()
-                ->with('error', 'No se pueden vender pasajes: el viaje para esta ruta ya se encuentra en curso o fue finalizado.');
+                ->with('error', 'Ruta en viaje, no se pueden vender pasajes.');
         }
 
         // ── 3. Preparación de datos (fuera del lock transaccional) ───────────
