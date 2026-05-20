@@ -38,7 +38,7 @@ class PagoWeb extends Component
     protected function rules()
     {
         return [
-            'comprobante' => 'required|image|max:2048', // Máximo 2MB
+            'comprobante' => 'required|image|max:10240', // Máximo 10MB
         ];
     }
 

@@ -21,13 +21,13 @@ class SolicitudReembolso extends Component
     protected $rules = [
         'boleto_uuid' => 'required|string|exists:boletos,id',
         'motivo' => 'required|string|max:255',
-        'evidencia' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        'evidencia' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
     ];
 
     protected $messages = [
         'boleto_uuid.exists' => 'El boleto no existe.',
         'evidencia.mimes' => 'La evidencia debe ser un archivo PDF, JPG, JPEG o PNG.',
-        'evidencia.max' => 'La evidencia no debe superar los 2MB.',
+        'evidencia.max' => 'La evidencia no debe superar los 10MB.',
     ];
 
     public function updatedBoletoUuid()
