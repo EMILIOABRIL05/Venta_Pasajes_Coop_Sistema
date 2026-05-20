@@ -69,8 +69,7 @@
                                                     <span class="font-bold">RUTA:</span> {{ $boleto->frecuencia->ruta->origen->ciudad }} &rarr; {{ $boleto->frecuencia->ruta->destino->ciudad }}
                                                 </p>
                                                 <p class="text-[10px] text-gray-400 mt-1">COD: {{ $boleto->codigo_reserva }}</p>
-                                                
-                                                @if($venta->estado === 'pagada')
+                                                @if($venta->estado === 'Pagada')
                                                     <button wire:click="descargarBoleto('{{ $boleto->id }}')" 
                                                             wire:loading.attr="disabled"
                                                             class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-[#003366] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#002244] transition-colors shadow-sm">
