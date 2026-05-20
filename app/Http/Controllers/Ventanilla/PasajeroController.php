@@ -12,6 +12,21 @@ use Illuminate\Support\Facades\Log;
 class PasajeroController extends Controller
 {
 
+    // ─── Busqueda ─────────────────────────────────────────────────────────────
+
+    public function buscarPorCedula(string $cedula): JsonResponse
+    {
+        $pasajero = Pasajero::withTrashed()->where('cedula', $cedula)->first();
+        
+        if (!$pasajero) {
+            return response()->json(['exists' => false], 404);
+        }
+        
+        return response()->json([
+            'exists' => true,
+            'pasajero' => $pasajero
+        ]);
+    }
 
     // ─── Store ────────────────────────────────────────────────────────────────
 

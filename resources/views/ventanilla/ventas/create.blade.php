@@ -192,6 +192,7 @@
                                         $bloqueada = $rutasBloqueadas->contains($ruta->id);
                                     @endphp
                                     <option value="{{ $ruta->id }}"
+                                        data-precio="{{ $ruta->precio_base }}"
                                         {{ $bloqueada ? 'disabled' : '' }}
                                         {{ old('ruta_id') == $ruta->id ? 'selected' : '' }}>
                                         {{ $ruta->origen->nombre ?? '?' }} → {{ $ruta->destino->nombre ?? '?' }}
@@ -206,22 +207,76 @@
                         </div>
 
                         {{-- ── Pasajero ── --}}
-                        <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-6">
-                            <label for="pasajero_id" class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                        <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-6 flex flex-col gap-4">
+                            <h3 class="text-sm font-bold text-gray-800 border-b border-gray-100 pb-2 flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                ID del Pasajero
-                            </label>
-                            <input type="number"
-                                   name="pasajero_id"
-                                   id="pasajero_id"
-                                   value="{{ old('pasajero_id') }}"
-                                   placeholder="Ej: 42"
-                                   min="1"
-                                   class="w-full rounded-xl border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition
-                                          {{ $errors->has('pasajero_id') ? 'border-red-400 bg-red-50' : '' }}">
-                            @error('pasajero_id')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
+                                Datos del Pasajero
+                            </h3>
+                            
+                            <div>
+                                <label for="cedula" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                    Cédula (10 dígitos)
+                                </label>
+                                <div class="relative flex items-center">
+                                    <input type="text"
+                                           name="cedula"
+                                           id="cedula"
+                                           value="{{ old('cedula') }}"
+                                           placeholder="Ej: 1712345670"
+                                           maxlength="10"
+                                           class="w-full rounded-xl border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition pr-10
+                                                  {{ $errors->has('cedula') ? 'border-red-400 bg-red-50' : '' }}">
+                                    <div id="cedula-spinner" class="hidden absolute right-3 items-center">
+                                        <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                    <div id="cedula-check" class="hidden absolute right-3 items-center text-emerald-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p id="cedula-helper" class="mt-1 text-[11px] text-gray-400"></p>
+                                @error('cedula')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="nombre_completo" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                    Nombre Completo
+                                </label>
+                                <input type="text"
+                                       name="nombre_completo"
+                                       id="nombre_completo"
+                                       value="{{ old('nombre_completo') }}"
+                                       placeholder="Nombre y Apellido"
+                                       class="w-full rounded-xl border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition
+                                              {{ $errors->has('nombre_completo') ? 'border-red-400 bg-red-50' : '' }}">
+                                @error('nombre_completo')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="edad" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                    Edad
+                                </label>
+                                <input type="number"
+                                       name="edad"
+                                       id="edad"
+                                       value="{{ old('edad') }}"
+                                       placeholder="Ej: 25"
+                                       min="0"
+                                       max="120"
+                                       class="w-full rounded-xl border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition
+                                              {{ $errors->has('edad') ? 'border-red-400 bg-red-50' : '' }}">
+                                @error('edad')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         {{-- ── Precio unitario ── --}}
@@ -290,9 +345,15 @@
         var asientosEl  = document.getElementById('resumen-asientos');
         var precioInput = document.getElementById('precio_unitario');
 
-        // ── Restaurar inputs ocultos desde old() ──────────────────────────────
-        // Los inputs de old('asientos') ya vienen pre-renderizados en el HTML.
-        // Aquí sólo sincronizamos el estado visual del resumen al cargar la página.
+        var rutaSelect  = document.getElementById('ruta_id');
+        var cedulaInput = document.getElementById('cedula');
+        var nombreInput = document.getElementById('nombre_completo');
+        var edadInput   = document.getElementById('edad');
+        var spinner     = document.getElementById('cedula-spinner');
+        var checkMark   = document.getElementById('cedula-check');
+        var helper      = document.getElementById('cedula-helper');
+
+        // ── Sincronizar Resumen ──────────────────────────────────────────────
         function syncResumen() {
             var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
             var count    = hiddens.length;
@@ -309,6 +370,26 @@
                 asientosEl.appendChild(badge);
             });
             btnSubmit.disabled = count === 0;
+        }
+
+        // ── Recalcular Precio Unitario por Descuento o Ruta ─────────────────
+        function recalcularPrecio() {
+            var selectedOption = rutaSelect.options[rutaSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                return;
+            }
+            var precioBase = parseFloat(selectedOption.dataset.precio) || 0;
+            var edadVal = parseInt(edadInput.value);
+            
+            var precioFinal = precioBase;
+            if (!isNaN(edadVal)) {
+                // Descuento por edad (Manuel's DescuentoPorEdad: nino <= 12, tercera_edad >= 65)
+                if (edadVal <= 12 || edadVal >= 65) {
+                    precioFinal = Math.round((precioBase * 0.5) * 100) / 100;
+                }
+            }
+            precioInput.value = precioFinal.toFixed(2);
+            syncResumen();
         }
 
         // ── Click en asientos disponibles ─────────────────────────────────────
@@ -343,11 +424,83 @@
             });
         });
 
-        // Actualizar total al cambiar el precio
+        // ── AJAX Búsqueda de Cédula ──────────────────────────────────────────
+        var abortController = null;
+        cedulaInput.addEventListener('input', function () {
+            // Permitir solo dígitos y limitar a 10
+            var val = this.value.replace(/\D/g, '').substring(0, 10);
+            this.value = val;
+
+            if (val.length < 10) {
+                spinner.classList.add('hidden');
+                spinner.classList.remove('flex');
+                checkMark.classList.add('hidden');
+                helper.textContent = '';
+                helper.className = 'mt-1 text-[11px] text-gray-400';
+                return;
+            }
+
+            if (abortController) {
+                abortController.abort();
+            }
+
+            abortController = new AbortController();
+            spinner.classList.remove('hidden');
+            spinner.classList.add('flex');
+            checkMark.classList.add('hidden');
+            helper.textContent = 'Buscando pasajero...';
+            helper.className = 'mt-1 text-[11px] text-indigo-500 font-medium animate-pulse';
+
+            fetch('/ventanilla/pasajeros/buscar/' + val, { signal: abortController.signal })
+                .then(function (response) {
+                    if (response.status === 200) {
+                        return response.json();
+                    } else if (response.status === 404) {
+                        return { exists: false };
+                    } else {
+                        throw new Error('Error en la búsqueda');
+                    }
+                })
+                .then(function (data) {
+                    spinner.classList.add('hidden');
+                    spinner.classList.remove('flex');
+                    if (data.exists && data.pasajero) {
+                        checkMark.classList.remove('hidden');
+                        nombreInput.value = data.pasajero.nombre_completo;
+                        edadInput.value = data.pasajero.edad;
+                        helper.textContent = '🟢 Pasajero encontrado en el sistema.';
+                        helper.className = 'mt-1 text-[11px] text-emerald-600 font-semibold';
+                        recalcularPrecio();
+                    } else {
+                        checkMark.classList.add('hidden');
+                        helper.textContent = 'ℹ️ Nuevo pasajero (no registrado). Ingrese nombre y edad.';
+                        helper.className = 'mt-1 text-[11px] text-amber-600 font-medium';
+                    }
+                })
+                .catch(function (err) {
+                    if (err.name !== 'AbortError') {
+                        spinner.classList.add('hidden');
+                        spinner.classList.remove('flex');
+                        checkMark.classList.add('hidden');
+                        helper.textContent = '⚠️ Error al buscar pasajero.';
+                        helper.className = 'mt-1 text-[11px] text-red-500 font-medium';
+                        console.error(err);
+                    }
+                });
+        });
+
+        // ── Event Listeners para recalculado automático ─────────────────────
+        rutaSelect.addEventListener('change', recalcularPrecio);
+        edadInput.addEventListener('input', recalcularPrecio);
         precioInput.addEventListener('input', syncResumen);
 
-        // Sincronía inicial (restaura old() al recargar tras error)
+        // ── Inicialización / Restauración de old() ──────────────────────────
         syncResumen();
+        recalcularPrecio();
+        if (cedulaInput.value.length === 10) {
+            // Lanzar evento input para activar búsqueda si ya tiene 10 dígitos (ej: al volver con error)
+            cedulaInput.dispatchEvent(new Event('input'));
+        }
     });
     </script>
 

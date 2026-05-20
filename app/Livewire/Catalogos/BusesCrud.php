@@ -64,7 +64,7 @@ class BusesCrud extends Component
             'anio' => ['required', 'integer', 'min:1900', 'max:' . now()->year],
             'filas' => ['required', 'integer', 'min:1', 'max:60'],
             'estado' => ['required', Rule::in(['disponible', 'en_ruta', 'mantenimiento'])],
-            'foto' => ['nullable', 'image', 'max:2048'],
+            'foto' => ['nullable', 'image', 'max:10240'],
         ];
     }
 
