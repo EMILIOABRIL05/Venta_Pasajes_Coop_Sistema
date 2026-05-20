@@ -50,12 +50,12 @@ class AnulacionBoletoTest extends TestCase
         [$user, $frecuencia, $pasajero] = $this->setupBasics();
 
         $response = $this->actingAs($user)->post(route('ventanilla.ventas.store'), [
-            'frecuencia_id' => $frecuencia->id,
-            'pasajero_id' => $pasajero->id,
+            'ruta_id' => $frecuencia->ruta_id,
+            'cedula' => $pasajero->cedula,
+            'nombre_completo' => $pasajero->nombre_completo,
+            'edad' => $pasajero->edad,
             'asientos' => [5, 6],
             'precio_unitario' => 10.00,
-            // Agregamos bus_id para que pase la validación en el store
-            'bus_id' => \App\Models\Bus::factory()->create()->id ?? \App\Models\Bus::create(['placa' => 'AAA-1111', 'numero_asientos' => 40, 'estado' => 'disponible', 'categoria_bus_id' => \App\Models\CategoriaBus::create(['nombre' => 'Normal', 'capacidad' => 40])->id])->id
         ]);
 
         // Asegurarse de que la venta y los boletos se hayan guardado en la base de datos
@@ -82,12 +82,15 @@ class AnulacionBoletoTest extends TestCase
     {
         [$user, $frecuencia, $pasajero] = $this->setupBasics();
 
-        // Crear una venta y un boleto directamente en la DB simulando que pasó el tiempo
+        // Crear una venta y un boleto directamente en la DB
         $venta = Venta::create([
             'user_id' => $user->id,
             'total' => 10.00,
-            'created_at' => Carbon::now()->subMinutes(35) // Tiene 35 minutos de antigüedad
         ]);
+
+        \Illuminate\Support\Facades\DB::table('ventas')
+            ->where('id', $venta->id)
+            ->update(['created_at' => Carbon::now()->subMinutes(35)]);
 
         $boleto = Boleto::create([
             'id' => (string) Str::uuid(),
@@ -97,17 +100,19 @@ class AnulacionBoletoTest extends TestCase
             'numero_asiento' => '12',
             'precio_final' => 10.00,
             'estado' => 'Vendido',
-            'created_at' => Carbon::now()->subMinutes(35)
         ]);
 
-        // Instanciar el controlador y llamar el método directamente
-        $controller = new VentaController();
-        $response = $controller->anularBoleto($boleto->id);
+        \Illuminate\Support\Facades\DB::table('boletos')
+            ->where('id', $boleto->id)
+            ->update(['created_at' => Carbon::now()->subMinutes(35)]);
+
+        $boleto->refresh();
+
+        $response = $this->actingAs($user)->post(route('ventanilla.ventas.boleto.anular', $boleto->id));
 
         // La anulación debería retornar un redirect con error
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertTrue(session()->has('error'));
-        $this->assertEquals('Tiempo límite de anulación excedido.', session('error'));
+        $response->assertStatus(302);
+        $response->assertSessionHas('error', 'Tiempo límite de anulación excedido.');
 
         // El boleto no debe haber sido eliminado lógicamente (sigue en la BD sin deleted_at)
         $this->assertDatabaseHas('boletos', [

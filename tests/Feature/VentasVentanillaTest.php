@@ -45,7 +45,9 @@ class VentasVentanillaTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('ventanilla.ventas.store'), [
             'ruta_id' => $ruta->id,
-            'pasajero_id' => $pasajero->id,
+            'cedula' => $pasajero->cedula,
+            'nombre_completo' => $pasajero->nombre_completo,
+            'edad' => $pasajero->edad,
             'asientos' => [5, 6],
             'precio_unitario' => 10.00
         ]);
