@@ -131,4 +131,17 @@ Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
 Route::get('/pago/{ventaId}', PagoWeb::class)->middleware(['auth'])->name('pago');
 Route::get('/mis-viajes', MisViajes::class)->middleware(['auth'])->name('mis-viajes');
 
+// ─── Solicitudes de Cambio (RBAC: Developer/Admin vs User) ───────────────────
+Route::middleware(['auth'])
+    ->prefix('solicitudes-cambio')
+    ->name('solicitudes-cambio.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\SolicitudCambioController::class, 'create'])
+            ->name('create');
+        Route::post('/', [\App\Http\Controllers\SolicitudCambioController::class, 'store'])
+            ->name('store');
+        Route::get('/listado', [\App\Http\Controllers\SolicitudCambioController::class, 'index'])
+            ->name('index');
+    });
+
 require __DIR__.'/auth.php';

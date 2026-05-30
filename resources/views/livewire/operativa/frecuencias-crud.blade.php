@@ -78,7 +78,7 @@
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h3 class="text-base font-bold text-slate-900">{{ $frecuencia->hora_salida }}</h3>
-                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $frecuencia->ruta->origen->nombre ?? 'Origen no encontrado' }} - {{ $frecuencia->ruta->destino->nombre ?? 'Destino no encontrado' }}</span>
+                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $frecuencia->ruta?->origen?->nombre ?? 'Origen no encontrado' }} - {{ $frecuencia->ruta?->destino?->nombre ?? 'Destino no encontrado' }}</span>
                                     </div>
                                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                                         ID: {{ $frecuencia->id }}
