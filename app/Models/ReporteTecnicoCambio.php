@@ -11,6 +11,7 @@ class ReporteTecnicoCambio extends Model
 
     protected $fillable = [
         'solicitud_cambio_id',
+        'modulo_afectado',
         'developer_id',
         'github_issue_id',
         'git_branch',

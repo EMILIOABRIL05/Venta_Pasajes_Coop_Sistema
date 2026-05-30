@@ -2,7 +2,7 @@
 
 @section('header')
     <h2 class="text-xl font-semibold leading-tight text-gray-800">
-        {{ auth()->user()->hasRole('developer') || auth()->user()->hasRole('administrador')
+        {{ auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin')
             ? 'Formulario Técnico de Cambio'
             : 'Solicitar Cambio' }}
     </h2>
@@ -56,7 +56,7 @@
             </div>
 
             {{-- ─── CAMPOS TÉCNICOS (solo developer / administrador) ──── --}}
-            @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('administrador'))
+            @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin'))
             <div class="mt-6 rounded-lg bg-white p-6 shadow-md border-l-4 border-[#CC0000]">
                 <h3 class="mb-4 text-lg font-semibold text-[#CC0000]">
                     Campos Técnicos (Solo Personal Autorizado)
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('administrador'))
+        @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin'))
         const modulo = document.getElementById('modulo_afectado');
         if (modulo && !modulo.value) {
             e.preventDefault();
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
         @endif
     });
 
-    @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('administrador'))
+    @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin'))
     document.querySelectorAll('.sandbox-item input[type="checkbox"]').forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
             const statusSpan = this.closest('.sandbox-item').querySelector('span:last-child');

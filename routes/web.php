@@ -142,6 +142,8 @@ Route::middleware(['auth'])
             ->name('store');
         Route::get('/listado', [\App\Http\Controllers\SolicitudCambioController::class, 'index'])
             ->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'show'])
+            ->name('show');
     });
 
 require __DIR__.'/auth.php';

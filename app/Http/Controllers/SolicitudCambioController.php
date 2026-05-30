@@ -33,7 +33,7 @@ class SolicitudCambioController extends Controller
         ]);
 
         $user = Auth::user();
-        $isDeveloper = $user->hasRole('developer') || $user->hasRole('administrador');
+        $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
 
         return DB::transaction(function () use ($validated, $user, $isDeveloper) {
             $solicitud = SolicitudCambio::create([
@@ -57,6 +57,7 @@ class SolicitudCambioController extends Controller
                 ReporteTecnicoCambio::create([
                     'solicitud_cambio_id' => $solicitud->id,
                     'developer_id'        => $user->id,
+                    'modulo_afectado'     => $validated['modulo_afectado'] ?? null,
                     'github_issue_id'     => $validated['github_issue_id'] ?? null,
                     'git_branch'          => $validated['git_branch'] ?? null,
                     'commit_hash'         => $validated['commit_hash'] ?? null,
@@ -75,7 +76,7 @@ class SolicitudCambioController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $isDeveloper = $user->hasRole('developer') || $user->hasRole('administrador');
+        $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
 
         $query = SolicitudCambio::with(['usuario', 'reporteTecnico'])
             ->latest();
@@ -87,5 +88,20 @@ class SolicitudCambioController extends Controller
         $solicitudes = $query->paginate(15);
 
         return view('solicitudes-cambio.index', compact('solicitudes', 'isDeveloper'));
+    }
+
+    public function show($id)
+    {
+        $user = Auth::user();
+        $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
+
+        $solicitud = SolicitudCambio::with(['usuario', 'reporteTecnico'])
+            ->findOrFail($id);
+
+        if (! $isDeveloper && $solicitud->user_id !== $user->id) {
+            abort(403);
+        }
+
+        return view('solicitudes-cambio.show', compact('solicitud', 'isDeveloper'));
     }
 }
