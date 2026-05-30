@@ -1,0 +1,51 @@
+name: Bug Report
+description: Reporta un problema en el sistema
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: tech_layer
+    attributes:
+      label: Capa tecnica
+      description: Selecciona la tecnologia principal afectada
+      options:
+        - Laravel 11 (Backend)
+        - Livewire 4 (UI)
+        - PostgreSQL (DB)
+        - Vite (Build)
+        - Tailwind CSS (UI)
+        - Alpine.js (UI)
+        - Spatie Permission (Roles)
+        - Laravel Breeze (Auth)
+        - Dompdf (PDF)
+        - Simple QrCode (QR)
+        - Maatwebsite Excel (Reportes)
+        - html5-qrcode (QR web)
+        - Composer/PHP
+        - NPM/Node
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripcion
+      description: Que paso y que esperabas que pasara
+      placeholder: Describe el problema con claridad
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Pasos exactos para replicar el problema
+      placeholder: "1. Ir a ...\n2. Clic en ...\n3. Ver error"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Pega logs, trazas o mensajes de error relevantes
+      render: shell
+    validations:
+      required: false
