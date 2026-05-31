@@ -36,17 +36,6 @@
                 </div>
 
                 <form wire:key="bus-form-{{ $busId ?? 'new' }}" wire:submit.prevent="save" class="space-y-5">
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700" for="categoria_bus_id">Categoría</label>
-                        <select id="categoria_bus_id" wire:model="categoria_bus_id" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-[#003366] focus:ring-[#003366]">
-                            <option value="">Seleccione una categoría...</option>
-                            @foreach ($categorias as $categoria)
-                                <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
-                            @endforeach
-                        </select>
-                            @error('categoria_bus_id') <p class="mt-2 text-sm text-[#CC0000]">{{ $message }}</p> @enderror
-                    </div>
-
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700" for="placa">Placa</label>
@@ -144,7 +133,7 @@
                 <div class="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Listado de buses</h2>
-                        <p class="text-sm text-slate-500">Muestra categoría, placa, estado, asiento lógico y foto.</p>
+                        <p class="text-sm text-slate-500">Muestra placa, estado, asiento lógico y foto.</p>
                     </div>
                 </div>
 
@@ -165,7 +154,6 @@
                                         <div class="space-y-3">
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <h3 class="text-base font-bold text-slate-900">{{ $bus->placa }}</h3>
-                                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $bus->categoria?->nombre ?? 'Sin categoría' }}</span>
                                                 <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $bus->estado === 'disponible' ? 'bg-[#003366]/10 text-[#003366]' : ($bus->estado === 'en_ruta' ? 'bg-slate-200 text-slate-700' : 'bg-[#CC0000]/10 text-[#CC0000]') }}">
                                                     {{ ucfirst(str_replace('_', ' ', $bus->estado)) }}
                                                 </span>

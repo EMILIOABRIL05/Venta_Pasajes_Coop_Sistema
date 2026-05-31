@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Livewire\Operativa\HojaRuta;
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use App\Models\Frecuencia;
 use App\Models\Parada;
 use App\Models\Ruta;
@@ -43,13 +42,7 @@ class OperativaTest extends TestCase
     {
         $user = $this->makeAdminUser();
 
-        $categoria = CategoriaBus::create([
-            'nombre' => 'Ejecutivo',
-            'descripcion' => 'Cat',
-        ]);
-
         $bus = Bus::create([
-            'categoria_bus_id' => $categoria->id,
             'placa' => 'AAA-1234',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Imce',

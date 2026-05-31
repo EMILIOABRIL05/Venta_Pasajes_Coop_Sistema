@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             RutaSeeder::class,
             FrecuenciaSeeder::class,
             RolesAndPermissionsSeeder::class,
-            CategoriaBusSeeder::class,
             TestUsersSeeder::class,
         ]);
     }

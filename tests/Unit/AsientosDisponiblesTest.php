@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use App\Models\Boleto;
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use App\Models\Frecuencia;
 use App\Models\Pasajero;
 use App\Models\Parada;
@@ -24,13 +23,7 @@ class AsientosDisponiblesTest extends TestCase
     {
         $cajero = User::factory()->create();
 
-        $categoria = CategoriaBus::create([
-            'nombre' => 'Ejecutivo',
-            'descripcion' => 'Categoria de prueba',
-        ]);
-
         $bus = Bus::create([
-            'categoria_bus_id' => $categoria->id,
             'placa' => 'TST-2001',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Prueba',

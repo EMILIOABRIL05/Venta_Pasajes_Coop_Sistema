@@ -4,7 +4,6 @@ namespace App\Livewire\Catalogos;
 
 use App\Livewire\Traits\RequiresRole;
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -21,8 +20,6 @@ class BusesCrud extends Component
     protected string $paginationTheme = 'tailwind';
 
     public ?int $busId = null;
-
-    public string $categoria_bus_id = '';
 
     public string $placa = '';
 
@@ -52,7 +49,6 @@ class BusesCrud extends Component
     protected function rules(): array
     {
         return [
-            'categoria_bus_id' => ['required', 'integer', 'exists:categorias_bus,id'],
             'placa' => [
                 'required',
                 'string',
@@ -103,7 +99,6 @@ class BusesCrud extends Component
         $bus = Bus::query()->findOrFail($id);
 
         $this->busId = $bus->id;
-        $this->categoria_bus_id = (string) $bus->categoria_bus_id;
         $this->placa = $bus->placa;
         $this->marca_chasis = $bus->marca_chasis;
         $this->carroceria = $bus->carroceria;
@@ -140,7 +135,6 @@ class BusesCrud extends Component
 
         $this->reset([
             'busId',
-            'categoria_bus_id',
             'placa',
             'marca_chasis',
             'carroceria',
@@ -161,7 +155,6 @@ class BusesCrud extends Component
         $pasillo = true;
 
         return [
-            'categoria_bus_id' => (int) $data['categoria_bus_id'],
             'placa' => strtoupper(trim($data['placa'])),
             'marca_chasis' => trim($data['marca_chasis']),
             'carroceria' => trim($data['carroceria']),
@@ -183,12 +176,8 @@ class BusesCrud extends Component
     {
         return view('livewire.catalogos.buses-crud', [
             'buses' => Bus::query()
-                ->with('categoria')
                 ->latest()
                 ->paginate(8),
-            'categorias' => CategoriaBus::query()
-                ->orderBy('nombre')
-                ->get(),
         ]);
     }
 }
