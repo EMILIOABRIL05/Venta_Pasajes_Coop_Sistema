@@ -9,8 +9,9 @@
 
         <!-- Navigation Items -->
         <div class="flex-1 overflow-y-auto px-3 py-6">
-            <!-- Dashboard -->
-            <a href="{{ route('dashboard') }}"
+            <!-- Solicitar Cambio (Desktop) -->
+            <a href="{{ route('solicitudes-cambio.create') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
