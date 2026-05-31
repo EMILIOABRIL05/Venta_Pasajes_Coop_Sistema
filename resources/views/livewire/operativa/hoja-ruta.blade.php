@@ -108,12 +108,15 @@
                                         </span>
                                     </div>
                                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                                        {{ $viaje->frecuencia?->ruta->origen->nombre ?? 'Sin origen' }} a {{ $viaje->frecuencia?->ruta->destino->nombre ?? 'Sin destino' }}
+                                        {{ $viaje->frecuencia?->ruta?->origen?->nombre ?? 'Sin origen' }} a {{ $viaje->frecuencia?->ruta?->destino?->nombre ?? 'Sin destino' }}
                                     </p>
                                     <p class="mt-1 text-xs text-slate-500">
-                                        Bus: {{ $viaje->bus->placa }} (Asientos: {{ $viaje->bus->numero_asientos }})
+                                        Bus: {{ $viaje->bus?->placa ?? 'Sin bus asignado' }} 
+                                        @if ($viaje->bus?->numero_asientos)
+                                            (Asientos: {{ $viaje->bus->numero_asientos }})
+                                        @endif
                                         @if ($viaje->chofer)
-                                            · Chofer: {{ $viaje->chofer->name }}
+                                            · Chofer: {{ $viaje->chofer->name ?? 'Sin nombre' }}
                                         @endif
                                     </p>
                                 </div>
