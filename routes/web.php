@@ -144,6 +144,8 @@ Route::middleware(['auth'])
             ->name('index');
         Route::get('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'show'])
             ->name('show');
+        Route::patch('/{id}/estado', [\App\Http\Controllers\SolicitudCambioController::class, 'updateStatus'])
+            ->name('update-status');
     });
 
 require __DIR__.'/auth.php';

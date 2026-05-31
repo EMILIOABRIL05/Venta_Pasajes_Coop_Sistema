@@ -106,4 +106,30 @@ class SolicitudCambioController extends Controller
 
         return view('solicitudes-cambio.show', compact('solicitud', 'isDeveloper'));
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $user = Auth::user();
+        $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
+
+        if (! $isDeveloper) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'estado_pipeline' => 'required|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
+        ]);
+
+        $solicitud = SolicitudCambio::findOrFail($id);
+
+        return DB::transaction(function () use ($solicitud, $validated) {
+            $solicitud->update([
+                'estado_pipeline' => $validated['estado_pipeline'],
+            ]);
+
+            return redirect()
+                ->route('solicitudes-cambio.show', $solicitud->id)
+                ->with('success', 'Estado actualizado a: ' . $validated['estado_pipeline']);
+        });
+    }
 }
