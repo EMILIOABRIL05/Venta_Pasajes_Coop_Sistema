@@ -35,9 +35,11 @@
                                 ];
                             @endphp
                             @foreach($tipos as $tipo)
-                                <label class="relative w-full cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10 sm:w-[calc(50%-0.75rem)] md:w-[calc(33.333%-1rem)] lg:w-auto flex justify-center items-center">
+                                <label class="relative flex cursor-pointer flex-col items-center sm:w-[calc(50%-0.75rem)] md:w-[calc(33.333%-1rem)] lg:w-auto">
                                     <input type="radio" name="tipo_solicitud" value="{{ $tipo }}" x-model="tipoSelected" @change="checkComplete()" class="peer sr-only" required>
-                                    <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">{{ $tipo }}</span>
+                                    <div class="w-full rounded-lg border-2 border-gray-200 p-4 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-2 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10 peer-checked:text-[#003366] peer-checked:font-bold peer-checked:ring-2 peer-checked:ring-[#003366]/20">
+                                        {{ $tipo }}
+                                    </div>
                                 </label>
                             @endforeach
                         </div>
@@ -58,9 +60,11 @@
                                 ];
                             @endphp
                             @foreach($origenes as $origen)
-                                <label class="relative flex cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                                <label class="relative flex cursor-pointer flex-col items-center">
                                     <input type="radio" name="origen_solicitud" value="{{ $origen }}" x-model="origenSelected" @change="checkComplete()" class="peer sr-only" required>
-                                    <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">{{ $origen }}</span>
+                                    <div class="w-full rounded-lg border-2 border-gray-200 p-4 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-2 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10 peer-checked:text-[#003366] peer-checked:font-bold peer-checked:ring-2 peer-checked:ring-[#003366]/20">
+                                        {{ $origen }}
+                                    </div>
                                 </label>
                             @endforeach
                         </div>
@@ -182,37 +186,37 @@
                 <div class="mt-6 border-t border-gray-200 pt-4">
                     <h4 class="mb-3 text-sm font-semibold text-gray-700">Validación Sandbox por Módulo</h4>
                     <div class="grid grid-cols-2 gap-3 md:grid-cols-3" id="sandbox-grid">
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Operativa (CRUDs)" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Operativa (CRUDs)</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
                         </label>
 
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Ventanilla (Venta)" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Ventanilla (Venta)</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
                         </label>
 
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Web Client (Carrito)" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Web Client (Carrito)</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
                         </label>
 
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Base de Datos (PostgreSQL)" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Base de Datos</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
                         </label>
 
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Componentes Livewire" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Livewire</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
                         </label>
 
-                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                        <label class="sandbox-item relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 peer-checked:border-[#003366] peer-checked:bg-[#003366]/10">
                             <input type="checkbox" name="sandbox_modules[]" value="Estilos Tailwind CSS" class="peer sr-only">
                             <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">Tailwind CSS</span>
                             <span class="mt-1 text-xs text-gray-400 peer-checked:text-[#003366]">Pendiente</span>
