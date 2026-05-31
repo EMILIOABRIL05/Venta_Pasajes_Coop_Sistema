@@ -133,7 +133,7 @@
                         <label for="modulo_afectado" class="block text-sm font-medium text-gray-700">
                             Módulo Afectado
                         </label>
-                        <select name="modulo_afectado" id="modulo_afectado" required
+                        <select name="modulo_afectado" id="modulo_afectado" x-model="moduloAfectado" required
                                 class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-[#003366] focus:ring-[#003366]">
                             <option value="">Seleccione...</option>
                             <option value="Operativa">Operativa</option>
@@ -246,17 +246,20 @@
                 <div class="mt-6 rounded-md bg-gray-50 p-4 border-t border-gray-200 pt-4">
                     <h4 class="mb-2 text-sm font-semibold text-gray-700">Matriz de Impacto</h4>
                     <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div class="rounded bg-green-100 p-2">
-                            <span class="font-medium text-green-800">Bajo</span>
-                            <p class="text-green-600">Sin downtime</p>
+                        <div class="rounded p-2 transition"
+                             :class="getImpactLevel() === 'bajo' ? 'bg-green-100 ring-2 ring-green-500' : 'bg-gray-100 opacity-50'">
+                            <span class="font-medium" :class="getImpactLevel() === 'bajo' ? 'text-green-800' : 'text-gray-500'">Bajo</span>
+                            <p :class="getImpactLevel() === 'bajo' ? 'text-green-600' : 'text-gray-400'">Sin downtime</p>
                         </div>
-                        <div class="rounded bg-yellow-100 p-2">
-                            <span class="font-medium text-yellow-800">Medio</span>
-                            <p class="text-yellow-600">Requiere mantenimiento</p>
+                        <div class="rounded p-2 transition"
+                             :class="getImpactLevel() === 'medio' ? 'bg-yellow-100 ring-2 ring-yellow-500' : 'bg-gray-100 opacity-50'">
+                            <span class="font-medium" :class="getImpactLevel() === 'medio' ? 'text-yellow-800' : 'text-gray-500'">Medio</span>
+                            <p :class="getImpactLevel() === 'medio' ? 'text-yellow-600' : 'text-gray-400'">Requiere mantenimiento</p>
                         </div>
-                        <div class="rounded bg-red-100 p-2">
-                            <span class="font-medium text-red-800">Alto</span>
-                            <p class="text-red-600">Downtime esperado</p>
+                        <div class="rounded p-2 transition"
+                             :class="getImpactLevel() === 'alto' ? 'bg-red-100 ring-2 ring-red-500' : 'bg-gray-100 opacity-50'">
+                            <span class="font-medium" :class="getImpactLevel() === 'alto' ? 'text-red-800' : 'text-gray-500'">Alto</span>
+                            <p :class="getImpactLevel() === 'alto' ? 'text-red-600' : 'text-gray-400'">Downtime esperado</p>
                         </div>
                     </div>
                 </div>
@@ -281,8 +284,14 @@ function solicitudForm() {
         tipoSelected: '',
         origenSelected: '',
         showTechnical: false,
+        moduloAfectado: '',
         checkComplete() {
             this.showTechnical = this.tipoSelected !== '' && this.origenSelected !== '';
+        },
+        getImpactLevel() {
+            if (['Web Client (Pasajero)', 'Ventanilla'].includes(this.moduloAfectado)) return 'medio';
+            if (['Base de Datos', 'Infraestructura'].includes(this.moduloAfectado)) return 'alto';
+            return 'bajo';
         }
     }
 }
