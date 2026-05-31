@@ -12,7 +12,6 @@ class Bus extends Model
     protected $table = 'buses';
 
     protected $fillable = [
-        'categoria_bus_id',
         'placa',
         'marca_chasis',
         'carroceria',
@@ -105,12 +104,6 @@ class Bus extends Model
         $this->attributes['mapa_asientos'] = is_array($value)
             ? json_encode($value, JSON_UNESCAPED_UNICODE)
             : null;
-    }
-
-    // Relación: un bus pertenece a una categoría
-    public function categoria()
-    {
-        return $this->belongsTo(CategoriaBus::class, 'categoria_bus_id');
     }
 
     // Scope útil: solo buses disponibles

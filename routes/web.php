@@ -6,7 +6,6 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
-use App\Livewire\Catalogos\CategoriasBusCrud;
 use App\Livewire\Catalogos\CuentasCrud;
 use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
@@ -30,10 +29,6 @@ Route::get('/admin', AdminPanel::class)
 Route::get('/admin/gestion-reembolsos', \App\Livewire\Admin\GestionReembolsos::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('admin.gestion-reembolsos');
-
-Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
-    ->middleware(['auth', 'role:admin|oficinista'])
-    ->name('catalogos.categorias-bus');
 
 Route::get('/catalogos/buses', BusesCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])

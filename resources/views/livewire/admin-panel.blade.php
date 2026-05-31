@@ -61,15 +61,6 @@
                 </div>
             </a>
 
-            <a href="{{ route('catalogos.categorias-bus') }}" class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-[#003366] hover:shadow-xl hover:shadow-blue-900/10">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-[#1F2937] group-hover:text-[#003366] transition-colors">Categorías de bus</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">Administra las clases comerciales que agrupan la flota y alimentan el catálogo.</p>
-                    </div>
-                    <span class="rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-semibold text-[#1F2937] transition group-hover:bg-[#003366] group-hover:text-white">Abrir</span>
-                </div>
-            </a>
         </div>
     </div>
 
