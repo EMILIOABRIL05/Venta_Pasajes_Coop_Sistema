@@ -49,7 +49,6 @@ class CompraWebTest extends TestCase
 
         $bus = Bus::create([
             'categoria_bus_id' => $categoria->id,
-            'disco' => '100',
             'placa' => 'AAA-1234',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Prueba',

@@ -66,7 +66,7 @@
                                                     <p class="font-black text-[#003366] text-sm italic">Asiento: {{ $boleto->numero_asiento }}</p>
                                                 </div>
                                                 <p class="text-xs text-gray-500 mt-1">
-                                                    <span class="font-bold">RUTA:</span> {{ $boleto->frecuencia->ruta->origen->ciudad }} &rarr; {{ $boleto->frecuencia->ruta->destino->ciudad }}
+                                                <span class="font-bold">RUTA:</span> {{ $boleto->viaje->frecuencia->ruta->origen->ciudad }} &rarr; {{ $boleto->viaje->frecuencia->ruta->destino->ciudad }}
                                                 </p>
                                                 <p class="text-[10px] text-gray-400 mt-1">COD: {{ $boleto->codigo_reserva }}</p>
                                                 @if($venta->estado === 'Pagada')

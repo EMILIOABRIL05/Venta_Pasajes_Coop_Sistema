@@ -64,8 +64,8 @@
                                     <p class="font-semibold">{{ $viaje->frecuencia->ruta->origen->ciudad ?? 'N/A' }} ➔ {{ $viaje->frecuencia->ruta->destino->ciudad ?? 'N/A' }}</p>
                                 </div>
                                 <div class="mb-2">
-                                    <span class="text-sm text-gray-500">Bus Disco:</span>
-                                    <p class="font-semibold">N° {{ $viaje->bus->numero_disco ?? 'N/A' }}</p>
+                                    <span class="text-sm text-gray-500">Placa:</span>
+                                    <p class="font-semibold">{{ $viaje->bus->placa ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <span class="text-sm text-gray-500">Precio Base:</span>

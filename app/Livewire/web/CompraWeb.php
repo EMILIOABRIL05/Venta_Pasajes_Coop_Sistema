@@ -16,8 +16,8 @@ class CompraWeb extends Component
     public $viajeId;
     public $viaje;
     public $asientosSeleccionados = [];
-    public $datosPasajeros = []; 
-    public $tipoAsiento = 'estandar'; 
+    public $datosPasajeros = [];
+    public $tipoAsiento = 'estandar';
     public $recargo = 0.00;
     public $total = 0.00;
 
@@ -30,17 +30,16 @@ class CompraWeb extends Component
     public function mount($viajeId)
     {
         $this->viajeId = $viajeId;
-        
-        // CÓDIGO LIMPIO: Usamos findOrFail. Si el ID del viaje no existe, Laravel 
-        // abortará automáticamente con un error 404, como debe ser en producción.
+
+        // Usamos findOrFail: si el viaje no existe Laravel aborta con 404.
         $this->viaje = Viaje::with([
-            'frecuencia.ruta.origen', 
-            'frecuencia.ruta.destino', 
-            'bus.categoria', 
-            'boletos'
+            'frecuencia.ruta.origen',
+            'frecuencia.ruta.destino',
+            'bus.categoria',
+            'boletos',
         ])->findOrFail($viajeId);
-        
-        $this->recargo = 0.00; 
+
+        $this->recargo = 0.00;
     }
 
     public function seleccionarAsiento($numeroAsiento)
@@ -125,78 +124,76 @@ class CompraWeb extends Component
             return;
         }
 
-       // 🛡️ EL ESCUDO ANTI-DUPLICADOS CORREGIDO
-        // Verificamos si los asientos ya están en la base de datos
-        $asientosYaVendidos = Boleto::where('frecuencia_id', $this->viaje->frecuencia_id)
-            ->whereIn('numero_asiento', $this->asientosSeleccionados)
-            ->pluck('numero_asiento')
-            ->unique() // <-- ¡Cura definitiva! Elimina el "3, 3" y lo deja en un solo "3"
-            ->toArray();
-
-        if (!empty($asientosYaVendidos)) {
-            // Mensaje corto y claro como sugeriste
-            $textoAsientos = count($asientosYaVendidos) === 1 
-                ? 'El asiento ' . $asientosYaVendidos[0] 
-                : 'Los asientos ' . implode(', ', $asientosYaVendidos);
-
-            session()->flash('error', $textoAsientos . ' ya está ocupado. Por favor, selecciona otro.');
-            
-            // Recargamos el mapa y limpiamos la selección inválida
-            $this->viaje->load('boletos');
-            $this->asientosSeleccionados = array_diff($this->asientosSeleccionados, $asientosYaVendidos);
-            foreach ($asientosYaVendidos as $ocupado) {
-                unset($this->datosPasajeros[$ocupado]);
-            }
-            
-            $this->calcularTotal();
-            return; 
-        }
+        $redirect = null;
 
         try {
-            DB::beginTransaction();
+            DB::transaction(function () use (&$redirect) {
+                // 🛡️ ANTI-DUPLICADOS DENTRO DE LA TRANSACCIÓN con lockForUpdate()
+                $asientosYaVendidos = Boleto::where('viaje_id', $this->viaje->id)
+                    ->whereIn('numero_asiento', $this->asientosSeleccionados)
+                    ->lockForUpdate()
+                    ->pluck('numero_asiento')
+                    ->unique()
+                    ->toArray();
 
-            $venta = Venta::create([
-                'user_id' => Auth::id(),
-                'cliente_id' => Auth::id(),
-                'total' => $this->total,
-                'estado' => 'Pendiente',
-                'comprobante' => null,
-            ]);
+                if (!empty($asientosYaVendidos)) {
+                    $textoAsientos = count($asientosYaVendidos) === 1
+                        ? 'El asiento ' . $asientosYaVendidos[0]
+                        : 'Los asientos ' . implode(', ', $asientosYaVendidos);
 
-            foreach ($this->asientosSeleccionados as $asiento) {
-                $datos = $this->datosPasajeros[$asiento];
+                    $this->viaje->load('boletos');
+                    $this->asientosSeleccionados = array_diff($this->asientosSeleccionados, $asientosYaVendidos);
+                    foreach ($asientosYaVendidos as $ocupado) {
+                        unset($this->datosPasajeros[$ocupado]);
+                    }
+                    $this->calcularTotal();
 
-                $pasajero = Pasajero::updateOrCreate(
-                    ['cedula' => $datos['cedula']],
-                    [
-                        'nombre_completo' => $datos['nombre'],
-                        'edad' => $datos['edad'],
-                    ]
-                );
+                    session()->flash('error', $textoAsientos . ' ya está ocupado. Por favor, selecciona otro.');
+                    return;
+                }
 
-                Boleto::create([
-                    'venta_id' => $venta->id,
-                    'pasajero_id' => $pasajero->id,
-                    'frecuencia_id' => $this->viaje->frecuencia_id,
-                    'numero_asiento' => $asiento,
-                    'precio_final' => $datos['precio'],
+                $venta = Venta::create([
+                    'user_id' => Auth::id(),
+                    'cliente_id' => Auth::id(),
+                    'total' => $this->total,
+                    'estado' => 'Pendiente',
+                    'comprobante' => null,
                 ]);
-            }
 
-            DB::commit();
+                foreach ($this->asientosSeleccionados as $asiento) {
+                    $datos = $this->datosPasajeros[$asiento];
 
-            $this->asientosSeleccionados = [];
-            $this->datosPasajeros = [];
-            $this->total = 0;
+                    $pasajero = Pasajero::updateOrCreate(
+                        ['cedula' => $datos['cedula']],
+                        [
+                            'nombre_completo' => $datos['nombre'],
+                            'edad' => $datos['edad'],
+                        ]
+                    );
 
-            session()->flash('success', '¡Compra web realizada con éxito!');
-            
-            return redirect()->route('pago', ['ventaId' => $venta->id]);
+                    Boleto::create([
+                        'venta_id' => $venta->id,
+                        'pasajero_id' => $pasajero->id,
+                        'viaje_id' => $this->viaje->id,
+                        'numero_asiento' => $asiento,
+                        'precio_final' => $datos['precio'],
+                    ]);
+                }
+
+                $this->asientosSeleccionados = [];
+                $this->datosPasajeros = [];
+                $this->total = 0;
+
+                session()->flash('success', '¡Compra web realizada con éxito!');
+
+                $redirect = redirect()->route('pago', ['ventaId' => $venta->id]);
+            });
 
         } catch (\Exception $e) {
-            DB::rollBack();
             session()->flash('error', 'Error al procesar la compra: ' . $e->getMessage());
         }
+
+        return $redirect;
     }
 
     public function render()

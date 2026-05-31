@@ -125,10 +125,9 @@ Route::get('/carrito/{viajeId}', function ($viajeId) {
 })->middleware(['auth'])->name('web.carrito');
 
 Route::get('/compra-web/{viajeId}', CompraWeb::class)
-    // ->middleware(['auth']) <-- COMENTADO TEMPORALMENTE PARA PRUEBAS
+    ->middleware(['auth'])
     ->name('web.compra-web');
 
-    
 // Solicitud de Reembolso (Público)
 Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
     ->name('solicitud.reembolso');

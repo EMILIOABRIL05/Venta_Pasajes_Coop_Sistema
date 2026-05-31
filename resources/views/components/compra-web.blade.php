@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-100 min-h-screen">  
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-100 min-h-screen">
     <!-- Hero Header Cooperativa Ambato -->
     <div class="bg-[#003366] text-white py-8 px-6 sm:px-10 rounded-2xl shadow-xl mb-8 flex flex-col md:flex-row items-center justify-between relative overflow-hidden border-b-4 border-[#CC0000]">
         <div class="z-10 w-full">
@@ -29,7 +29,7 @@
                     <svg class="w-4 h-4 mr-1.5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M16 16h3a1 1 0 001-1v-4a1 1 0 00-1-1h-3m-9 0h3"></path>
                     </svg>
-                    Bus #{{ $viaje->bus->disco ?? 'N/D' }} ({{ $viaje->bus->categoria->nombre ?? 'Normal' }})
+                    Bus: {{ $viaje->bus->placa ?? 'N/D' }} ({{ $viaje->bus->categoria->nombre ?? 'Normal' }})
                 </span>
             </div>
         </div>
