@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-<div class="py-6">
+<div class="py-6" x-data="solicitudForm()">
     <div class="mx-auto max-w-4xl">
         <form id="form-solicitud-cambio" method="POST" action="{{ route('solicitudes-cambio.store') }}">
             @csrf
@@ -18,20 +18,70 @@
             <div class="rounded-lg bg-white p-6 shadow-md">
                 <h3 class="mb-4 text-lg font-semibold text-[#003366]">Información de la Solicitud</h3>
 
-                <div class="mb-4">
-                    <label for="tipo_solicitud" class="block text-sm font-medium text-gray-700">
-                        Tipo de Solicitud
-                    </label>
-                    <select name="tipo_solicitud" id="tipo_solicitud" required
-                            class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-[#003366] focus:ring-[#003366]">
-                        <option value="">Seleccione...</option>
-                        <option value="Mejora funcional">Mejora funcional</option>
-                        <option value="Reporte de error">Reporte de error</option>
-                        <option value="Nueva característica">Nueva característica</option>
-                        <option value="Cambio de diseño">Cambio de diseño</option>
-                        <option value="Otro">Otro</option>
-                    </select>
-                </div>
+                @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin'))
+                    {{-- TIPO DE CAMBIO (Radio Cards para Dev/Admin) --}}
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Tipo de Cambio
+                        </label>
+                        <div class="flex flex-wrap justify-center gap-3">
+                            @php
+                                $tipos = [
+                                    'Nueva Regla de Negocio',
+                                    'Ajuste de Interfaz / UX',
+                                    'Corrección de Error',
+                                    'Modificación de BD',
+                                    'Optimización',
+                                ];
+                            @endphp
+                            @foreach($tipos as $tipo)
+                                <label class="relative w-full cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10 sm:w-[calc(50%-0.75rem)] md:w-[calc(33.333%-1rem)] lg:w-auto flex justify-center items-center">
+                                    <input type="radio" name="tipo_solicitud" value="{{ $tipo }}" x-model="tipoSelected" @change="checkComplete()" class="peer sr-only" required>
+                                    <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">{{ $tipo }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- ORIGEN DE LA SOLICITUD (Radio Cards para Dev/Admin) --}}
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Origen de la Solicitud
+                        </label>
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            @php
+                                $origenes = [
+                                    'Retroalimentación del Usuario',
+                                    'Requerimiento del Ingeniero/Docente',
+                                    'Falla Crítica',
+                                    'Iniciativa Técnica',
+                                ];
+                            @endphp
+                            @foreach($origenes as $origen)
+                                <label class="relative flex cursor-pointer flex-col rounded-lg border-2 border-gray-200 p-4 text-center transition hover:border-[#003366] hover:bg-[#003366]/5 has-[:checked]:border-[#003366] has-[:checked]:bg-[#003366]/10">
+                                    <input type="radio" name="origen_solicitud" value="{{ $origen }}" x-model="origenSelected" @change="checkComplete()" class="peer sr-only" required>
+                                    <span class="text-sm font-medium text-gray-700 peer-checked:text-[#003366]">{{ $origen }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    {{-- TIPO DE SOLICITUD (Dropdown para otros roles) --}}
+                    <div class="mb-4">
+                        <label for="tipo_solicitud" class="block text-sm font-medium text-gray-700">
+                            Tipo de Solicitud
+                        </label>
+                        <select name="tipo_solicitud" id="tipo_solicitud" required
+                                class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-[#003366] focus:ring-[#003366]">
+                            <option value="">Seleccione...</option>
+                            <option value="Mejora funcional">Mejora funcional</option>
+                            <option value="Reporte de error">Reporte de error</option>
+                            <option value="Nueva característica">Nueva característica</option>
+                            <option value="Cambio de diseño">Cambio de diseño</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                @endif
 
                 <div class="mb-4">
                     <label for="descripcion" class="block text-sm font-medium text-gray-700">
@@ -57,7 +107,7 @@
 
             {{-- ─── CAMPOS TÉCNICOS (solo developer / administrador) ──── --}}
             @if(auth()->user()->hasRole('developer') || auth()->user()->hasRole('admin'))
-            <div class="mt-6 rounded-lg bg-white p-6 shadow-md border-l-4 border-[#CC0000]">
+            <div x-show="showTechnical" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="mt-6 rounded-lg bg-white p-6 shadow-md border-l-4 border-[#CC0000]">
                 <h3 class="mb-4 text-lg font-semibold text-[#CC0000]">
                     Campos Técnicos (Solo Personal Autorizado)
                 </h3>
@@ -226,11 +276,22 @@
 
 @push('scripts')
 <script>
+function solicitudForm() {
+    return {
+        tipoSelected: '',
+        origenSelected: '',
+        showTechnical: false,
+        checkComplete() {
+            this.showTechnical = this.tipoSelected !== '' && this.origenSelected !== '';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('form-solicitud-cambio');
 
     form.addEventListener('submit', function (e) {
-        const tipo = document.getElementById('tipo_solicitud').value;
+        const tipo = document.querySelector('input[name="tipo_solicitud"]:checked')?.value || document.getElementById('tipo_solicitud')?.value;
         const desc = document.getElementById('descripcion').value.trim();
 
         if (!tipo || !desc) {
