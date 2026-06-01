@@ -15,16 +15,23 @@ class FrecuenciaSeeder extends Seeder
     {
         $rutas = Ruta::all();
 
-        foreach ($rutas as $ruta) {
-            Frecuencia::create([
-                'ruta_id' => $ruta->id,
-                'hora_salida' => '08:00',
-            ]);
+        $horarios = [
+            '06:00',
+            '08:30',
+            '12:00',
+            '15:30',
+        ];
 
-            Frecuencia::create([
-                'ruta_id' => $ruta->id,
-                'hora_salida' => '10:30',
-            ]);
+        foreach ($rutas as $ruta) {
+            foreach ($horarios as $hora) {
+                Frecuencia::updateOrCreate(
+                    [
+                        'ruta_id' => $ruta->id,
+                        'hora_salida' => $hora,
+                    ],
+                    []
+                );
+            }
         }
     }
 }
