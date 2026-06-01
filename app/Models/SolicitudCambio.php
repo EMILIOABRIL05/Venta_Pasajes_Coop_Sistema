@@ -13,6 +13,7 @@ class SolicitudCambio extends Model
     protected $fillable = [
         'user_id',
         'tipo_solicitud',
+        'origen_solicitud',
         'descripcion',
         'prioridad',
         'estado_pipeline',
@@ -21,6 +22,7 @@ class SolicitudCambio extends Model
     protected $casts = [
         'prioridad'       => 'string',
         'estado_pipeline' => 'string',
+        'origen_solicitud' => 'string',
     ];
 
     public function usuario(): BelongsTo

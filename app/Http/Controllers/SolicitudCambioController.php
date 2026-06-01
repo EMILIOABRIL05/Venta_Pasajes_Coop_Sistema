@@ -18,18 +18,19 @@ class SolicitudCambioController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tipo_solicitud'  => 'required|string|max:255',
-            'descripcion'     => 'required|string',
-            'prioridad'       => 'required|in:Baja,Media,Alta',
-            'estado_pipeline' => 'nullable|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
-            'modulo_afectado' => 'nullable|string|max:255',
-            'github_issue_id' => 'nullable|string|max:255',
-            'git_branch'      => 'nullable|string|max:255',
-            'commit_hash'     => 'nullable|string|max:255',
-            'sandbox_status'  => 'nullable|string',
-            'sandbox_modules' => 'nullable|array',
-            'risk_analysis'   => 'nullable|string',
-            'rollback_plan'   => 'nullable|string',
+            'tipo_solicitud'   => 'required|string|max:255',
+            'origen_solicitud' => 'nullable|string|max:255',
+            'descripcion'      => 'required|string',
+            'prioridad'        => 'required|in:Baja,Media,Alta',
+            'estado_pipeline'  => 'nullable|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
+            'modulo_afectado'  => 'nullable|string|max:255',
+            'github_issue_id'  => 'nullable|string|max:255',
+            'git_branch'       => 'nullable|string|max:255',
+            'commit_hash'      => 'nullable|string|max:255',
+            'sandbox_status'   => 'nullable|string',
+            'sandbox_modules'  => 'nullable|array',
+            'risk_analysis'    => 'nullable|string',
+            'rollback_plan'    => 'nullable|string',
         ]);
 
         $user = Auth::user();
@@ -39,6 +40,7 @@ class SolicitudCambioController extends Controller
             $solicitud = SolicitudCambio::create([
                 'user_id'         => $user->id,
                 'tipo_solicitud'  => $validated['tipo_solicitud'],
+                'origen_solicitud' => $isDeveloper ? ($validated['origen_solicitud'] ?? null) : null,
                 'descripcion'     => $validated['descripcion'],
                 'prioridad'       => $validated['prioridad'],
                 'estado_pipeline' => $isDeveloper
@@ -103,5 +105,31 @@ class SolicitudCambioController extends Controller
         }
 
         return view('solicitudes-cambio.show', compact('solicitud', 'isDeveloper'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $user = Auth::user();
+        $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
+
+        if (! $isDeveloper) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'estado_pipeline' => 'required|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
+        ]);
+
+        $solicitud = SolicitudCambio::findOrFail($id);
+
+        return DB::transaction(function () use ($solicitud, $validated) {
+            $solicitud->update([
+                'estado_pipeline' => $validated['estado_pipeline'],
+            ]);
+
+            return redirect()
+                ->route('solicitudes-cambio.show', $solicitud->id)
+                ->with('success', 'Estado actualizado a: ' . $validated['estado_pipeline']);
+        });
     }
 }

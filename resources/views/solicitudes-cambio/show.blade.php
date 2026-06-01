@@ -37,6 +37,16 @@
                         'Baja'  => 'bg-green-500',
                     ];
                     $priorityDot = $priorityColors[$solicitud->prioridad] ?? 'bg-gray-500';
+
+                    $pipelineSteps = [
+                        'Propuesto'           => ['En Desarrollo', 'Rechazado'],
+                        'En Desarrollo'       => ['Validado en Sandbox', 'Rechazado'],
+                        'Validado en Sandbox' => ['Mergado', 'Rechazado'],
+                        'Mergado'             => ['Desplegado'],
+                        'Desplegado'          => [],
+                        'Rechazado'           => [],
+                    ];
+                    $nextSteps = $pipelineSteps[$solicitud->estado_pipeline] ?? [];
                 @endphp
                 <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $badgeClass }}">
                     {{ $solicitud->estado_pipeline }}
@@ -47,6 +57,43 @@
                 </span>
             </div>
         </div>
+
+        {{-- ─── Action Buttons (Developer/Admin Only) ──────────────────── --}}
+        @if($isDeveloper && count($nextSteps) > 0)
+        <div class="mb-6 rounded-lg bg-white p-4 shadow-md border border-gray-200">
+            <h4 class="mb-3 text-sm font-semibold text-gray-700">Avanzar en Pipeline</h4>
+            <div class="flex flex-wrap gap-2">
+                @foreach($nextSteps as $nextStep)
+                    @php
+                        $btnColors = [
+                            'En Desarrollo'       => 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+                            'Validado en Sandbox' => 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500',
+                            'Mergado'             => 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
+                            'Desplegado'          => 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+                            'Rechazado'           => 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+                        ];
+                        $btnClass = $btnColors[$nextStep] ?? 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
+                    @endphp
+                    <form method="POST" action="{{ route('solicitudes-cambio.update-status', $solicitud->id) }}" class="inline">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="estado_pipeline" value="{{ $nextStep }}">
+                        <button type="submit"
+                                class="rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $btnClass }}">
+                            {{ $nextStep === 'Rechazado' ? 'Rechazar' : 'Mover a: ' . $nextStep }}
+                        </button>
+                    </form>
+                @endforeach
+            </div>
+        </div>
+        @elseif($isDeveloper && $solicitud->estado_pipeline === 'Rechazado')
+        <div class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-800 border border-red-200">
+            <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Esta solicitud ha sido rechazada.
+        </div>
+        @endif
 
         {{-- ─── Descripción ────────────────────────────────────────────── --}}
         <div class="mb-6 rounded-lg bg-white p-6 shadow-md">
