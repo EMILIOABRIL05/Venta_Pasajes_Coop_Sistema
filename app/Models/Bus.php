@@ -29,6 +29,11 @@ class Bus extends Model
         'numero_asientos' => 'integer',
     ];
 
+    public function asientos()
+    {
+        return $this->hasMany(Asiento::class);
+    }
+
     public static function estructuraAsientosBase(): array
     {
         return [
