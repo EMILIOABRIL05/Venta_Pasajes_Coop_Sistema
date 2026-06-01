@@ -3,7 +3,9 @@
 namespace App\Livewire\Catalogos;
 
 use App\Livewire\Traits\RequiresRole;
+use App\Models\Asiento;
 use App\Models\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -36,6 +38,8 @@ class BusesCrud extends Component
 
     public string $estado = 'disponible';
 
+    public array $asientosCategorias = [];
+
     public ?string $fotoActual = null;
 
     public TemporaryUploadedFile|string|null $foto = null;
@@ -44,6 +48,7 @@ class BusesCrud extends Component
     {
         $this->requireRole('admin|oficinista');
         $this->resetForm();
+        $this->cargarCategoriasAsientosPorDefecto();
     }
 
     protected function rules(): array
@@ -69,26 +74,30 @@ class BusesCrud extends Component
         $data = $this->validate();
         $payload = $this->buildPayload($data);
 
-        if ($this->busId) {
-            $bus = Bus::query()->findOrFail($this->busId);
+        DB::transaction(function () use ($payload) {
+            if ($this->busId) {
+                $bus = Bus::query()->findOrFail($this->busId);
 
-            if ($this->foto instanceof TemporaryUploadedFile) {
-                $this->deletePhotoIfExists($bus->foto);
-                $payload['foto'] = $this->foto->store('buses', 'public');
+                if ($this->foto instanceof TemporaryUploadedFile) {
+                    $this->deletePhotoIfExists($bus->foto);
+                    $payload['foto'] = $this->foto->store('buses', 'public');
+                } else {
+                    $payload['foto'] = $bus->foto;
+                }
+
+                $bus->update($payload);
+                $this->sincronizarAsientos($bus);
+                session()->flash('message', 'Bus actualizado correctamente.');
             } else {
-                $payload['foto'] = $bus->foto;
-            }
+                if ($this->foto instanceof TemporaryUploadedFile) {
+                    $payload['foto'] = $this->foto->store('buses', 'public');
+                }
 
-            $bus->update($payload);
-            session()->flash('message', 'Bus actualizado correctamente.');
-        } else {
-            if ($this->foto instanceof TemporaryUploadedFile) {
-                $payload['foto'] = $this->foto->store('buses', 'public');
+                $bus = Bus::create($payload);
+                $this->sincronizarAsientos($bus);
+                session()->flash('message', 'Bus creado correctamente.');
             }
-
-            Bus::create($payload);
-            session()->flash('message', 'Bus creado correctamente.');
-        }
+        });
 
         $this->resetForm();
         $this->resetPage();
@@ -109,6 +118,7 @@ class BusesCrud extends Component
         $this->estado = $bus->estado;
         $this->fotoActual = $bus->foto;
         $this->foto = null;
+        $this->cargarCategoriasAsientosDesdeBus($bus);
 
     }
 
@@ -146,6 +156,12 @@ class BusesCrud extends Component
         $this->filas = (string) $baseSeatMap['filas'];
         $this->pasillo = (bool) $baseSeatMap['pasillo'];
         $this->estado = 'disponible';
+        $this->cargarCategoriasAsientosPorDefecto();
+    }
+
+    public function updatedFilas(): void
+    {
+        $this->cargarCategoriasAsientosPorDefecto();
     }
 
     private function buildPayload(array $data): array
@@ -165,6 +181,77 @@ class BusesCrud extends Component
         ];
     }
 
+    private function cargarCategoriasAsientosPorDefecto(): void
+    {
+        $total = Bus::calcularCapacidad((int) $this->filas, true);
+        $this->asientosCategorias = [];
+
+        for ($numero = 1; $numero <= $total; $numero++) {
+            $this->asientosCategorias[(string) $numero] = 'estandar';
+        }
+
+        if ($this->busId) {
+            $bus = Bus::query()->find($this->busId);
+
+            if ($bus) {
+                $this->cargarCategoriasAsientosDesdeBus($bus);
+            }
+        }
+    }
+
+    private function cargarCategoriasAsientosDesdeBus(Bus $bus): void
+    {
+        $filas = is_array($bus->mapa_asientos) && isset($bus->mapa_asientos['filas'])
+            ? (int) $bus->mapa_asientos['filas']
+            : (int) $this->filas;
+
+        $total = Bus::calcularCapacidad($filas, true);
+        $categorias = array_fill(1, $total, 'estandar');
+
+        foreach ($bus->asientos()->orderBy('numero')->get() as $asiento) {
+            $categorias[$asiento->numero] = $asiento->categoria;
+        }
+
+        $this->asientosCategorias = [];
+
+        foreach ($categorias as $numero => $categoria) {
+            $this->asientosCategorias[(string) $numero] = $categoria;
+        }
+    }
+
+    public function alternarCategoriaAsiento(int $numero): void
+    {
+        $clave = (string) $numero;
+        $categoriaActual = $this->asientosCategorias[$clave] ?? 'estandar';
+        $this->asientosCategorias[$clave] = $categoriaActual === 'vip' ? 'estandar' : 'vip';
+    }
+
+    private function sincronizarAsientos(Bus $bus): void
+    {
+        $filas = is_array($bus->mapa_asientos) && isset($bus->mapa_asientos['filas'])
+            ? (int) $bus->mapa_asientos['filas']
+            : (int) $this->filas;
+
+        $total = Bus::calcularCapacidad($filas, true);
+
+        Asiento::query()
+            ->where('bus_id', $bus->id)
+            ->where('numero', '>', $total)
+            ->delete();
+
+        for ($numero = 1; $numero <= $total; $numero++) {
+            Asiento::updateOrCreate(
+                [
+                    'bus_id' => $bus->id,
+                    'numero' => $numero,
+                ],
+                [
+                    'categoria' => $this->asientosCategorias[(string) $numero] ?? 'estandar',
+                ]
+            );
+        }
+    }
+
     private function deletePhotoIfExists(?string $photoPath): void
     {
         if ($photoPath) {
@@ -176,6 +263,7 @@ class BusesCrud extends Component
     {
         return view('livewire.catalogos.buses-crud', [
             'buses' => Bus::query()
+                ->with('asientos')
                 ->latest()
                 ->paginate(8),
         ]);

@@ -97,6 +97,57 @@
                         </div>
                     </div>
 
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.15em] text-[#003366]">Categoría por asiento</p>
+                                <h3 class="mt-1 text-sm font-bold text-slate-900">Marca cada asiento como estándar o VIP</h3>
+                                <p class="mt-1 text-xs text-slate-500">Los asientos VIP se venden con recargo y se resaltan en la venta.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                                <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-amber-800">
+                                    <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                                    VIP
+                                </span>
+                                <span class="inline-flex items-center gap-2 rounded-full bg-slate-200 px-3 py-1.5 text-slate-700">
+                                    <span class="h-2.5 w-2.5 rounded-full bg-slate-500"></span>
+                                    Estándar
+                                </span>
+                            </div>
+                        </div>
+
+                        @php
+                            $totalAsientos = \App\Models\Bus::calcularCapacidad((int) $filas, true);
+                        @endphp
+
+                        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            @for ($numero = 1; $numero <= $totalAsientos; $numero++)
+                                @php
+                                    $categoria = $asientosCategorias[(string) $numero] ?? 'estandar';
+                                @endphp
+
+                                <button
+                                    type="button"
+                                    wire:click="alternarCategoriaAsiento({{ $numero }})"
+                                    class="group flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition {{ $categoria === 'vip' ? 'border-amber-300 bg-amber-50 text-amber-900 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-[#003366]/25 hover:bg-[#003366]/5' }}"
+                                >
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Asiento</p>
+                                        <p class="mt-1 text-lg font-black">{{ $numero }}</p>
+                                    </div>
+
+                                    <div class="flex h-9 w-9 items-center justify-center rounded-full {{ $categoria === 'vip' ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-600' }}">
+                                        @if ($categoria === 'vip')
+                                            ★
+                                        @else
+                                            •
+                                        @endif
+                                    </div>
+                                </button>
+                            @endfor
+                        </div>
+                    </div>
+
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700" for="foto">Foto del bus</label>
                         <input id="foto" type="file" wire:model="foto" accept="image/*" class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[#003366] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#00284d]">
@@ -166,6 +217,8 @@
                                             <div class="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                                                 <p><span class="font-semibold text-slate-900">Asientos:</span> {{ $bus->numero_asientos }}</p>
                                                 <p><span class="font-semibold text-slate-900">Mapa:</span> {{ $bus->mapa_asientos_resumen }}</p>
+                                                <p><span class="font-semibold text-slate-900">VIP:</span> {{ $bus->asientos->where('categoria', 'vip')->count() }}</p>
+                                                <p><span class="font-semibold text-slate-900">Estándar:</span> {{ $bus->asientos->where('categoria', 'estandar')->count() }}</p>
                                             </div>
                                         </div>
 
