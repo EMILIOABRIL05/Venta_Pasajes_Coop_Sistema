@@ -79,6 +79,12 @@ const choferQrScanner = (livewireId) => ({
 
 window.choferQrScanner = choferQrScanner;
 
+window.datosEntrega = {
+	imprimirResumen() {
+		window.print();
+	},
+};
+
 function registrarChoferQrScanner(AlpineRef) {
 	if (!AlpineRef || typeof AlpineRef.data !== 'function') {
 		return;
