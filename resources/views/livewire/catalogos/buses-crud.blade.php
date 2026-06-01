@@ -167,6 +167,23 @@
                                                 <p><span class="font-semibold text-slate-900">Asientos:</span> {{ $bus->numero_asientos }}</p>
                                                 <p><span class="font-semibold text-slate-900">Mapa:</span> {{ $bus->mapa_asientos_resumen }}</p>
                                             </div>
+
+                                            @php
+                                                $asientosPorCategoria = collect($bus->mapa_asientos['asientos'] ?? [])
+                                                    ->groupBy('categoria_id')
+                                                    ->map->count();
+                                            @endphp
+
+                                            @if($categoriasAsiento->isNotEmpty())
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($categoriasAsiento as $categoria)
+                                                        <span class="seat-category-pill" style="--seat-color: {{ $categoria->color_hex ?? '#003366' }}">
+                                                            {{ $categoria->nombre }}:
+                                                            {{ $asientosPorCategoria->get($categoria->id, 0) }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
 
                                         <div class="flex items-center gap-2">

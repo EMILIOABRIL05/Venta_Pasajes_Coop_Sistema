@@ -4,6 +4,7 @@ namespace App\Livewire\Catalogos;
 
 use App\Livewire\Traits\RequiresRole;
 use App\Models\Bus;
+use App\Models\CategoriaAsiento;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -57,7 +58,7 @@ class BusesCrud extends Component
             ],
             'marca_chasis' => ['required', 'string', 'max:120'],
             'carroceria' => ['required', 'string', 'max:120'],
-            'anio' => ['required', 'integer', 'min:1900', 'max:' . now()->year],
+            'anio' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
             'filas' => ['required', 'integer', 'min:1', 'max:60'],
             'estado' => ['required', Rule::in(['disponible', 'en_ruta', 'mantenimiento'])],
             'foto' => ['nullable', 'image', 'max:10240'],
@@ -117,6 +118,7 @@ class BusesCrud extends Component
         // Solo admin puede eliminar buses
         if (! auth()->user()?->hasRole('admin')) {
             session()->flash('error', 'No tienes permisos para eliminar buses.');
+
             return;
         }
 
@@ -153,6 +155,8 @@ class BusesCrud extends Component
         $filas = (int) $data['filas'];
         // Pasillo central forzado a true (estándar interprovincial)
         $pasillo = true;
+        $categorias = CategoriaAsiento::query()->orderBy('orden')->get();
+        $categoriaDefault = $categorias->firstWhere('es_default', true) ?? $categorias->first();
 
         return [
             'placa' => strtoupper(trim($data['placa'])),
@@ -160,7 +164,12 @@ class BusesCrud extends Component
             'carroceria' => trim($data['carroceria']),
             'anio' => (int) $data['anio'],
             'numero_asientos' => Bus::calcularCapacidad($filas, $pasillo),
-            'mapa_asientos' => Bus::generarEstructuraAsientos($filas, $pasillo),
+            'mapa_asientos' => Bus::generarMapaAsientosCategorizado(
+                $filas,
+                $pasillo,
+                $categoriaDefault,
+                $categorias
+            ),
             'estado' => $data['estado'],
         ];
     }
@@ -178,6 +187,9 @@ class BusesCrud extends Component
             'buses' => Bus::query()
                 ->latest()
                 ->paginate(8),
+            'categoriasAsiento' => CategoriaAsiento::query()
+                ->orderBy('orden')
+                ->get(),
         ]);
     }
 }

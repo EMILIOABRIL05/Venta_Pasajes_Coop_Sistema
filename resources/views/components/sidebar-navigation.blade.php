@@ -38,6 +38,14 @@
                     </svg>
                     Panel Admin
                 </a>
+
+                <a href="{{ route('admin.datos-entrega') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.datos-entrega') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10" />
+                    </svg>
+                    Datos Entrega
+                </a>
             @endif
 
              <!-- Ventanilla -->
@@ -241,6 +249,14 @@
                         </svg>
                         Panel Admin
                     </a>
+
+                    <a href="{{ route('admin.datos-entrega') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.datos-entrega') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10" />
+                        </svg>
+                        Datos Entrega
+                    </a>
                 @endif
 
                 <!-- Operativa Mobile -->
@@ -354,5 +370,4 @@
         </nav>
     </transition>
 </div>
-
 

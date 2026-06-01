@@ -2,6 +2,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\BoletoValidacionController;
+use App\Http\Controllers\DatosEntregaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
@@ -25,6 +26,10 @@ Route::get('/dashboard', function () {
 Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
+
+Route::get('/admin/datos-entrega', DatosEntregaController::class)
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.datos-entrega');
 
 Route::get('/admin/gestion-reembolsos', \App\Livewire\Admin\GestionReembolsos::class)
     ->middleware(['auth', 'role:admin|oficinista'])
