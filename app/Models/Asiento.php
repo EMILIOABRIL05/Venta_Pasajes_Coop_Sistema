@@ -34,4 +34,11 @@ class Asiento extends Model
     {
         return $this->categoria !== 'vip';
     }
+
+    public function precioConRecargo(float $precioBase): float
+    {
+        return $this->esVip()
+            ? round($precioBase * 1.5, 2)
+            : round($precioBase, 2);
+    }
 }
