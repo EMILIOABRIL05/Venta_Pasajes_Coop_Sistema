@@ -65,6 +65,9 @@
                                     <span class="inline-block w-3 h-3 rounded bg-emerald-500"></span> Disponible
                                 </span>
                                 <span class="flex items-center gap-1.5">
+                                    <span class="inline-block w-3 h-3 rounded bg-amber-400 ring-2 ring-amber-200"></span> VIP (+50%)
+                                </span>
+                                <span class="flex items-center gap-1.5">
                                     <span class="inline-block w-3 h-3 rounded bg-cyan-500 ring-2 ring-cyan-300"></span> Seleccionado
                                 </span>
                                 <span class="flex items-center gap-1.5">

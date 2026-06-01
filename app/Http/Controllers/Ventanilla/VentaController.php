@@ -101,10 +101,35 @@ class VentaController extends Controller
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
         $asientos       = array_values(array_unique($datosValidados['asientos']));
-        $precioUnitario = (float) $datosValidados['precio_unitario'];
-        $total          = round($precioUnitario * count($asientos), 2);
+        $precioBase     = (float) $datosValidados['precio_unitario'];
 
         $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
+        $viajeActivo = Viaje::with('bus.asientos')
+            ->where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($datosValidados) {
+                $q->where('ruta_id', $datosValidados['ruta_id']);
+            })
+            ->first();
+
+        $categoriasPorAsiento = [];
+        $total = 0.0;
+
+        foreach ($asientos as $numeroAsiento) {
+            $categoria = 'estandar';
+
+            if ($viajeActivo?->bus) {
+                $categoria = $viajeActivo->bus->asientos
+                    ->firstWhere('numero', (int) $numeroAsiento)
+                    ?->categoria ?? 'estandar';
+            }
+
+            $precioAsiento = $categoria === 'vip'
+                ? round($precioBase * 1.5, 2)
+                : round($precioBase, 2);
+
+            $categoriasPorAsiento[(string) $numeroAsiento] = $categoria;
+            $total += $precioAsiento;
+        }
 
         // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
         //    Doble capa de protección contra ventas simultáneas del mismo asiento:
@@ -120,7 +145,7 @@ class VentaController extends Controller
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioUnitario, $total, $frecuencia) {
+            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioBase, $total, $frecuencia, $categoriasPorAsiento) {
 
                 // 3a. Resolver, crear o restaurar pasajero
                 $pasajero = Pasajero::withTrashed()->where('cedula', $datosValidados['cedula'])->first();
@@ -152,7 +177,10 @@ class VentaController extends Controller
                     'pasajero_id'    => $pasajero->id,  // FK → pasajeros.id ✓
                     'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
                     'numero_asiento' => (string) $asiento,
-                    'precio_final'   => $precioUnitario,
+                    'categoria_asiento' => $categoriasPorAsiento[(string) $asiento] ?? 'estandar',
+                    'precio_final'   => ($categoriasPorAsiento[(string) $asiento] ?? 'estandar') === 'vip'
+                        ? round($precioBase * 1.5, 2)
+                        : round($precioBase, 2),
                 ], $asientos);
 
                 // 3d. Inserción masiva de boletos ──────────────────────────────
