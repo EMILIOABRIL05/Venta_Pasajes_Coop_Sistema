@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Models\Frecuencia;
+use App\Models\Viaje;
 
 class Boleto extends Model
 {
@@ -32,6 +33,7 @@ class Boleto extends Model
         'venta_id',
         'pasajero_id',
         'frecuencia_id',
+        'viaje_id',
         'numero_asiento',
         'precio_final',
         'estado',
@@ -99,6 +101,15 @@ class Boleto extends Model
     public function frecuencia()
     {
         return $this->belongsTo(Frecuencia::class);
+    }
+
+    /**
+     * El boleto pertenece a un viaje concreto (fecha + bus).
+     * Permite distinguir asientos por día, no solo por frecuencia.
+     */
+    public function viaje()
+    {
+        return $this->belongsTo(Viaje::class);
     }
 
     /**

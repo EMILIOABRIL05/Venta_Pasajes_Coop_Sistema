@@ -12,6 +12,7 @@ use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
 use App\Livewire\Web\PagoWeb;
 use App\Livewire\Web\MisViajes;
+use App\Livewire\Web\CompraWeb;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -119,10 +120,14 @@ Route::middleware(['auth', 'role:oficinista|admin'])
 
 
 // ─── Módulo Web (Sprint 3 - Estudiante 5 Anthony) ──────────────────────────────
-Route::get('/carrito/{viajeId}', CarritoCompra::class)
-    ->middleware(['auth']) 
-    ->name('web.carrito');
+Route::get('/carrito/{viajeId}', function ($viajeId) {
+    return redirect()->route('web.compra-web', ['viajeId' => $viajeId]);
+})->middleware(['auth'])->name('web.carrito');
 
+// AQUÍ ESTÁ LA MAGIA QUE LO ARREGLA TODO: Quitamos el 'render'
+Route::get('/compra-web/{viajeId}', CompraWeb::class)
+    ->name('web.compra-web')
+    ->middleware(['auth']);
 // Solicitud de Reembolso (Público)
 Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
     ->name('solicitud.reembolso');
