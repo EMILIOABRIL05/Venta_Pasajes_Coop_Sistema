@@ -17,8 +17,8 @@ class RutaSeeder extends Seeder
             ->pluck('id', 'nombre');
 
         $rutas = [
-            ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Terrestre Quito', 'precio_base' => 6.00, 'tiempo_estimado_minutos' => 140],
-            ['origen' => 'Terminal Terrestre Quito', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 6.00, 'tiempo_estimado_minutos' => 140],
+            ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Terrestre Quitumbe', 'precio_base' => 6.00, 'tiempo_estimado_minutos' => 150],
+            ['origen' => 'Terminal Terrestre Quitumbe', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 6.00, 'tiempo_estimado_minutos' => 150],
             ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Terrestre Guayaquil', 'precio_base' => 15.00, 'tiempo_estimado_minutos' => 360],
             ['origen' => 'Terminal Terrestre Guayaquil', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 15.00, 'tiempo_estimado_minutos' => 360],
             ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Terrestre Banos', 'precio_base' => 2.50, 'tiempo_estimado_minutos' => 50],
@@ -29,6 +29,8 @@ class RutaSeeder extends Seeder
             ['origen' => 'Terminal Terrestre Tena', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 6.50, 'tiempo_estimado_minutos' => 180],
             ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Latacunga', 'precio_base' => 1.50, 'tiempo_estimado_minutos' => 45],
             ['origen' => 'Terminal Latacunga', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 1.50, 'tiempo_estimado_minutos' => 45],
+            ['origen' => 'Terminal Terrestre Ambato', 'destino' => 'Terminal Salcedo', 'precio_base' => 1.25, 'tiempo_estimado_minutos' => 35],
+            ['origen' => 'Terminal Salcedo', 'destino' => 'Terminal Terrestre Ambato', 'precio_base' => 1.25, 'tiempo_estimado_minutos' => 35],
         ];
 
         foreach ($rutas as $ruta) {

@@ -12,14 +12,18 @@ class CategoriaAsiento extends Model
     protected $table = 'categorias_asiento';
 
     protected $fillable = [
+        'codigo',
         'nombre',
         'recargo',
+        'color_hex',
+        'orden',
         'es_default',
         'descripcion',
     ];
 
     protected $casts = [
         'recargo' => 'decimal:2',
+        'orden' => 'integer',
         'es_default' => 'boolean',
     ];
 }

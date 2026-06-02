@@ -64,8 +64,8 @@
                                     <p class="font-semibold">{{ $viaje->frecuencia->ruta->origen->ciudad ?? 'N/A' }} ➔ {{ $viaje->frecuencia->ruta->destino->ciudad ?? 'N/A' }}</p>
                                 </div>
                                 <div class="mb-2">
-                                    <span class="text-sm text-gray-500">Bus Disco:</span>
-                                    <p class="font-semibold">N° {{ $viaje->bus->numero_disco ?? 'N/A' }}</p>
+                                    <span class="text-sm text-gray-500">Placa:</span>
+                                    <p class="font-semibold">{{ $viaje->bus->placa ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <span class="text-sm text-gray-500">Precio Base:</span>
@@ -73,11 +73,11 @@
                                 </div>
                             </div>
                             
-                            <!-- Botón Corregido con Enlace al Carrito -->
+                            <!-- Botón Corregido con Enlace al Componente Compra Web -->
                             <div class="px-4 py-4 bg-gray-50 border-t border-gray-200">
-                                <a href="{{ route('web.carrito', ['viajeId' => $viaje->id]) }}" 
+                                <a href="{{ route('web.compra-web', ['viajeId' => $viaje->id]) }}" 
                                    class="w-full block text-center bg-[#CC0000] hover:bg-red-800 text-white font-bold py-2 px-4 rounded transition duration-200 shadow-sm">
-                                    Comprar Pasaje
+                                    Comprar Boletos
                                 </a>
                             </div>
                         </div>
