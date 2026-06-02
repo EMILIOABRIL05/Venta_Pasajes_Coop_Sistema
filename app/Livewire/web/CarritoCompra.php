@@ -22,6 +22,7 @@ class CarritoCompra extends Component
     public $asientosSeleccionados = [];
     public $datosPasajeros = []; // Nombre, Cédula, Edad
     public $total = 0;
+    public array $seatCategories = [];
 
     protected $rules = [
         'datosPasajeros.*.nombre' => 'required|string|min:3',
@@ -34,6 +35,11 @@ class CarritoCompra extends Component
         $this->viajeId = $viajeId;
         // Cargamos el viaje con su frecuencia, ruta, bus y boletos vendidos
         $this->viaje = Viaje::with(['frecuencia.ruta', 'bus', 'boletos'])->findOrFail($viajeId);
+        $this->seatCategories = $this->viaje->bus
+            ? $this->viaje->bus->asientos()->pluck('categoria', 'numero')->mapWithKeys(function ($categoria, $numero) {
+                return [(string) $numero => $categoria];
+            })->all()
+            : [];
     }
 
 public function seleccionarAsiento($numeroAsiento)

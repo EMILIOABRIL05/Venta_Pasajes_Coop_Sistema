@@ -55,6 +55,7 @@
         :seatNumbers="range(1, $viaje->bus->numero_asientos ?? 40)" 
         :occupiedSeats="$viaje->boletos ? $viaje->boletos->pluck('numero_asiento')->toArray() : []"
         :selectedSeats="$asientosSeleccionados"
+        :seatCategories="$seatCategories"
     />
 </div>
         </div>

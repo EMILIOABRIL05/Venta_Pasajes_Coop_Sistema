@@ -120,7 +120,7 @@
                             $totalAsientos = \App\Models\Bus::calcularCapacidad((int) $filas, true);
                         @endphp
 
-                        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4">
                             @for ($numero = 1; $numero <= $totalAsientos; $numero++)
                                 @php
                                     $categoria = $asientosCategorias[(string) $numero] ?? 'estandar';
@@ -129,20 +129,17 @@
                                 <button
                                     type="button"
                                     wire:click="alternarCategoriaAsiento({{ $numero }})"
-                                    class="group flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition {{ $categoria === 'vip' ? 'border-amber-300 bg-amber-50 text-amber-900 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-[#003366]/25 hover:bg-[#003366]/5' }}"
+                                    class="relative flex items-center justify-center rounded-2xl border px-4 py-6 text-center transition {{ $categoria === 'vip' ? 'border-yellow-400 bg-amber-50 text-amber-900 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-[#003366]/25 hover:bg-[#003366]/5' }}"
                                 >
-                                    <div>
-                                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Asiento</p>
-                                        <p class="mt-1 text-lg font-black">{{ $numero }}</p>
-                                    </div>
+                                    @if ($categoria === 'vip')
+                                        <span class="absolute -top-3 inline-flex items-center justify-center rounded-full bg-yellow-400 text-white w-6 h-6">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.84-.197-1.54-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                                            </svg>
+                                        </span>
+                                    @endif
 
-                                    <div class="flex h-9 w-9 items-center justify-center rounded-full {{ $categoria === 'vip' ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-600' }}">
-                                        @if ($categoria === 'vip')
-                                            ★
-                                        @else
-                                            •
-                                        @endif
-                                    </div>
+                                    <span class="text-2xl font-extrabold tracking-tight">{{ $numero }}</span>
                                 </button>
                             @endfor
                         </div>

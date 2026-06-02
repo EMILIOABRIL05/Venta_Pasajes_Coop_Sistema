@@ -111,8 +111,24 @@ class VentaController extends Controller
             })
             ->first();
 
+        // Verificar que ninguno de los asientos ya esté vendido en la base de datos para este viaje hoy (si el viaje existe)
+        if ($viajeActivo) {
+            $vendidos = Boleto::where('frecuencia_id', $viajeActivo->frecuencia_id)
+                ->whereDate('created_at', $hoy)
+                ->whereIn('numero_asiento', array_map('strval', $asientos))
+                ->pluck('numero_asiento');
+
+            if ($vendidos->isNotEmpty()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Los siguientes asientos ya han sido vendidos para este viaje: ' . $vendidos->map(fn($s) => "#{$s}")->join(', ') . '.');
+            }
+        }
+
+
         $categoriasPorAsiento = [];
         $total = 0.0;
+
 
         foreach ($asientos as $numeroAsiento) {
             $categoria = 'estandar';
@@ -327,6 +343,65 @@ class VentaController extends Controller
 
         return view('ventanilla.ventas.create', compact('rutas', 'rutasBloqueadas'));
     }
+
+    /**
+     * Obtiene los asientos ocupados y categorías para una ruta específica en el día actual (AJAX).
+     *
+     * @param  int  $ruta_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function asientosPorRuta($ruta_id)
+    {
+        $hoy = now()->toDateString();
+
+        $viaje = Viaje::where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($ruta_id) {
+                $q->where('ruta_id', $ruta_id);
+            })
+            ->with(['bus.asientos', 'frecuencia.ruta'])
+            ->first();
+
+        if (!$viaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay viajes programados hoy para esta ruta.'
+            ]);
+        }
+
+        $bus = $viaje->bus;
+        if (!$bus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un bus asignado al viaje de esta ruta hoy.'
+            ]);
+        }
+
+        $numeroAsientos = $bus->numero_asientos;
+        
+        $seatCategories = $bus->asientos()
+            ->pluck('categoria', 'numero')
+            ->mapWithKeys(function ($categoria, $numero) {
+                return [(string) $numero => $categoria];
+            })
+            ->all();
+
+        // Obtener los asientos que ya están ocupados (boletos vendidos para esta frecuencia hoy)
+        $occupiedSeats = Boleto::where('frecuencia_id', $viaje->frecuencia_id)
+            ->whereDate('created_at', $hoy)
+            ->pluck('numero_asiento')
+            ->map(fn($num) => (string) $num)
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'viaje_id' => $viaje->id,
+            'numero_asientos' => $numeroAsientos,
+            'seatCategories' => $seatCategories,
+            'occupiedSeats' => $occupiedSeats,
+            'precio_base' => (float) ($viaje->frecuencia->ruta->precio_base ?? 0),
+        ]);
+    }
+
 
     /**
      * Muestra los detalles de una venta específica y sus boletos.
