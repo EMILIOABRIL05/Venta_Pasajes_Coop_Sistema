@@ -124,10 +124,10 @@ Route::get('/carrito/{viajeId}', function ($viajeId) {
     return redirect()->route('web.compra-web', ['viajeId' => $viajeId]);
 })->middleware(['auth'])->name('web.carrito');
 
+// AQUÍ ESTÁ LA MAGIA QUE LO ARREGLA TODO: Quitamos el 'render'
 Route::get('/compra-web/{viajeId}', CompraWeb::class)
-    ->middleware(['auth'])
-    ->name('web.compra-web');
-
+    ->name('web.compra-web')
+    ->middleware(['auth']);
 // Solicitud de Reembolso (Público)
 Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
     ->name('solicitud.reembolso');

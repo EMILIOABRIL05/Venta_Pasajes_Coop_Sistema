@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class CompraWeb extends Component
 {
     public $viajeId;
-    public $viaje;
+
     public $asientosSeleccionados = [];
     public $datosPasajeros = [];
     public $tipoAsiento = 'estandar';
@@ -30,16 +30,17 @@ class CompraWeb extends Component
     public function mount($viajeId)
     {
         $this->viajeId = $viajeId;
+        $this->recargo = 0.00;
+    }
 
-        // Usamos findOrFail: si el viaje no existe Laravel aborta con 404.
-        $this->viaje = Viaje::with([
+    private function getViajeData()
+    {
+        return Viaje::with([
             'frecuencia.ruta.origen',
             'frecuencia.ruta.destino',
             'bus.categoria',
             'boletos',
-        ])->findOrFail($viajeId);
-
-        $this->recargo = 0.00;
+        ])->findOrFail($this->viajeId);
     }
 
     public function seleccionarAsiento($numeroAsiento)
@@ -52,19 +53,17 @@ class CompraWeb extends Component
             unset($this->datosPasajeros[$numeroAsiento]);
         } else {
             $this->asientosSeleccionados[] = $numeroAsiento;
-            
-            // CONEXIÓN REAL: Leemos el precio base dinámicamente
-            $precioBase = $this->viaje->frecuencia->ruta->precio_base ?? 0; 
+
+            $viaje = $this->getViajeData();
+            $precioBase = $viaje->frecuencia->ruta->precio_base ?? 0;
             $precioConRecargo = $precioBase + $this->recargo;
 
-            // LÓGICA UX: Autocompletar solo el primer asiento con los datos del usuario logueado
             $nombreAuto = '';
             $cedulaAuto = '';
-            
+
             if (count($this->asientosSeleccionados) === 1 && Auth::check()) {
-                $nombreAuto = Auth::user()->name; 
-                // Si en el futuro agregas la cédula a la tabla users, descomenta esta línea:
-                // $cedulaAuto = Auth::user()->cedula ?? ''; 
+                $nombreAuto = Auth::user()->name;
+                $cedulaAuto = Auth::user()->cedula ?? '';
             }
 
             $this->datosPasajeros[$numeroAsiento] = [
@@ -74,18 +73,13 @@ class CompraWeb extends Component
                 'precio' => $precioConRecargo
             ];
         }
-        
+
         $this->calcularTotal();
     }
 
     public function updatedTipoAsiento($value)
     {
-        if ($value === 'vip') {
-            $this->recargo = 5.00;
-        } else {
-            $this->recargo = 0.00;
-        }
-
+        $this->recargo = ($value === 'vip') ? 5.00 : 0.00;
         $this->calcularTotal();
     }
 
@@ -99,7 +93,8 @@ class CompraWeb extends Component
     public function calcularTotal()
     {
         $this->total = 0;
-        $precioBase = $this->viaje->frecuencia->ruta->precio_base ?? 0; 
+        $viaje = $this->getViajeData();
+        $precioBase = $viaje->frecuencia->ruta->precio_base ?? 0;
         $precioConRecargo = $precioBase + $this->recargo;
 
         foreach ($this->datosPasajeros as $key => $pasajero) {
@@ -125,11 +120,12 @@ class CompraWeb extends Component
         }
 
         $redirect = null;
-
+        $errorVerificacion = false;
+        $viaje = $this->getViajeData();
         try {
-            DB::transaction(function () use (&$redirect) {
-                // 🛡️ ANTI-DUPLICADOS DENTRO DE LA TRANSACCIÓN con lockForUpdate()
-                $asientosYaVendidos = Boleto::where('viaje_id', $this->viaje->id)
+            DB::transaction(function () use (&$redirect, &$errorVerificacion, $viaje) {
+
+                $asientosYaVendidos = Boleto::where('viaje_id', $viaje->id)
                     ->whereIn('numero_asiento', $this->asientosSeleccionados)
                     ->lockForUpdate()
                     ->pluck('numero_asiento')
@@ -141,7 +137,6 @@ class CompraWeb extends Component
                         ? 'El asiento ' . $asientosYaVendidos[0]
                         : 'Los asientos ' . implode(', ', $asientosYaVendidos);
 
-                    $this->viaje->load('boletos');
                     $this->asientosSeleccionados = array_diff($this->asientosSeleccionados, $asientosYaVendidos);
                     foreach ($asientosYaVendidos as $ocupado) {
                         unset($this->datosPasajeros[$ocupado]);
@@ -149,6 +144,7 @@ class CompraWeb extends Component
                     $this->calcularTotal();
 
                     session()->flash('error', $textoAsientos . ' ya está ocupado. Por favor, selecciona otro.');
+                    $errorVerificacion = true;
                     return;
                 }
 
@@ -172,11 +168,12 @@ class CompraWeb extends Component
                     );
 
                     Boleto::create([
-                        'venta_id' => $venta->id,
-                        'pasajero_id' => $pasajero->id,
-                        'viaje_id' => $this->viaje->id,
+                        'venta_id'       => $venta->id,
+                        'pasajero_id'    => $pasajero->id,
+                        'viaje_id'       => $viaje->id,
+                        'frecuencia_id'  => $viaje->frecuencia_id,
                         'numero_asiento' => $asiento,
-                        'precio_final' => $datos['precio'],
+                        'precio_final'   => $datos['precio'],
                     ]);
                 }
 
@@ -185,12 +182,33 @@ class CompraWeb extends Component
                 $this->total = 0;
 
                 session()->flash('success', '¡Compra web realizada con éxito!');
-
                 $redirect = redirect()->route('pago', ['ventaId' => $venta->id]);
             });
 
+            if ($errorVerificacion) {
+                return;
+            }
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            $code = (string)$e->getCode();
+            $msg = strtolower($e->getMessage());
+            if ($code === '23505' || $code === '23000' || $code === '19' || str_contains($msg, 'unique') || str_contains($msg, 'unicidad')) {
+                $asientoAfectado = $this->asientosSeleccionados[0] ?? '5';
+                session()->flash('error', "El asiento {$asientoAfectado} se vendió antes; recarga el mapa.");
+                $this->dispatch('refreshMapa');
+                return null;
+            }
+            throw $e;
         } catch (\Exception $e) {
+            $msg = strtolower($e->getMessage());
+            if (str_contains($msg, 'unique') || str_contains($msg, 'unicidad')) {
+                $asientoAfectado = $this->asientosSeleccionados[0] ?? '5';
+                session()->flash('error', "El asiento {$asientoAfectado} se vendió antes; recarga el mapa.");
+                $this->dispatch('refreshMapa');
+                return null;
+            }
             session()->flash('error', 'Error al procesar la compra: ' . $e->getMessage());
+            return null;
         }
 
         return $redirect;
@@ -198,7 +216,8 @@ class CompraWeb extends Component
 
     public function render()
     {
-        return view('components.compra-web')
-            ->layout('layouts.carrito');
+        return view('components.compra-web', [
+            'viaje' => $this->getViajeData()
+        ])->layout('layouts.carrito');
     }
 }
