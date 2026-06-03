@@ -1,3 +1,13 @@
+@php
+    $usuarioMenu = auth()->user();
+    $esAdmin = $usuarioMenu?->hasRole('admin') ?? false;
+    $esOficinista = $usuarioMenu?->hasRole('oficinista') ?? false;
+    $esChofer = $usuarioMenu?->hasRole('chofer') ?? false;
+    $esDeveloper = $usuarioMenu?->hasRole('developer') ?? false;
+    $esCliente = $usuarioMenu?->hasRole('cliente') ?? false;
+    $esInterno = $esAdmin || $esOficinista || $esDeveloper;
+@endphp
+
 <div x-data="{ open: false, catalogosOpen: false, operativaOpen: false, ventanillaOpen: false }">
     <!-- Sidebar Desktop -->
     <nav class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden bg-[#003366] text-white shadow-xl transition-all duration-300 sm:flex" aria-label="Sidebar principal">
@@ -9,16 +19,26 @@
 
         <!-- Navigation Items -->
         <div class="flex-1 overflow-y-auto px-3 py-6">
-            <!-- Solicitar Cambio (Desktop) -->
-            <a href="{{ route('solicitudes-cambio.create') }}"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+            <a href="{{ route('dashboard') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4h4" />
                 </svg>
-                Solicitar Cambio
+                Dashboard
             </a>
 
-            @if (auth()->user()->hasAnyRole('admin', 'developer'))
+            <!-- Solicitar Cambio (Desktop) -->
+            @if ($esInterno)
+                <a href="{{ route('solicitudes-cambio.create') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Solicitar Cambio
+                </a>
+            @endif
+
+            @if ($esAdmin || $esDeveloper)
                 <a href="{{ route('solicitudes-cambio.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,8 +48,42 @@
                 </a>
             @endif
 
+            @if ($esChofer || $esAdmin)
+                <a href="{{ route('chofer.dashboard') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('chofer.dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0Zm10 0a2 2 0 11-4 0 2 2 0 014 0ZM13 6h4l3 5v6h-2M5 17H3V6h10v11H9" />
+                    </svg>
+                    Panel Chofer
+                </a>
+            @endif
+
+            @if ($esCliente)
+                <a href="{{ route('mis-viajes') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('mis-viajes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h5M5 3h14a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 012-2Z" />
+                    </svg>
+                    Mis Viajes
+                </a>
+                <a href="{{ url('/') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 text-blue-100 hover:bg-blue-700 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8h18M5 8l2-4h10l2 4M7 8v10m10-10v10M6 18h12" />
+                    </svg>
+                    Comprar Pasajes
+                </a>
+                <a href="{{ route('solicitud.reembolso') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitud.reembolso') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.12-4 2.5S9.79 13 12 13s4 1.12 4 2.5S14.21 18 12 18m0-10V6m0 12v-2" />
+                    </svg>
+                    Reembolsos
+                </a>
+            @endif
+
             <!-- Admin Panel -->
-            @if (auth()->user()->hasRole('admin'))
+            @if ($esAdmin)
                 <a href="{{ route('admin.panel') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.panel') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,10 +100,18 @@
                     </svg>
                     Datos Entrega
                 </a>
+
+                <a href="{{ route('admin.reportes') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.reportes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18M6 8v13M16 13v8M21 6v15" />
+                    </svg>
+                    Reportes
+                </a>
             @endif
 
              <!-- Ventanilla -->
-            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+            @if ($esAdmin || $esOficinista)
                 <div class="mb-4">
                     <button @click="ventanillaOpen = !ventanillaOpen"
                         class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white group">
@@ -80,12 +142,19 @@
                             </svg>
                             Cierre de Turno
                         </a>
+                        <a href="{{ route('admin.gestion-reembolsos') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.gestion-reembolsos') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M6 11h12M8 15h8M10 19h4" />
+                            </svg>
+                            Gestion Reembolsos
+                        </a>
                     </div>
                 </div>
             @endif
 
             <!-- Operativa -->
-            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+            @if ($esAdmin || $esOficinista)
                 <div class="mb-4">
                     <button @click="operativaOpen = !operativaOpen"
                         class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white group">
@@ -124,7 +193,7 @@
             @endif
 
             <!-- Catálogos Section -->
-            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+            @if ($esAdmin || $esOficinista)
                 <div class="mb-4">
                     <button @click="catalogosOpen = !catalogosOpen"
                         class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white group">
@@ -142,7 +211,7 @@
                     <!-- Sub-items -->
                     <div x-show="catalogosOpen" @click.outside="catalogosOpen = false" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
                         <!-- Buses -->
-                        @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                        @if ($esAdmin || $esOficinista)
                             <a href="{{ route('catalogos.buses') }}"
                                 class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.buses') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -155,7 +224,7 @@
                         <!-- Categorías de Bus (Solo Admin) -->
 
                         <!-- Cuentas Operativas (Solo Admin) -->
-                        @if (auth()->user()->hasRole('admin'))
+                        @if ($esAdmin)
                             <a href="{{ route('catalogos.cuentas') }}"
                                 class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.cuentas') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,15 +316,17 @@
                 </a>
 
                 <!-- Solicitudes de Cambio Mobile -->
-                <a href="{{ route('solicitudes-cambio.create') }}" @click="open = false"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Solicitar Cambio
-                </a>
+                @if ($esInterno)
+                    <a href="{{ route('solicitudes-cambio.create') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Solicitar Cambio
+                    </a>
+                @endif
 
-                @if (auth()->user()->hasAnyRole('admin', 'developer'))
+                @if ($esAdmin || $esDeveloper)
                     <a href="{{ route('solicitudes-cambio.index') }}" @click="open = false"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,7 +336,41 @@
                     </a>
                 @endif
 
-                @if (auth()->user()->hasRole('admin'))
+                @if ($esChofer || $esAdmin)
+                    <a href="{{ route('chofer.dashboard') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('chofer.dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0Zm10 0a2 2 0 11-4 0 2 2 0 014 0ZM13 6h4l3 5v6h-2M5 17H3V6h10v11H9" />
+                        </svg>
+                        Panel Chofer
+                    </a>
+                @endif
+
+                @if ($esCliente)
+                    <a href="{{ route('mis-viajes') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('mis-viajes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h5M5 3h14a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 012-2Z" />
+                        </svg>
+                        Mis Viajes
+                    </a>
+                    <a href="{{ url('/') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 text-blue-100 hover:bg-blue-700 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8h18M5 8l2-4h10l2 4M7 8v10m10-10v10M6 18h12" />
+                        </svg>
+                        Comprar Pasajes
+                    </a>
+                    <a href="{{ route('solicitud.reembolso') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitud.reembolso') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.12-4 2.5S9.79 13 12 13s4 1.12 4 2.5S14.21 18 12 18m0-10V6m0 12v-2" />
+                        </svg>
+                        Reembolsos
+                    </a>
+                @endif
+
+                @if ($esAdmin)
                     <a href="{{ route('admin.panel') }}" @click="open = false"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.panel') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,10 +387,17 @@
                         </svg>
                         Datos Entrega
                     </a>
+                    <a href="{{ route('admin.reportes') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.reportes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18M6 8v13M16 13v8M21 6v15" />
+                        </svg>
+                        Reportes
+                    </a>
                 @endif
 
                 <!-- Operativa Mobile -->
-                @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                @if ($esAdmin || $esOficinista)
                     <div class="mb-4">
                         <button @click="operativaOpen = !operativaOpen"
                             class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
@@ -323,7 +435,7 @@
                 @endif
 
                 <!-- Ventanilla Mobile -->
-                @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                @if ($esAdmin || $esOficinista)
                     <div class="mb-4">
                         <button @click="ventanillaOpen = !ventanillaOpen"
                             class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
@@ -353,11 +465,18 @@
                                 </svg>
                                 Cierre de Turno
                             </a>
+                            <a href="{{ route('admin.gestion-reembolsos') }}" @click="open = false"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.gestion-reembolsos') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M6 11h12M8 15h8M10 19h4" />
+                                </svg>
+                                Gestion Reembolsos
+                            </a>
                         </div>
                     </div>
                 @endif
 
-                @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                @if ($esAdmin || $esOficinista)
                     <div class="mb-4">
                         <button @click="catalogosOpen = !catalogosOpen"
                             class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
@@ -373,7 +492,7 @@
                         </button>
 
                         <div x-show="catalogosOpen" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
-                            @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
+                            @if ($esAdmin || $esOficinista)
                                 <a href="{{ route('catalogos.buses') }}" @click="open = false"
                                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.buses') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -383,7 +502,7 @@
                                 </a>
                             @endif
 
-                            @if (auth()->user()->hasRole('admin'))
+                            @if ($esAdmin)
                                 <a href="{{ route('catalogos.cuentas') }}" @click="open = false"
                                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.cuentas') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,4 +538,3 @@
         </nav>
     </transition>
 </div>
-
