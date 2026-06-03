@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Chofer\PanelPrincipal;
 use App\Models\Boleto;
 use App\Models\BoletoValidacion;
+use App\Models\Asiento;
 use App\Models\Bus;
 use App\Models\Frecuencia;
 use App\Models\Parada;
@@ -41,6 +42,12 @@ class PanelPrincipalChoferTest extends TestCase
             'numero_asientos' => 10,
             'estado' => 'disponible',
             'mapa_asientos' => Bus::generarEstructuraAsientos(3, true),
+        ]);
+
+        Asiento::create([
+            'bus_id' => $bus->id,
+            'numero' => 1,
+            'categoria' => 'vip',
         ]);
 
         $origen = Parada::create(['nombre' => 'Ambato', 'ciudad' => 'Ambato']);
@@ -171,15 +178,19 @@ class PanelPrincipalChoferTest extends TestCase
         $this->assertDatabaseHas('ventas', [
             'user_id' => $chofer->id,
             'estado' => 'Pagada',
+            'total' => 18.75,
         ]);
 
         $this->assertDatabaseHas('boletos', [
             'frecuencia_id' => $frecuencia->id,
             'numero_asiento' => '1',
+            'categoria_asiento' => 'vip',
+            'precio_final' => 18.75,
         ]);
 
         $this->assertDatabaseHas('pagos', [
             'metodo_pago' => 'venta_express',
+            'monto' => 18.75,
         ]);
 
         Carbon::setTestNow();
