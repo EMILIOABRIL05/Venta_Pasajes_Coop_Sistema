@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use App\Models\Parada;
 use App\Models\Pasajero;
 use App\Models\Ruta;

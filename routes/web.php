@@ -2,16 +2,17 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\BoletoValidacionController;
+use App\Http\Controllers\DatosEntregaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\Ventanilla\PasajeroController;
 use App\Livewire\AdminPanel;
 use App\Livewire\Catalogos\BusesCrud;
-use App\Livewire\Catalogos\CategoriasBusCrud;
 use App\Livewire\Catalogos\CuentasCrud;
 use App\Livewire\Chofer\PanelPrincipal;
 use App\Livewire\Web\CarritoCompra;
 use App\Livewire\Web\PagoWeb;
 use App\Livewire\Web\MisViajes;
+use App\Livewire\Web\CompraWeb;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,13 +28,13 @@ Route::get('/admin', AdminPanel::class)
     ->middleware(['auth', 'role:admin'])
     ->name('admin.panel');
 
+Route::get('/admin/datos-entrega', DatosEntregaController::class)
+    ->middleware(['auth', 'role:admin'])
+    ->name('admin.datos-entrega');
+
 Route::get('/admin/gestion-reembolsos', \App\Livewire\Admin\GestionReembolsos::class)
     ->middleware(['auth', 'role:admin|oficinista'])
     ->name('admin.gestion-reembolsos');
-
-Route::get('/catalogos/categorias-bus', CategoriasBusCrud::class)
-    ->middleware(['auth', 'role:admin|oficinista'])
-    ->name('catalogos.categorias-bus');
 
 Route::get('/catalogos/buses', BusesCrud::class)
     ->middleware(['auth', 'role:admin|oficinista'])
@@ -97,9 +98,11 @@ Route::middleware(['auth', 'role:oficinista|admin'])
 
         Route::get('/historial', \App\Livewire\Ventanilla\HistorialVentas::class)->name('historial');
         Route::get('/pasajeros/buscar/{cedula}', [PasajeroController::class, 'buscarPorCedula'])->name('pasajeros.buscar');
+        Route::get('/ventas/asientos-por-ruta/{ruta_id}', [\App\Http\Controllers\Ventanilla\VentaController::class, 'asientosPorRuta'])->name('ventas.asientos-por-ruta');
         Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class)->only(['index', 'create', 'store', 'show']);
         Route::post('/ventas/boleto/{id}/anular', [\App\Http\Controllers\Ventanilla\VentaController::class, 'anularBoleto'])->name('ventas.boleto.anular');
         Route::resource('pasajeros', PasajeroController::class)->only(['store', 'show', 'destroy']);
+
 
         // Cierre de turno (Manolo - Sprint 4)
         Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])
@@ -119,10 +122,14 @@ Route::middleware(['auth', 'role:oficinista|admin'])
 
 
 // ─── Módulo Web (Sprint 3 - Estudiante 5 Anthony) ──────────────────────────────
-Route::get('/carrito/{viajeId}', CarritoCompra::class)
-    ->middleware(['auth']) 
-    ->name('web.carrito');
+Route::get('/carrito/{viajeId}', function ($viajeId) {
+    return redirect()->route('web.compra-web', ['viajeId' => $viajeId]);
+})->middleware(['auth'])->name('web.carrito');
 
+// AQUÍ ESTÁ LA MAGIA QUE LO ARREGLA TODO: Quitamos el 'render'
+Route::get('/compra-web/{viajeId}', CompraWeb::class)
+    ->name('web.compra-web')
+    ->middleware(['auth']);
 // Solicitud de Reembolso (Público)
 Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
     ->name('solicitud.reembolso');
@@ -130,5 +137,26 @@ Route::get('/solicitud-reembolso', \App\Livewire\Web\SolicitudReembolso::class)
 // Pago Web y Historial (Anthony)
 Route::get('/pago/{ventaId}', PagoWeb::class)->middleware(['auth'])->name('pago');
 Route::get('/mis-viajes', MisViajes::class)->middleware(['auth'])->name('mis-viajes');
+
+// ─── Solicitudes de Cambio (RBAC: Developer/Admin vs User) ───────────────────
+Route::middleware(['auth'])
+    ->prefix('solicitudes-cambio')
+    ->name('solicitudes-cambio.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\SolicitudCambioController::class, 'create'])
+            ->name('create');
+        Route::post('/', [\App\Http\Controllers\SolicitudCambioController::class, 'store'])
+            ->name('store');
+        Route::get('/listado', [\App\Http\Controllers\SolicitudCambioController::class, 'index'])
+            ->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'show'])
+            ->name('show');
+        Route::get('/{id}/editar', [\App\Http\Controllers\SolicitudCambioController::class, 'edit'])
+            ->name('edit');
+        Route::put('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'update'])
+            ->name('update');
+        Route::patch('/{id}/estado', [\App\Http\Controllers\SolicitudCambioController::class, 'updateStatus'])
+            ->name('update-status');
+    });
 
 require __DIR__.'/auth.php';

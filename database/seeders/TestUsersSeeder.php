@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class TestUsersSeeder extends Seeder
 {
@@ -41,10 +42,29 @@ class TestUsersSeeder extends Seeder
                 'tipo_usuario' => 'chofer',
                 'email_verified_at' => now(),
             ],
+            [
+                'name' => 'Developer Prueba',
+                'email' => 'developer@cooperativa.test',
+                'password' => Hash::make('password123'),
+                'cedula' => '1900000004',
+                'telefono' => '0987654324',
+                'fecha_nacimiento' => '1995-06-10',
+                'tipo_usuario' => 'developer',
+                'email_verified_at' => now(),
+            ],
         ];
 
         foreach ($users as $userData) {
-            $user = User::create($userData);
+            $user = User::updateOrCreate(
+                ['email' => $userData['email']],
+                array_merge($userData, ['deleted_at' => null])
+            );
+
+            $user->forceFill([
+                'password' => $userData['password'],
+            ])->save();
+
+            Role::firstOrCreate(['name' => $userData['tipo_usuario']]);
             $user->assignRole($userData['tipo_usuario']);
         }
     }

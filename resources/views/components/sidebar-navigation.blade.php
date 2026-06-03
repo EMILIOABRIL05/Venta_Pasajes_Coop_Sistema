@@ -9,14 +9,24 @@
 
         <!-- Navigation Items -->
         <div class="flex-1 overflow-y-auto px-3 py-6">
-            <!-- Dashboard -->
-            <a href="{{ route('dashboard') }}"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+            <!-- Solicitar Cambio (Desktop) -->
+            <a href="{{ route('solicitudes-cambio.create') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4h4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Dashboard
+                Solicitar Cambio
             </a>
+
+            @if (auth()->user()->hasAnyRole('admin', 'developer'))
+                <a href="{{ route('solicitudes-cambio.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    Listado de Cambios
+                </a>
+            @endif
 
             <!-- Admin Panel -->
             @if (auth()->user()->hasRole('admin'))
@@ -27,6 +37,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     Panel Admin
+                </a>
+
+                <a href="{{ route('admin.datos-entrega') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.datos-entrega') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10" />
+                    </svg>
+                    Datos Entrega
                 </a>
             @endif
 
@@ -135,15 +153,6 @@
                         @endif
 
                         <!-- Categorías de Bus (Solo Admin) -->
-                        @if (auth()->user()->hasRole('admin'))
-                            <a href="{{ route('catalogos.categorias-bus') }}"
-                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.categorias-bus') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M9 2a1 1 0 000 2h2V2H9zM7 4a1 1 0 000 2h10V4H7zm-2 4a1 1 0 000 2h14V8H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5z" />
-                                </svg>
-                                Categorías
-                            </a>
-                        @endif
 
                         <!-- Cuentas Operativas (Solo Admin) -->
                         @if (auth()->user()->hasRole('admin'))
@@ -237,6 +246,25 @@
                     Dashboard
                 </a>
 
+                <!-- Solicitudes de Cambio Mobile -->
+                <a href="{{ route('solicitudes-cambio.create') }}" @click="open = false"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.create') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Solicitar Cambio
+                </a>
+
+                @if (auth()->user()->hasAnyRole('admin', 'developer'))
+                    <a href="{{ route('solicitudes-cambio.index') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('solicitudes-cambio.index') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        Listado de Cambios
+                    </a>
+                @endif
+
                 @if (auth()->user()->hasRole('admin'))
                     <a href="{{ route('admin.panel') }}" @click="open = false"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.panel') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
@@ -245,6 +273,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         Panel Admin
+                    </a>
+
+                    <a href="{{ route('admin.datos-entrega') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('admin.datos-entrega') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10" />
+                        </svg>
+                        Datos Entrega
                     </a>
                 @endif
 
@@ -348,16 +384,6 @@
                             @endif
 
                             @if (auth()->user()->hasRole('admin'))
-                                <a href="{{ route('catalogos.categorias-bus') }}" @click="open = false"
-                                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.categorias-bus') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 2a1 1 0 000 2h2V2H9zM7 4a1 1 0 000 2h10V4H7zm-2 4a1 1 0 000 2h14V8H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5zm0 4a1 1 0 000 2h14v-2H5z" />
-                                    </svg>
-                                    Categorías
-                                </a>
-                            @endif
-
-                            @if (auth()->user()->hasRole('admin'))
                                 <a href="{{ route('catalogos.cuentas') }}" @click="open = false"
                                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('catalogos.cuentas') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,3 +419,4 @@
         </nav>
     </transition>
 </div>
+

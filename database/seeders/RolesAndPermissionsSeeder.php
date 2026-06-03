@@ -33,6 +33,11 @@ class RolesAndPermissionsSeeder extends Seeder
         // Roles y asignación de permisos
         $rolesPermissions = [
             'admin' => $permissions,
+            'developer' => [
+                'manage_config',
+                'view_reports',
+                'scan_qr',
+            ],
             'oficinista' => [
                 'sell_boletos',
                 'validate_comprobantes',

@@ -6,7 +6,6 @@ use App\Livewire\Chofer\PanelPrincipal;
 use App\Models\Boleto;
 use App\Models\BoletoValidacion;
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use App\Models\Frecuencia;
 use App\Models\Parada;
 use App\Models\Pasajero;
@@ -34,13 +33,7 @@ class PanelPrincipalChoferTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-05-13 09:00:00'));
 
-        $categoria = CategoriaBus::create([
-            'nombre' => 'Ejecutivo',
-            'descripcion' => 'Cat',
-        ]);
-
         $bus = Bus::create([
-            'categoria_bus_id' => $categoria->id,
             'placa' => 'TST-1001',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Imce',

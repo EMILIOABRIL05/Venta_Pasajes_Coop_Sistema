@@ -12,7 +12,6 @@ class Bus extends Model
     protected $table = 'buses';
 
     protected $fillable = [
-        'categoria_bus_id',
         'placa',
         'marca_chasis',
         'carroceria',
@@ -29,6 +28,11 @@ class Bus extends Model
         'anio' => 'integer',
         'numero_asientos' => 'integer',
     ];
+
+    public function asientos()
+    {
+        return $this->hasMany(Asiento::class);
+    }
 
     public static function estructuraAsientosBase(): array
     {
@@ -55,6 +59,49 @@ class Bus extends Model
         ];
     }
 
+    public static function generarMapaAsientosCategorizado(
+        int $filas,
+        bool $tienePasillo,
+        ?CategoriaAsiento $categoriaDefault,
+        iterable $categorias,
+        array $asientosCategoria = []
+    ): array {
+        $mapa = self::generarEstructuraAsientos($filas, $tienePasillo);
+        $capacidad = (int) $mapa['capacidad_total'];
+
+        $categoriaPorAsiento = [];
+        foreach ($asientosCategoria as $grupo) {
+            foreach (($grupo['asientos'] ?? []) as $asiento) {
+                $categoriaPorAsiento[(string) $asiento] = $grupo['categoria_id'] ?? null;
+            }
+        }
+
+        $mapa['categoria_defecto_id'] = $categoriaDefault?->id;
+        $mapa['categorias_asiento'] = collect($categorias)
+            ->map(static fn (CategoriaAsiento $categoria) => [
+                'id' => $categoria->id,
+                'codigo' => $categoria->codigo,
+                'nombre' => $categoria->nombre,
+                'recargo' => (float) $categoria->recargo,
+                'color_hex' => $categoria->color_hex,
+                'es_default' => $categoria->es_default,
+            ])
+            ->values()
+            ->all();
+
+        $mapa['asientos'] = collect(range(1, $capacidad))
+            ->map(static function (int $numero) use ($categoriaDefault, $categoriaPorAsiento) {
+                return [
+                    'numero' => (string) $numero,
+                    'categoria_id' => $categoriaPorAsiento[(string) $numero] ?? $categoriaDefault?->id,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return $mapa;
+    }
+
     private static function calcularAsientosPorFila(bool $tienePasillo): int
     {
         return $tienePasillo ? 4 : 5;
@@ -68,7 +115,7 @@ class Bus extends Model
     public function obtenerInfoMapa(): array
     {
         $mapa = $this->mapa_asientos ?? self::estructuraAsientosBase();
-        
+
         return [
             'filas' => $mapa['filas'] ?? 10,
             'pasillo' => $mapa['pasillo'] ?? true,
@@ -107,30 +154,24 @@ class Bus extends Model
             : null;
     }
 
-    // Relación: un bus pertenece a una categoría
-    public function categoria()
-    {
-        return $this->belongsTo(CategoriaBus::class, 'categoria_bus_id');
-    }
-
     // Scope útil: solo buses disponibles
     public function scopeDisponible($query)
     {
         return $query->whereNotIn('estado', ['mantenimiento', 'en_ruta']);
     }
-    
+
     public function getFotoUrlAttribute(): ?string
     {
-        return $this->foto ? asset('storage/' . $this->foto) : null;
+        return $this->foto ? asset('storage/'.$this->foto) : null;
     }
-    
+
     public function getMapaAsientosResumenAttribute(): string
     {
         $info = $this->obtenerInfoMapa();
         $filas = $info['filas'];
         $pasillo = $info['pasillo'] ? 'con pasillo' : 'sin pasillo';
         $capacidad = $info['capacidad_total'];
-        
+
         return "{$filas} filas, {$pasillo} ({$capacidad} asientos)";
     }
 }

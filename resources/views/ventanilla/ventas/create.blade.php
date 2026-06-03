@@ -65,6 +65,9 @@
                                     <span class="inline-block w-3 h-3 rounded bg-emerald-500"></span> Disponible
                                 </span>
                                 <span class="flex items-center gap-1.5">
+                                    <span class="inline-block w-3 h-3 rounded bg-amber-400 ring-2 ring-amber-200"></span> VIP (+50%)
+                                </span>
+                                <span class="flex items-center gap-1.5">
                                     <span class="inline-block w-3 h-3 rounded bg-cyan-500 ring-2 ring-cyan-300"></span> Seleccionado
                                 </span>
                                 <span class="flex items-center gap-1.5">
@@ -100,11 +103,18 @@
                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                                     @for ($i = 1; $i <= 40; $i++)
                                         @php
-                                            $ocupado      = in_array($i, $asientosOcupados);
+                                            $ocupado      = true; // Deshabilitado por defecto hasta que se seleccione ruta
                                             $preselected  = in_array($i, array_map('intval', $asientosOldArray));
                                         @endphp
 
                                         <div class="relative group flex justify-center" data-group>
+
+                                            <!-- VIP Star Badge (absolute above button) -->
+                                            <span id="vip-star-{{ $i }}" class="vip-star hidden absolute -top-2.5 z-10 inline-flex items-center justify-center rounded-full bg-yellow-400 text-white w-5 h-5 shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.84-.197-1.54-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                                                </svg>
+                                            </span>
 
                                             {{-- Tooltip --}}
                                             <div class="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 z-50
@@ -113,9 +123,8 @@
                                                 <div class="bg-gray-900 text-white rounded-xl px-3 py-2 shadow-2xl text-center">
                                                     <p class="text-[11px] font-bold">Asiento {{ $i }}</p>
                                                     <p class="text-emerald-400 text-[11px] font-semibold">${{ number_format($precioRefMap, 2) }}</p>
-                                                    <p data-tooltip-status class="text-[9px] mt-0.5
-                                                        {{ $ocupado ? 'text-red-400' : ($preselected ? 'text-cyan-400' : 'text-gray-400') }}">
-                                                        {{ $ocupado ? '🔴 Ocupado' : ($preselected ? '🔵 Seleccionado' : '🟢 Disponible') }}
+                                                    <p data-tooltip-status class="text-[9px] mt-0.5 text-gray-400">
+                                                        🟢 Disponible
                                                     </p>
                                                 </div>
                                                 <div class="flex justify-center">
@@ -127,15 +136,9 @@
                                             <button type="button"
                                                     id="asiento-{{ $i }}"
                                                     data-asiento="{{ $i }}"
-                                                    data-seat-state="{{ $ocupado ? 'occupied' : ($preselected ? 'selected' : 'available') }}"
-                                                    @disabled($ocupado)
-                                                    class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2 px-1 text-xs font-bold border transition-all duration-300
-                                                        {{ $ocupado
-                                                            ? 'bg-red-400 border-red-500 text-white opacity-50 cursor-not-allowed'
-                                                            : ($preselected
-                                                                ? 'bg-cyan-500 border-cyan-600 text-white shadow-md ring-2 ring-cyan-300 ring-offset-1 hover:scale-110'
-                                                                : 'bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-emerald-400 hover:shadow-md hover:-translate-y-0.5 hover:scale-110 active:scale-95 cursor-pointer')
-                                                        }}"
+                                                    data-seat-state="available"
+                                                    @disabled(true)
+                                                    class="w-full flex flex-col items-center justify-center gap-0.5 rounded-lg py-2 px-1 text-xs font-bold border transition-all duration-300 bg-emerald-500 border-emerald-600 text-white shadow-sm opacity-50 cursor-not-allowed"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
                                                     <path d="M6 2a2 2 0 00-2 2v7h2V4h12v7h2V4a2 2 0 00-2-2H6z"/>
@@ -348,8 +351,10 @@
     {{-- ── JavaScript: selección de asientos + resumen dinámico ──────────────── --}}
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var CLS_AVAIL    = ['bg-emerald-500', 'border-emerald-600', 'shadow-sm'];
-        var CLS_SELECTED = ['bg-cyan-500', 'border-cyan-600', 'shadow-md', 'ring-2', 'ring-cyan-300', 'ring-offset-1'];
+        var CLS_AVAIL    = ['bg-emerald-500', 'border-emerald-600', 'text-white', 'shadow-sm', 'hover:bg-emerald-400', 'hover:shadow-md', 'hover:-translate-y-0.5', 'hover:scale-110', 'active:scale-95', 'cursor-pointer'];
+        var CLS_VIP      = ['bg-amber-400', 'border-amber-500', 'text-white', 'shadow-sm', 'hover:bg-amber-300', 'hover:shadow-md', 'hover:-translate-y-0.5', 'hover:scale-110', 'active:scale-95', 'cursor-pointer', 'ring-2', 'ring-amber-200', 'ring-offset-1'];
+        var CLS_SELECTED = ['bg-cyan-500', 'border-cyan-600', 'text-white', 'shadow-md', 'ring-2', 'ring-cyan-300', 'ring-offset-1', 'hover:scale-110'];
+        var CLS_OCCUPIED = ['bg-red-400', 'border-red-500', 'text-white', 'opacity-50', 'cursor-not-allowed'];
 
         var container   = document.getElementById('asientos-hidden-container');
         var btnSubmit   = document.getElementById('btn-submit');
@@ -376,11 +381,61 @@
         var checkMark   = document.getElementById('cedula-check');
         var helper      = document.getElementById('cedula-helper');
 
-        var RECARGO_VIP = 5.00; // Recargo base simulado en frontend
+        // ── Cambiar estilo de asiento dinámicamente ────────────────────────
+        function setSeatStyle(btn, state, category) {
+            var allClasses = [...CLS_AVAIL, ...CLS_VIP, ...CLS_SELECTED, ...CLS_OCCUPIED];
+            allClasses.forEach(function(c) { btn.classList.remove(c); });
+
+            var seatNum = btn.dataset.asiento;
+            var star = document.getElementById('vip-star-' + seatNum);
+
+            if (state === 'occupied') {
+                btn.dataset.seatState = 'occupied';
+                btn.disabled = true;
+                CLS_OCCUPIED.forEach(function(c) { btn.classList.add(c); });
+                if (star) star.classList.add('hidden');
+            } else if (state === 'selected') {
+                btn.dataset.seatState = 'selected';
+                btn.disabled = false;
+                CLS_SELECTED.forEach(function(c) { btn.classList.add(c); });
+                if (star) star.classList.add('hidden');
+            } else { // available
+                btn.dataset.seatState = 'available';
+                btn.disabled = false;
+                if (category === 'vip') {
+                    CLS_VIP.forEach(function(c) { btn.classList.add(c); });
+                    if (star) star.classList.remove('hidden');
+                } else {
+                    CLS_AVAIL.forEach(function(c) { btn.classList.add(c); });
+                    if (star) star.classList.add('hidden');
+                }
+            }
+        }
 
         // ── Sincronizar Resumen ──────────────────────────────────────────────
         function syncResumen() {
-            recalcularPrecio();
+            var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
+            var count    = hiddens.length;
+            var precioBaseSelected = parseFloat(precioInput.value) || 0;
+            var total = 0;
+
+            asientosEl.innerHTML = '';
+            hiddens.forEach(function (inp) {
+                var seatNumber = inp.value;
+                var btn = document.getElementById('asiento-' + seatNumber);
+                var isVip = btn && btn.dataset.category === 'vip';
+                var price = isVip ? (precioBaseSelected * 1.5) : precioBaseSelected;
+                total += price;
+
+                var badge = document.createElement('span');
+                badge.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-indigo-200 text-indigo-800 text-xs font-bold';
+                badge.textContent = seatNumber;
+                asientosEl.appendChild(badge);
+            });
+
+            countEl.textContent = count;
+            totalEl.textContent = '$' + total.toFixed(2);
+            btnSubmit.disabled = count === 0;
         }
 
         // ── Recalcular Precio Unitario por Descuento o Ruta ─────────────────
@@ -467,33 +522,134 @@
             btnSubmit.disabled = count === 0;
         }
 
+        function clearSelectedSeats() {
+            container.innerHTML = '';
+            syncResumen();
+        }
+
+        // ── AJAX Cargar Asientos y categorías ──────────────────────────────
+        function cargarAsientosPorRuta(rutaId) {
+            if (!rutaId) {
+                clearSelectedSeats();
+                document.querySelectorAll('[data-seat-state]').forEach(function(btn) {
+                    btn.dataset.category = 'estandar';
+                    setSeatStyle(btn, 'available', 'estandar');
+                    btn.disabled = true;
+                    var statusEl = btn.closest('[data-group]').querySelector('[data-tooltip-status]');
+                    if (statusEl) {
+                        statusEl.textContent = '🟢 Disponible';
+                        statusEl.classList.remove('text-cyan-400', 'text-red-400');
+                        statusEl.classList.add('text-gray-400');
+                    }
+                });
+                return;
+            }
+
+            fetch('/ventanilla/ventas/asientos-por-ruta/' + rutaId)
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar asientos');
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        clearSelectedSeats();
+
+                        var occupied = data.occupiedSeats || [];
+                        var categories = data.seatCategories || {};
+                        var maxSeats = data.numero_asientos || 40;
+
+                        document.querySelectorAll('[data-seat-state]').forEach(function(btn) {
+                            var seatNum = parseInt(btn.dataset.asiento);
+                            var seatGroup = btn.closest('[data-group]');
+
+                            if (seatNum > maxSeats) {
+                                if (seatGroup) seatGroup.classList.add('hidden');
+                                return;
+                            } else {
+                                if (seatGroup) seatGroup.classList.remove('hidden');
+                            }
+
+                            var isOccupied = occupied.includes(String(seatNum)) || occupied.includes(seatNum);
+                            var cat = categories[String(seatNum)] || 'estandar';
+                            btn.dataset.category = cat;
+
+                            // Actualizar precio en tooltip
+                            var priceRef = data.precio_base || 0;
+                            var seatPrice = cat === 'vip' ? (priceRef * 1.5) : priceRef;
+                            var priceEl = seatGroup.querySelector('.text-emerald-400');
+                            if (priceEl) {
+                                priceEl.textContent = '$' + seatPrice.toFixed(2);
+                            }
+
+                            var statusEl = seatGroup.querySelector('[data-tooltip-status]');
+                            if (isOccupied) {
+                                setSeatStyle(btn, 'occupied', cat);
+                                if (statusEl) {
+                                    statusEl.textContent = '🔴 Ocupado';
+                                    statusEl.classList.remove('text-cyan-400', 'text-gray-400');
+                                    statusEl.classList.add('text-red-400');
+                                }
+                            } else {
+                                setSeatStyle(btn, 'available', cat);
+                                if (statusEl) {
+                                    statusEl.textContent = cat === 'vip' ? '🟡 VIP disponible' : '🟢 Disponible';
+                                    statusEl.classList.remove('text-cyan-400', 'text-red-400');
+                                    statusEl.classList.add('text-gray-400');
+                                }
+                            }
+                        });
+
+                        recalcularPrecio();
+                    } else {
+                        clearSelectedSeats();
+                        alert('⚠️ ' + data.message);
+                        document.querySelectorAll('[data-seat-state]').forEach(function(btn) {
+                            btn.dataset.category = 'estandar';
+                            setSeatStyle(btn, 'available', 'estandar');
+                            btn.disabled = true;
+                        });
+                    }
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    alert('⚠️ Ocurrió un error al cargar el mapa de asientos.');
+                });
+        }
+
         // ── Click en asientos disponibles ─────────────────────────────────────
         document.querySelectorAll('[data-seat-state]').forEach(function (btn) {
-            if (btn.dataset.seatState === 'occupied') return;
-
             btn.addEventListener('click', function () {
+                if (this.disabled || this.dataset.seatState === 'occupied') return;
+
                 var seat       = this.dataset.asiento;
                 var isSelected = this.dataset.seatState === 'selected';
                 var statusEl   = this.closest('[data-group]').querySelector('[data-tooltip-status]');
+                var category   = this.dataset.category || 'estandar';
 
                 if (isSelected) {
                     // Deseleccionar
-                    this.dataset.seatState = 'available';
-                    CLS_SELECTED.forEach(function (c) { btn.classList.remove(c); });
-                    CLS_AVAIL.forEach(function (c)    { btn.classList.add(c); });
+                    setSeatStyle(this, 'available', category);
                     container.querySelector('input[value="' + seat + '"]')?.remove();
-                    if (statusEl) { statusEl.textContent = '🟢 Disponible'; statusEl.classList.replace('text-cyan-400', 'text-gray-400'); }
+                    if (statusEl) {
+                        statusEl.textContent = category === 'vip' ? '🟡 VIP disponible' : '🟢 Disponible';
+                        statusEl.classList.remove('text-cyan-400');
+                        statusEl.classList.add('text-gray-400');
+                    }
                 } else {
                     // Seleccionar
-                    this.dataset.seatState = 'selected';
-                    CLS_AVAIL.forEach(function (c)    { btn.classList.remove(c); });
-                    CLS_SELECTED.forEach(function (c) { btn.classList.add(c); });
+                    setSeatStyle(this, 'selected', category);
                     var inp = document.createElement('input');
                     inp.type  = 'hidden';
                     inp.name  = 'asientos[]';
                     inp.value = seat;
                     container.appendChild(inp);
-                    if (statusEl) { statusEl.textContent = '🔵 Seleccionado'; statusEl.classList.replace('text-gray-400', 'text-cyan-400'); }
+                    if (statusEl) {
+                        statusEl.textContent = '🔵 Seleccionado';
+                        statusEl.classList.remove('text-gray-400');
+                        statusEl.classList.add('text-cyan-400');
+                    }
                 }
                 syncResumen();
             });
@@ -565,15 +721,24 @@
         });
 
         // ── Event Listeners para recalculado automático ─────────────────────
-        rutaSelect.addEventListener('change', recalcularPrecio);
+        rutaSelect.addEventListener('change', function() {
+            cargarAsientosPorRuta(this.value);
+            recalcularPrecio();
+        });
         edadInput.addEventListener('input', recalcularPrecio);
         if (discapacidadCb) discapacidadCb.addEventListener('change', recalcularPrecio);
 
         // ── Inicialización / Restauración de old() ──────────────────────────
+        if (rutaSelect.value) {
+            cargarAsientosPorRuta(rutaSelect.value);
+        } else {
+            document.querySelectorAll('[data-seat-state]').forEach(function(btn) {
+                btn.disabled = true;
+            });
+        }
         syncResumen();
         recalcularPrecio();
         if (cedulaInput.value.length === 10) {
-            // Lanzar evento input para activar búsqueda si ya tiene 10 dígitos (ej: al volver con error)
             cedulaInput.dispatchEvent(new Event('input'));
         }
     });

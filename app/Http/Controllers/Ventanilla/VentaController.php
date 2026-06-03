@@ -11,6 +11,8 @@ use App\Models\Viaje;
 use App\Models\Venta;
 use App\Models\Pasajero;
 use App\Services\CierreTurnoService;
+use App\Services\PricingService;
+use App\Models\CategoriaAsiento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ class VentaController extends Controller
      */
     public function __construct(
         private readonly CierreTurnoService $servicioCierre,
+        private readonly PricingService $pricingService,
     ) {}
     // ─── Index ────────────────────────────────────────────────────────────────
 
@@ -64,14 +67,13 @@ class VentaController extends Controller
         // ── 1. Validación estricta de entrada ─────────────────────────────────
         //    'distinct' rechaza que el frontend envíe el mismo número dos veces.
         $datosValidados = $request->validate([
-            'ruta_id'         => ['required', 'integer', 'exists:rutas,id'],
-            'cedula'          => ['required', 'string', 'regex:/^\d{10}$/'],
-            'nombre_completo' => ['required', 'string', 'max:255'],
-            'edad'            => ['required', 'integer', 'min:0', 'max:120'],
-            'tiene_discapacidad' => ['nullable', 'boolean'],
-            'asientos'        => ['required', 'array', 'min:1', 'max:40'],
-            'asientos.*'      => ['required', 'integer', 'between:1,40', 'distinct'],
-            'precio_unitario' => ['required', 'numeric', 'min:0.01'],
+            'ruta_id'            => ['required', 'integer', 'exists:rutas,id'],
+            'cedula'             => ['required', 'string', 'regex:/^\d{10}$/'],
+            'nombre_completo'    => ['required', 'string', 'max:255'],
+            'edad'               => ['required', 'integer', 'min:0', 'max:120'],
+            'asientos'           => ['required', 'array', 'min:1', 'max:40'],
+            'asientos.*'         => ['required', 'integer', 'between:1,40', 'distinct'],
+            'categoria_asiento_id' => ['nullable', 'integer', 'exists:categorias_asiento,id'],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 10 dígitos numéricos.',
             'nombre_completo.required' => 'El nombre completo del pasajero es obligatorio.',
@@ -101,39 +103,66 @@ class VentaController extends Controller
         // ── 3. Preparación de datos (fuera del lock transaccional) ───────────
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
-        $asientos       = array_values(array_unique($datosValidados['asientos']));
-        $precioUnitario = (float) $datosValidados['precio_unitario'];
+        $asientos = array_values(array_unique($datosValidados['asientos']));
+        $edad     = (int) $datosValidados['edad'];
 
-        $frecuencia = \App\Models\Frecuencia::with('ruta')->where('ruta_id', $datosValidados['ruta_id'])->first();
+        // Obtener precio base de la ruta
+        $ruta = Ruta::findOrFail($datosValidados['ruta_id']);
+        $precioBase = (float) $ruta->precio_base;
 
-        // ── 3.1 Cálculo dinámico de precios ───────────────────────────────────
-        $tieneDiscapacidad = $request->boolean('tiene_discapacidad', false);
-        $edad = (int) $datosValidados['edad'];
-        $aplicaDescuento = ($edad >= 65 || $edad < 18 || $tieneDiscapacidad);
-        $descuento = $aplicaDescuento ? 0.50 : 0.0;
-        $recargoVip = config('pasajes.recargo_vip', 5.00); // $R: Recargo VIP
-
-        $viajeHoy = \App\Models\Viaje::with('bus')->where('fecha', $hoy)
-            ->where('frecuencia_id', $frecuencia?->id)
-            ->first();
-
-        $vipSeats = [];
-        if ($viajeHoy && $viajeHoy->bus && is_array($viajeHoy->bus->mapa_asientos)) {
-            $vipSeats = $viajeHoy->bus->mapa_asientos['extras']['vip'] ?? [];
+        // Obtener recargo de la categoría de asiento (si aplica)
+        $recargo = 0.0;
+        if (!empty($datosValidados['categoria_asiento_id'])) {
+            $categoria = CategoriaAsiento::find($datosValidados['categoria_asiento_id']);
+            $recargo = $categoria ? (float) $categoria->recargo : 0.0;
         }
 
-        $total = 0.0;
-        $preciosAsientos = [];
+        // Calcular precio unitario con PricingService (base + recargo - descuento edad)
+        $precioUnitario = $this->pricingService->calcularPrecioFinal($precioBase, $recargo, $edad);
+        $total          = round($precioUnitario * count($asientos), 2);
 
-        foreach ($asientos as $asientoNum) {
-            $esVip = in_array($asientoNum, $vipSeats);
-            $R = $esVip ? $recargoVip : 0.0;
-            
-            // P_final = (P_base + R) * (1 - D)
-            $precioFinal = ($precioUnitario + $R) * (1 - $descuento);
-            
-            $preciosAsientos[$asientoNum] = round($precioFinal, 2);
-            $total += $preciosAsientos[$asientoNum];
+        $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
+        $viajeActivo = Viaje::with('bus.asientos')
+            ->where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($datosValidados) {
+                $q->where('ruta_id', $datosValidados['ruta_id']);
+            })
+            ->first();
+
+        // Verificar que ninguno de los asientos ya esté vendido en la base de datos para este viaje hoy (si el viaje existe)
+        if ($viajeActivo) {
+            $vendidos = Boleto::where('frecuencia_id', $viajeActivo->frecuencia_id)
+                ->whereDate('created_at', $hoy)
+                ->whereIn('numero_asiento', array_map('strval', $asientos))
+                ->pluck('numero_asiento');
+
+            if ($vendidos->isNotEmpty()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Los siguientes asientos ya han sido vendidos para este viaje: ' . $vendidos->map(fn($s) => "#{$s}")->join(', ') . '.');
+            }
+        }
+
+
+        $categoriasPorAsiento = [];
+        $total = 0.0;
+
+
+        foreach ($asientos as $numeroAsiento) {
+            $categoria = 'estandar';
+
+            if ($viajeActivo?->bus) {
+                $categoria = $viajeActivo->bus->asientos
+                    ->firstWhere('numero', (int) $numeroAsiento)
+                    ?->categoria ?? 'estandar';
+            }
+
+            $precioAsiento = $categoria === 'vip'
+                ? round($precioBase * 1.5, 2)
+                : round($precioBase, 2);
+
+            $categoriasPorAsiento[(string) $numeroAsiento] = $categoria;
+            $total += $precioAsiento;
         }
 
         // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
@@ -150,7 +179,7 @@ class VentaController extends Controller
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($datosValidados, $asientos, $preciosAsientos, $total, $frecuencia) {
+            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioBase, $total, $frecuencia, $categoriasPorAsiento) {
 
                 // 3a. Resolver, crear o restaurar pasajero
                 $pasajero = Pasajero::withTrashed()->where('cedula', $datosValidados['cedula'])->first();
@@ -182,7 +211,10 @@ class VentaController extends Controller
                     'pasajero_id'    => $pasajero->id,  // FK → pasajeros.id ✓
                     'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
                     'numero_asiento' => (string) $asiento,
-                    'precio_final'   => $preciosAsientos[$asiento],
+                    'categoria_asiento' => $categoriasPorAsiento[(string) $asiento] ?? 'estandar',
+                    'precio_final'   => ($categoriasPorAsiento[(string) $asiento] ?? 'estandar') === 'vip'
+                        ? round($precioBase * 1.5, 2)
+                        : round($precioBase, 2),
                 ], $asientos);
 
                 // 3d. Inserción masiva de boletos ──────────────────────────────
@@ -329,6 +361,65 @@ class VentaController extends Controller
 
         return view('ventanilla.ventas.create', compact('rutas', 'rutasBloqueadas'));
     }
+
+    /**
+     * Obtiene los asientos ocupados y categorías para una ruta específica en el día actual (AJAX).
+     *
+     * @param  int  $ruta_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function asientosPorRuta($ruta_id)
+    {
+        $hoy = now()->toDateString();
+
+        $viaje = Viaje::where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($ruta_id) {
+                $q->where('ruta_id', $ruta_id);
+            })
+            ->with(['bus.asientos', 'frecuencia.ruta'])
+            ->first();
+
+        if (!$viaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay viajes programados hoy para esta ruta.'
+            ]);
+        }
+
+        $bus = $viaje->bus;
+        if (!$bus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un bus asignado al viaje de esta ruta hoy.'
+            ]);
+        }
+
+        $numeroAsientos = $bus->numero_asientos;
+        
+        $seatCategories = $bus->asientos()
+            ->pluck('categoria', 'numero')
+            ->mapWithKeys(function ($categoria, $numero) {
+                return [(string) $numero => $categoria];
+            })
+            ->all();
+
+        // Obtener los asientos que ya están ocupados (boletos vendidos para esta frecuencia hoy)
+        $occupiedSeats = Boleto::where('frecuencia_id', $viaje->frecuencia_id)
+            ->whereDate('created_at', $hoy)
+            ->pluck('numero_asiento')
+            ->map(fn($num) => (string) $num)
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'viaje_id' => $viaje->id,
+            'numero_asientos' => $numeroAsientos,
+            'seatCategories' => $seatCategories,
+            'occupiedSeats' => $occupiedSeats,
+            'precio_base' => (float) ($viaje->frecuencia->ruta->precio_base ?? 0),
+        ]);
+    }
+
 
     /**
      * Muestra los detalles de una venta específica y sus boletos.

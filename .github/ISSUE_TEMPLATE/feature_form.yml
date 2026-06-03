@@ -1,0 +1,35 @@
+name: Feature Request
+description: Solicita una mejora o nueva funcionalidad
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripcion
+      description: Explica la necesidad y el valor de negocio
+      placeholder: "Como <rol> quiero <necesidad> para <beneficio>"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptacion
+      description: Lista verificable de resultados esperados
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: checkboxes
+    id: tech_checklist
+    attributes:
+      label: Checklist tecnico
+      description: Marca las areas de impacto estimadas
+      options:
+        - label: Requiere nueva migracion en database/migrations
+        - label: Requiere modelo en app/Models
+        - label: Requiere seeder en database/seeders
+        - label: Requiere controlador en app/Http/Controllers
+        - label: Requiere componente Livewire en app/Livewire
+        - label: Requiere vista Blade en resources/views
+        - label: Requiere ruta en routes/web.php
+        - label: Requiere cambios en recursos frontend (resources/css o resources/js)
