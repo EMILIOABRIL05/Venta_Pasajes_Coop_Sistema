@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\Pasajero;
 use App\Models\Venta;
 use App\Models\Viaje;
+use App\Services\PricingService;
 use App\Support\AsientosDisponibles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,13 @@ use Livewire\Component;
 class PanelPrincipal extends Component
 {
     use RequiresRole;
+
+    public function boot(PricingService $pricingService): void
+    {
+        $this->pricingService = $pricingService;
+    }
+
+    private PricingService $pricingService;
 
     public ?Viaje $viajeActual = null;
 
@@ -246,7 +254,7 @@ class PanelPrincipal extends Component
                 $viaje = Viaje::query()
                     ->whereKey($this->viajeActual->id)
                     ->lockForUpdate()
-                    ->with(['bus', 'frecuencia.ruta'])
+                    ->with(['bus.asientos', 'frecuencia.ruta'])
                     ->firstOrFail();
 
                 $asientoLibre = AsientosDisponibles::primerDisponible($viaje, true);
@@ -257,12 +265,22 @@ class PanelPrincipal extends Component
                     ]);
                 }
 
-                $precio = (float) ($viaje->frecuencia->ruta->precio_base ?? 0);
-                if ($precio <= 0) {
+                $precioBase = (float) ($viaje->frecuencia->ruta->precio_base ?? 0);
+                if ($precioBase <= 0) {
                     throw ValidationException::withMessages([
                         'precio' => 'La ruta no tiene precio base configurado.',
                     ]);
                 }
+
+                $categoriaAsiento = $viaje->bus?->asientos
+                    ->firstWhere('numero', (int) $asientoLibre)
+                    ?->categoria ?? 'estandar';
+
+                $recargo = $categoriaAsiento === 'vip'
+                    ? round($precioBase * 0.5, 2)
+                    : 0.0;
+
+                $precioFinal = $this->pricingService->calcularPrecioFinal($precioBase, $recargo);
 
                 $pasajero = Pasajero::query()->firstOrCreate(
                     ['cedula' => '9000000001'],
@@ -271,7 +289,7 @@ class PanelPrincipal extends Component
 
                 $venta = Venta::create([
                     'user_id' => Auth::id(),
-                    'total' => round($precio, 2),
+                    'total' => $precioFinal,
                     'estado' => 'Pagada',
                 ]);
 
@@ -280,22 +298,23 @@ class PanelPrincipal extends Component
                     'pasajero_id' => $pasajero->id,
                     'frecuencia_id' => $viaje->frecuencia_id,
                     'numero_asiento' => $asientoLibre,
-                    'precio_final' => round($precio, 2),
+                    'categoria_asiento' => $categoriaAsiento,
+                    'precio_final' => $precioFinal,
                 ]);
 
                 Pago::create([
                     'venta_id' => $venta->id,
-                    'monto' => round($precio, 2),
+                    'monto' => $precioFinal,
                     'fecha' => now(),
                     'metodo_pago' => 'venta_express',
-                    'observaciones' => 'Venta a bordo registrada desde panel chofer.',
+                    'observaciones' => "Venta a bordo registrada desde panel chofer. Asiento {$asientoLibre} {$categoriaAsiento}.",
                 ]);
             });
 
             $this->viajeActual->refresh();
 
             $this->tipoMensajeExpress = 'success';
-            $this->mensajeExpress = 'Venta express registrada: 1 asiento asignado.';
+            $this->mensajeExpress = 'Venta express registrada con precio por categoría de asiento.';
         } catch (ValidationException $e) {
             $this->tipoMensajeExpress = 'error';
             $this->mensajeExpress = collect($e->errors())->flatten()->first();
