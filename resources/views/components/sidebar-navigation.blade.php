@@ -1,4 +1,4 @@
-<div x-data="{ open: false, catalogosOpen: false, operativaOpen: false }">
+<div x-data="{ open: false, catalogosOpen: false, operativaOpen: false, ventanillaOpen: false }">
     <!-- Sidebar Desktop -->
     <nav class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden bg-[#003366] text-white shadow-xl transition-all duration-300 sm:flex" aria-label="Sidebar principal">
         <!-- Logo / Header -->
@@ -32,13 +32,38 @@
 
              <!-- Ventanilla -->
             @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
-                <a href="{{ route('ventanilla.ventas.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('ventanilla.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                    </svg>
-                    Módulo Ventanilla
-                </a>
+                <div class="mb-4">
+                    <button @click="ventanillaOpen = !ventanillaOpen"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white group">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                            <span>Módulo Ventanilla</span>
+                        </div>
+                        <svg :class="ventanillaOpen ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </button>
+
+                    <!-- Sub-items -->
+                    <div x-show="ventanillaOpen" @click.outside="ventanillaOpen = false" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
+                        <a href="{{ route('ventanilla.ventas.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('ventanilla.ventas.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                            Ventas
+                        </a>
+                        <a href="{{ route('ventanilla.cierre') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('ventanilla.cierre') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h0a4 4 0 014 4v2M9 17H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4" />
+                            </svg>
+                            Cierre de Turno
+                        </a>
+                    </div>
+                </div>
             @endif
 
             <!-- Operativa -->
@@ -263,13 +288,37 @@
 
                 <!-- Ventanilla Mobile -->
                 @if (auth()->user()->hasAnyRole('admin', 'oficinista'))
-                    <a href="{{ route('ventanilla.ventas.index') }}" @click="open = false"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('ventanilla.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                        </svg>
-                        Módulo Ventanilla
-                    </a>
+                    <div class="mb-4">
+                        <button @click="ventanillaOpen = !ventanillaOpen"
+                            class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                </svg>
+                                <span>Módulo Ventanilla</span>
+                            </div>
+                            <svg :class="ventanillaOpen ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                        </button>
+
+                        <div x-show="ventanillaOpen" x-transition class="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
+                            <a href="{{ route('ventanilla.ventas.index') }}" @click="open = false"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('ventanilla.ventas.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                </svg>
+                                Ventas
+                            </a>
+                            <a href="{{ route('ventanilla.cierre') }}" @click="open = false"
+                                class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('ventanilla.cierre') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h0a4 4 0 014 4v2M9 17H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4" />
+                                </svg>
+                                Cierre de Turno
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
                 @if (auth()->user()->hasAnyRole('admin', 'oficinista'))

@@ -68,6 +68,7 @@ class VentaController extends Controller
             'cedula'          => ['required', 'string', 'regex:/^\d{10}$/'],
             'nombre_completo' => ['required', 'string', 'max:255'],
             'edad'            => ['required', 'integer', 'min:0', 'max:120'],
+            'tiene_discapacidad' => ['nullable', 'boolean'],
             'asientos'        => ['required', 'array', 'min:1', 'max:40'],
             'asientos.*'      => ['required', 'integer', 'between:1,40', 'distinct'],
             'precio_unitario' => ['required', 'numeric', 'min:0.01'],
@@ -102,9 +103,38 @@ class VentaController extends Controller
         //    para minimizar el tiempo que los registros quedan bloqueados.
         $asientos       = array_values(array_unique($datosValidados['asientos']));
         $precioUnitario = (float) $datosValidados['precio_unitario'];
-        $total          = round($precioUnitario * count($asientos), 2);
 
-        $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
+        $frecuencia = \App\Models\Frecuencia::with('ruta')->where('ruta_id', $datosValidados['ruta_id'])->first();
+
+        // ── 3.1 Cálculo dinámico de precios ───────────────────────────────────
+        $tieneDiscapacidad = $request->boolean('tiene_discapacidad', false);
+        $edad = (int) $datosValidados['edad'];
+        $aplicaDescuento = ($edad >= 65 || $edad < 18 || $tieneDiscapacidad);
+        $descuento = $aplicaDescuento ? 0.50 : 0.0;
+        $recargoVip = config('pasajes.recargo_vip', 5.00); // $R: Recargo VIP
+
+        $viajeHoy = \App\Models\Viaje::with('bus')->where('fecha', $hoy)
+            ->where('frecuencia_id', $frecuencia?->id)
+            ->first();
+
+        $vipSeats = [];
+        if ($viajeHoy && $viajeHoy->bus && is_array($viajeHoy->bus->mapa_asientos)) {
+            $vipSeats = $viajeHoy->bus->mapa_asientos['extras']['vip'] ?? [];
+        }
+
+        $total = 0.0;
+        $preciosAsientos = [];
+
+        foreach ($asientos as $asientoNum) {
+            $esVip = in_array($asientoNum, $vipSeats);
+            $R = $esVip ? $recargoVip : 0.0;
+            
+            // P_final = (P_base + R) * (1 - D)
+            $precioFinal = ($precioUnitario + $R) * (1 - $descuento);
+            
+            $preciosAsientos[$asientoNum] = round($precioFinal, 2);
+            $total += $preciosAsientos[$asientoNum];
+        }
 
         // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
         //    Doble capa de protección contra ventas simultáneas del mismo asiento:
@@ -120,7 +150,7 @@ class VentaController extends Controller
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioUnitario, $total, $frecuencia) {
+            $venta = DB::transaction(function () use ($datosValidados, $asientos, $preciosAsientos, $total, $frecuencia) {
 
                 // 3a. Resolver, crear o restaurar pasajero
                 $pasajero = Pasajero::withTrashed()->where('cedula', $datosValidados['cedula'])->first();
@@ -152,7 +182,7 @@ class VentaController extends Controller
                     'pasajero_id'    => $pasajero->id,  // FK → pasajeros.id ✓
                     'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
                     'numero_asiento' => (string) $asiento,
-                    'precio_final'   => $precioUnitario,
+                    'precio_final'   => $preciosAsientos[$asiento],
                 ], $asientos);
 
                 // 3d. Inserción masiva de boletos ──────────────────────────────

@@ -241,7 +241,7 @@ class CierreTurnoService
                 'total'   => 0.0,
                 'boletos' => 0,
             ],
-        ]);
+        ])->toArray();
 
         foreach ($ventas as $v) {
             $hora = (int) $v->created_at->format('G');
@@ -249,10 +249,12 @@ class CierreTurnoService
             $slots[$hora]['boletos'] += $v->boletos->count();
         }
 
+        $slotsCollection = collect($slots);
+
         return [
-            'labels'  => $slots->pluck('label')->values()->toArray(),
-            'totales' => $slots->pluck('total')->map(fn ($t) => round($t, 2))->values()->toArray(),
-            'boletos' => $slots->pluck('boletos')->values()->toArray(),
+            'labels'  => $slotsCollection->pluck('label')->values()->toArray(),
+            'totales' => $slotsCollection->pluck('total')->map(fn ($t) => round($t, 2))->values()->toArray(),
+            'boletos' => $slotsCollection->pluck('boletos')->values()->toArray(),
         ];
     }
 
