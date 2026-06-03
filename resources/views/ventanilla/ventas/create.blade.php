@@ -414,28 +414,7 @@
 
         // ── Sincronizar Resumen ──────────────────────────────────────────────
         function syncResumen() {
-            var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
-            var count    = hiddens.length;
-            var precioBaseSelected = parseFloat(precioInput.value) || 0;
-            var total = 0;
-
-            asientosEl.innerHTML = '';
-            hiddens.forEach(function (inp) {
-                var seatNumber = inp.value;
-                var btn = document.getElementById('asiento-' + seatNumber);
-                var isVip = btn && btn.dataset.category === 'vip';
-                var price = isVip ? (precioBaseSelected * 1.5) : precioBaseSelected;
-                total += price;
-
-                var badge = document.createElement('span');
-                badge.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-indigo-200 text-indigo-800 text-xs font-bold';
-                badge.textContent = seatNumber;
-                asientosEl.appendChild(badge);
-            });
-
-            countEl.textContent = count;
-            totalEl.textContent = '$' + total.toFixed(2);
-            btnSubmit.disabled = count === 0;
+            recalcularPrecio();
         }
 
         // ── Recalcular Precio Unitario por Descuento o Ruta ─────────────────
@@ -464,14 +443,17 @@
             var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
             var count    = hiddens.length;
             
-            // Simular lógica VIP (Ej: Asientos 1 al 4 son VIP en el frontend visual)
             var countVip = 0;
+            var totalRecargo = 0;
             hiddens.forEach(function (inp) {
-                if (parseInt(inp.value) <= 4) countVip++;
+                var btn = document.getElementById('asiento-' + inp.value);
+                if (btn && btn.dataset.category === 'vip') {
+                    countVip++;
+                    totalRecargo += precioBase * 0.5;
+                }
             });
 
             var totalBase = precioBase * count;
-            var totalRecargo = countVip * RECARGO_VIP;
             var subtotal = totalBase + totalRecargo;
             
             var totalDescuento = 0;
@@ -510,7 +492,8 @@
 
             asientosEl.innerHTML = '';
             hiddens.forEach(function (inp) {
-                var isVip = parseInt(inp.value) <= 4;
+                var btn = document.getElementById('asiento-' + inp.value);
+                var isVip = btn && btn.dataset.category === 'vip';
                 var badge = document.createElement('span');
                 badge.className = isVip 
                     ? 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 shadow-sm'
