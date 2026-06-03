@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Bus;
-use App\Models\CategoriaBus;
 use App\Models\Parada;
 use App\Models\Ruta;
 use App\Models\User;
@@ -44,13 +43,7 @@ class CompraWebTest extends TestCase
             'hora_salida' => '08:00:00'
         ]);
 
-        $categoria = CategoriaBus::create([
-            'nombre' => 'Normal',
-            'descripcion' => 'Prueba'
-        ]);
-
         $bus = Bus::create([
-            'categoria_bus_id' => $categoria->id,
             'placa' => 'AAA-1234',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Prueba',
@@ -119,13 +112,7 @@ class CompraWebTest extends TestCase
             'hora_salida' => '08:00:00'
         ]);
 
-        $categoria = CategoriaBus::create([
-            'nombre' => 'Normal',
-            'descripcion' => 'Prueba'
-        ]);
-
         $bus = Bus::create([
-            'categoria_bus_id' => $categoria->id,
             'placa' => 'AAA-1234',
             'marca_chasis' => 'Hino',
             'carroceria' => 'Prueba',
