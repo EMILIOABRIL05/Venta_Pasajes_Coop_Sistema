@@ -9,7 +9,6 @@ use App\Models\Boleto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
-
 class MisViajes extends Component
 {
     public function render()
@@ -47,8 +46,9 @@ class MisViajes extends Component
             return;
         }
 
-        // Generar QR en formato SVG (inline)
-        $qrCode = QrCode::size(150)->generate($boleto->id);
+        // Generar QR en formato SVG base64 (A prueba de Docker y DOMPDF)
+        $urlValidacion = url("/validar-boleto?uuid=" . $boleto->id); 
+        $qrCode = base64_encode(QrCode::format('svg')->size(150)->generate($urlValidacion));
 
         $data = [
             'boleto' => $boleto,
