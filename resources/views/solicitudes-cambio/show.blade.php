@@ -164,8 +164,18 @@
         </div>
         @endif
 
-        {{-- ─── Botón Volver ───────────────────────────────────────────── --}}
-        <div class="mt-6">
+        {{-- ─── Botones de Acción ──────────────────────────────────────────── --}}
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+            @if($isDeveloper)
+            <a href="{{ route('solicitudes-cambio.edit', $solicitud->id) }}"
+               class="inline-flex items-center gap-2 rounded-md bg-[#003366] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-[#003366] focus:ring-offset-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {{ $solicitud->reporteTecnico ? 'Editar Solicitud' : 'Completar Reporte Técnico' }}
+            </a>
+            @endif
+
             <a href="{{ route('solicitudes-cambio.index') }}"
                class="inline-flex items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

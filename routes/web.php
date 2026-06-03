@@ -144,6 +144,10 @@ Route::middleware(['auth'])
             ->name('index');
         Route::get('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'show'])
             ->name('show');
+        Route::get('/{id}/editar', [\App\Http\Controllers\SolicitudCambioController::class, 'edit'])
+            ->name('edit');
+        Route::put('/{id}', [\App\Http\Controllers\SolicitudCambioController::class, 'update'])
+            ->name('update');
         Route::patch('/{id}/estado', [\App\Http\Controllers\SolicitudCambioController::class, 'updateStatus'])
             ->name('update-status');
     });
