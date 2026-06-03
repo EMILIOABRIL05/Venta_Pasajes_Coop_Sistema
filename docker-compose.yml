@@ -1,0 +1,66 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coop_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - coop_vendor:/var/www/html/vendor
+    depends_on:
+      - db
+    networks:
+      - coop_network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: coop_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - coop_network
+
+  db:
+    image: postgres:16-alpine
+    container_name: coop_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: coop_sistema
+      POSTGRES_USER: coop_user
+      POSTGRES_PASSWORD: coop_password
+    volumes:
+      - coop_pgdata:/var/lib/postgresql/data
+    networks:
+      - coop_network
+
+  node:
+    image: node:22-alpine
+    container_name: coop_node
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - coop_node_modules:/var/www/html/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    networks:
+      - coop_network
+
+networks:
+  coop_network:
+    driver: bridge
+
+volumes:
+  coop_pgdata:
+  coop_vendor:
+  coop_node_modules:
