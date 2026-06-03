@@ -11,6 +11,8 @@ use App\Models\Viaje;
 use App\Models\Venta;
 use App\Models\Pasajero;
 use App\Services\CierreTurnoService;
+use App\Services\PricingService;
+use App\Models\CategoriaAsiento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ class VentaController extends Controller
      */
     public function __construct(
         private readonly CierreTurnoService $servicioCierre,
+        private readonly PricingService $pricingService,
     ) {}
     // ─── Index ────────────────────────────────────────────────────────────────
 
@@ -64,13 +67,13 @@ class VentaController extends Controller
         // ── 1. Validación estricta de entrada ─────────────────────────────────
         //    'distinct' rechaza que el frontend envíe el mismo número dos veces.
         $datosValidados = $request->validate([
-            'ruta_id'         => ['required', 'integer', 'exists:rutas,id'],
-            'cedula'          => ['required', 'string', 'regex:/^\d{10}$/'],
-            'nombre_completo' => ['required', 'string', 'max:255'],
-            'edad'            => ['required', 'integer', 'min:0', 'max:120'],
-            'asientos'        => ['required', 'array', 'min:1', 'max:40'],
-            'asientos.*'      => ['required', 'integer', 'between:1,40', 'distinct'],
-            'precio_unitario' => ['required', 'numeric', 'min:0.01'],
+            'ruta_id'            => ['required', 'integer', 'exists:rutas,id'],
+            'cedula'             => ['required', 'string', 'regex:/^\d{10}$/'],
+            'nombre_completo'    => ['required', 'string', 'max:255'],
+            'edad'               => ['required', 'integer', 'min:0', 'max:120'],
+            'asientos'           => ['required', 'array', 'min:1', 'max:40'],
+            'asientos.*'         => ['required', 'integer', 'between:1,40', 'distinct'],
+            'categoria_asiento_id' => ['nullable', 'integer', 'exists:categorias_asiento,id'],
         ], [
             'cedula.regex' => 'La cédula debe contener exactamente 10 dígitos numéricos.',
             'nombre_completo.required' => 'El nombre completo del pasajero es obligatorio.',
@@ -100,8 +103,23 @@ class VentaController extends Controller
         // ── 3. Preparación de datos (fuera del lock transaccional) ───────────
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
-        $asientos       = array_values(array_unique($datosValidados['asientos']));
-        $precioBase     = (float) $datosValidados['precio_unitario'];
+        $asientos = array_values(array_unique($datosValidados['asientos']));
+        $edad     = (int) $datosValidados['edad'];
+
+        // Obtener precio base de la ruta
+        $ruta = Ruta::findOrFail($datosValidados['ruta_id']);
+        $precioBase = (float) $ruta->precio_base;
+
+        // Obtener recargo de la categoría de asiento (si aplica)
+        $recargo = 0.0;
+        if (!empty($datosValidados['categoria_asiento_id'])) {
+            $categoria = CategoriaAsiento::find($datosValidados['categoria_asiento_id']);
+            $recargo = $categoria ? (float) $categoria->recargo : 0.0;
+        }
+
+        // Calcular precio unitario con PricingService (base + recargo - descuento edad)
+        $precioUnitario = $this->pricingService->calcularPrecioFinal($precioBase, $recargo, $edad);
+        $total          = round($precioUnitario * count($asientos), 2);
 
         $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
         $viajeActivo = Viaje::with('bus.asientos')
