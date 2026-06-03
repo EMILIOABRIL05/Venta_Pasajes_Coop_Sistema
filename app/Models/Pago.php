@@ -17,10 +17,14 @@ class Pago extends Model
         'metodo_pago',
         'referencia',
         'observaciones',
+        'estado',
+        'codigo_autorizacion',
+        'validado_at',
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
+        'validado_at' => 'datetime',
         'monto' => 'decimal:2',
     ];
 
