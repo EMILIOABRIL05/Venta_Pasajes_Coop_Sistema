@@ -101,10 +101,51 @@ class VentaController extends Controller
         //    Toda operación que NO requiera acceso a la BD debe hacerse aquí,
         //    para minimizar el tiempo que los registros quedan bloqueados.
         $asientos       = array_values(array_unique($datosValidados['asientos']));
-        $precioUnitario = (float) $datosValidados['precio_unitario'];
-        $total          = round($precioUnitario * count($asientos), 2);
+        $precioBase     = (float) $datosValidados['precio_unitario'];
 
         $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
+        $viajeActivo = Viaje::with('bus.asientos')
+            ->where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($datosValidados) {
+                $q->where('ruta_id', $datosValidados['ruta_id']);
+            })
+            ->first();
+
+        // Verificar que ninguno de los asientos ya esté vendido en la base de datos para este viaje hoy (si el viaje existe)
+        if ($viajeActivo) {
+            $vendidos = Boleto::where('frecuencia_id', $viajeActivo->frecuencia_id)
+                ->whereDate('created_at', $hoy)
+                ->whereIn('numero_asiento', array_map('strval', $asientos))
+                ->pluck('numero_asiento');
+
+            if ($vendidos->isNotEmpty()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Los siguientes asientos ya han sido vendidos para este viaje: ' . $vendidos->map(fn($s) => "#{$s}")->join(', ') . '.');
+            }
+        }
+
+
+        $categoriasPorAsiento = [];
+        $total = 0.0;
+
+
+        foreach ($asientos as $numeroAsiento) {
+            $categoria = 'estandar';
+
+            if ($viajeActivo?->bus) {
+                $categoria = $viajeActivo->bus->asientos
+                    ->firstWhere('numero', (int) $numeroAsiento)
+                    ?->categoria ?? 'estandar';
+            }
+
+            $precioAsiento = $categoria === 'vip'
+                ? round($precioBase * 1.5, 2)
+                : round($precioBase, 2);
+
+            $categoriasPorAsiento[(string) $numeroAsiento] = $categoria;
+            $total += $precioAsiento;
+        }
 
         // ── 2.5 Verificación de disponibilidad en tiempo real ─────────────────
         //    Doble capa de protección contra ventas simultáneas del mismo asiento:
@@ -120,7 +161,7 @@ class VentaController extends Controller
 
         // ── 3. Transacción atómica con reintentos ante deadlock ───────────────
         try {
-            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioUnitario, $total, $frecuencia) {
+            $venta = DB::transaction(function () use ($datosValidados, $asientos, $precioBase, $total, $frecuencia, $categoriasPorAsiento) {
 
                 // 3a. Resolver, crear o restaurar pasajero
                 $pasajero = Pasajero::withTrashed()->where('cedula', $datosValidados['cedula'])->first();
@@ -152,7 +193,10 @@ class VentaController extends Controller
                     'pasajero_id'    => $pasajero->id,  // FK → pasajeros.id ✓
                     'frecuencia_id'  => $frecuencia ? $frecuencia->id : null,
                     'numero_asiento' => (string) $asiento,
-                    'precio_final'   => $precioUnitario,
+                    'categoria_asiento' => $categoriasPorAsiento[(string) $asiento] ?? 'estandar',
+                    'precio_final'   => ($categoriasPorAsiento[(string) $asiento] ?? 'estandar') === 'vip'
+                        ? round($precioBase * 1.5, 2)
+                        : round($precioBase, 2),
                 ], $asientos);
 
                 // 3d. Inserción masiva de boletos ──────────────────────────────
@@ -299,6 +343,65 @@ class VentaController extends Controller
 
         return view('ventanilla.ventas.create', compact('rutas', 'rutasBloqueadas'));
     }
+
+    /**
+     * Obtiene los asientos ocupados y categorías para una ruta específica en el día actual (AJAX).
+     *
+     * @param  int  $ruta_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function asientosPorRuta($ruta_id)
+    {
+        $hoy = now()->toDateString();
+
+        $viaje = Viaje::where('fecha', $hoy)
+            ->whereHas('frecuencia', function ($q) use ($ruta_id) {
+                $q->where('ruta_id', $ruta_id);
+            })
+            ->with(['bus.asientos', 'frecuencia.ruta'])
+            ->first();
+
+        if (!$viaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay viajes programados hoy para esta ruta.'
+            ]);
+        }
+
+        $bus = $viaje->bus;
+        if (!$bus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un bus asignado al viaje de esta ruta hoy.'
+            ]);
+        }
+
+        $numeroAsientos = $bus->numero_asientos;
+        
+        $seatCategories = $bus->asientos()
+            ->pluck('categoria', 'numero')
+            ->mapWithKeys(function ($categoria, $numero) {
+                return [(string) $numero => $categoria];
+            })
+            ->all();
+
+        // Obtener los asientos que ya están ocupados (boletos vendidos para esta frecuencia hoy)
+        $occupiedSeats = Boleto::where('frecuencia_id', $viaje->frecuencia_id)
+            ->whereDate('created_at', $hoy)
+            ->pluck('numero_asiento')
+            ->map(fn($num) => (string) $num)
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'viaje_id' => $viaje->id,
+            'numero_asientos' => $numeroAsientos,
+            'seatCategories' => $seatCategories,
+            'occupiedSeats' => $occupiedSeats,
+            'precio_base' => (float) ($viaje->frecuencia->ruta->precio_base ?? 0),
+        ]);
+    }
+
 
     /**
      * Muestra los detalles de una venta específica y sus boletos.

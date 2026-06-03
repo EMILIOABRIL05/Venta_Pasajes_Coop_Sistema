@@ -92,6 +92,7 @@
                         :seat-numbers="$seatNumbers"
                         :occupied-seats="$occupiedSeats"
                         :selected-seat="old('numero_asiento')"
+                        :seat-categories="$seatCategories"
                         name="numero_asiento"
                     />
 

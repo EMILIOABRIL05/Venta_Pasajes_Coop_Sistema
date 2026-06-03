@@ -7,6 +7,7 @@ use App\Models\Viaje;
 use App\Models\Pasajero;
 use App\Models\Venta;
 use App\Models\Boleto;
+use App\Models\Asiento;
 use App\Support\DescuentoPorEdad; // Clase estática de Manuel
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,6 +22,7 @@ class CarritoCompra extends Component
     public $asientosSeleccionados = [];
     public $datosPasajeros = []; // Nombre, Cédula, Edad
     public $total = 0;
+    public array $seatCategories = [];
 
     protected $rules = [
         'datosPasajeros.*.nombre' => 'required|string|min:3',
@@ -33,6 +35,11 @@ class CarritoCompra extends Component
         $this->viajeId = $viajeId;
         // Cargamos el viaje con su frecuencia, ruta, bus y boletos vendidos
         $this->viaje = Viaje::with(['frecuencia.ruta', 'bus', 'boletos'])->findOrFail($viajeId);
+        $this->seatCategories = $this->viaje->bus
+            ? $this->viaje->bus->asientos()->pluck('categoria', 'numero')->mapWithKeys(function ($categoria, $numero) {
+                return [(string) $numero => $categoria];
+            })->all()
+            : [];
     }
 
 public function seleccionarAsiento($numeroAsiento)
@@ -47,7 +54,7 @@ public function seleccionarAsiento($numeroAsiento)
         $this->asientosSeleccionados[] = $numeroAsiento;
         
         // Aseguramos que el precio base exista
-        $precioBase = $this->viaje->frecuencia->ruta->precio_base ?? 0;
+            $precioBase = $this->precioBaseAsiento($numeroAsiento);
         
         $this->datosPasajeros[$numeroAsiento] = [
             'nombre' => '',
@@ -63,9 +70,10 @@ public function seleccionarAsiento($numeroAsiento)
     public function calcularTotal()
     {
         $this->total = 0;
-        $precioBase = $this->viaje->frecuencia->ruta->precio_base;
 
         foreach ($this->datosPasajeros as $key => $pasajero) {
+            $precioBase = $this->precioBaseAsiento($key);
+
             if ($pasajero['edad'] !== '' && is_numeric($pasajero['edad'])) {
                 // Usamos la clase estática de Manuel para el descuento por edad
                 $precioFinal = DescuentoPorEdad::precioFinal($precioBase, (int) $pasajero['edad']);
@@ -117,6 +125,7 @@ public function seleccionarAsiento($numeroAsiento)
                     // Nota: el sistema actual enlaza el boleto a la frecuencia (según la BD actual)
                     'frecuencia_id' => $this->viaje->frecuencia_id,
                     'numero_asiento' => $asiento,
+                    'categoria_asiento' => $this->categoriaAsiento($asiento),
                     'precio_final' => $datos['precio'],
                 ]);
             }
@@ -151,4 +160,23 @@ public function seleccionarAsiento($numeroAsiento)
         return view('livewire.web.carrito-compra')
             ->layout('layouts.carrito'); 
     }    
+
+    private function categoriaAsiento(string $numeroAsiento): string
+    {
+        $asiento = Asiento::query()
+            ->where('bus_id', $this->viaje->bus_id)
+            ->where('numero', (int) $numeroAsiento)
+            ->first();
+
+        return $asiento?->categoria ?? 'estandar';
+    }
+
+    private function precioBaseAsiento(string $numeroAsiento): float
+    {
+        $precioBase = (float) ($this->viaje->frecuencia->ruta->precio_base ?? 0);
+
+        return $this->categoriaAsiento($numeroAsiento) === 'vip'
+            ? round($precioBase * 1.5, 2)
+            : round($precioBase, 2);
+    }
 }

@@ -98,9 +98,11 @@ Route::middleware(['auth', 'role:oficinista|admin'])
 
         Route::get('/historial', \App\Livewire\Ventanilla\HistorialVentas::class)->name('historial');
         Route::get('/pasajeros/buscar/{cedula}', [PasajeroController::class, 'buscarPorCedula'])->name('pasajeros.buscar');
+        Route::get('/ventas/asientos-por-ruta/{ruta_id}', [\App\Http\Controllers\Ventanilla\VentaController::class, 'asientosPorRuta'])->name('ventas.asientos-por-ruta');
         Route::resource('ventas', \App\Http\Controllers\Ventanilla\VentaController::class)->only(['index', 'create', 'store', 'show']);
         Route::post('/ventas/boleto/{id}/anular', [\App\Http\Controllers\Ventanilla\VentaController::class, 'anularBoleto'])->name('ventas.boleto.anular');
         Route::resource('pasajeros', PasajeroController::class)->only(['store', 'show', 'destroy']);
+
 
         // Cierre de turno (Manolo - Sprint 4)
         Route::get('/cierre', [\App\Http\Controllers\Ventanilla\VentaController::class, 'cierreTurno'])

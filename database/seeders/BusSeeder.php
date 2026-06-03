@@ -41,12 +41,6 @@ class BusSeeder extends Seeder
                 'anio' => 2021,
                 'filas' => 9,
                 'estado' => 'disponible',
-                'categorias_por_asiento' => [
-                    [
-                        'categoria_id' => $categoriaPreferencial?->id,
-                        'asientos' => [1, 2],
-                    ],
-                ],
             ],
             [
                 'placa' => 'TAA-3001',
@@ -75,7 +69,7 @@ class BusSeeder extends Seeder
                 true,
                 $categoriaDefault,
                 $categorias,
-                $busData['categorias_por_asiento']
+                $busData['categorias_por_asiento'] ?? []
             );
 
             Bus::updateOrCreate(

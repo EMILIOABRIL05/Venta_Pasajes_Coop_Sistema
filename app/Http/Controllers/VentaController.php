@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Models\Venta;
 use App\Models\Bus;
+use App\Models\Asiento;
 use App\Models\Pago;
 use App\Models\Frecuencia;
 use App\Models\Pasajero;
@@ -48,6 +49,7 @@ class VentaController extends Controller
             ->toArray();
 
         $seatNumbers = range(1, max(1, $bus->numero_asientos));
+        $seatCategories = $bus->asientos()->pluck('categoria', 'numero')->all();
         $pasajeros = Pasajero::orderBy('nombre_completo')->get(['id', 'nombre_completo', 'cedula']);
         $buses = Bus::orderBy('placa')->get(['id', 'placa', 'numero_asientos']);
 
@@ -56,6 +58,7 @@ class VentaController extends Controller
             'bus' => $bus,
             'occupiedSeats' => $occupiedSeats,
             'seatNumbers' => $seatNumbers,
+            'seatCategories' => $seatCategories,
             'pasajeros' => $pasajeros,
             'buses' => $buses,
         ]);
@@ -87,6 +90,10 @@ class VentaController extends Controller
 
         $frecuencia = Frecuencia::with('ruta')->findOrFail($validated['frecuencia_id']);
         $bus = Bus::findOrFail($validated['bus_id']);
+        $asiento = Asiento::query()
+            ->where('bus_id', $bus->id)
+            ->where('numero', (int) $validated['numero_asiento'])
+            ->first();
 
         $viajeBloqueado = \App\Models\Viaje::where('frecuencia_id', $validated['frecuencia_id'])
             ->where('fecha', now()->toDateString())
@@ -97,7 +104,10 @@ class VentaController extends Controller
             return back()->withInput()->withErrors(['general' => 'No se pueden vender pasajes: el viaje ya se encuentra en curso o ha finalizado.']);
         }
 
-        if ($validated['precio_final'] != $frecuencia->ruta->precio_base) {
+        $precioBase = (float) $frecuencia->ruta->precio_base;
+        $precioEsperado = $asiento?->precioConRecargo($precioBase) ?? round($precioBase, 2);
+
+        if ((float) $validated['precio_final'] != $precioEsperado) {
             return back()->withInput()->withErrors(['precio_final' => 'El monto no coincide con el precio de la ruta.']);
         }
 
@@ -123,6 +133,7 @@ class VentaController extends Controller
                     'pasajero_id' => $validated['pasajero_id'],
                     'frecuencia_id' => $validated['frecuencia_id'],
                     'numero_asiento' => $seatString,
+                    'categoria_asiento' => $asiento?->categoria ?? 'estandar',
                     'precio_final' => $validated['precio_final'],
                 ]);
 

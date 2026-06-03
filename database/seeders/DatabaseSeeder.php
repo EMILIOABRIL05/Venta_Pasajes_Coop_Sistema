@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             FrecuenciaSeeder::class,
             CategoriaAsientoSeeder::class,
             BusSeeder::class,
+            AsientoSeeder::class,
             RolesAndPermissionsSeeder::class,
             TestUsersSeeder::class,
         ]);

@@ -35,6 +35,7 @@ class Boleto extends Model
         'frecuencia_id',
         'viaje_id',
         'numero_asiento',
+        'categoria_asiento',
         'precio_final',
         'estado',
         'fecha_cancelacion',

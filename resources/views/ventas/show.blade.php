@@ -50,6 +50,12 @@
                             <span class="font-medium">Asiento:</span>
                             <span class="font-bold">{{ $boleto->numero_asiento }}</span>
                         </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Categoría:</span>
+                                <span class="font-bold {{ ($boleto->categoria_asiento ?? 'estandar') === 'vip' ? 'text-amber-700' : 'text-gray-700' }}">
+                                    {{ ($boleto->categoria_asiento ?? 'estandar') === 'vip' ? 'VIP' : 'Estándar' }}
+                                </span>
+                            </div>
                         <div class="flex justify-between">
                             <span class="font-medium">Precio:</span>
                             <span>${{ number_format($boleto->precio_final, 2) }}</span>
