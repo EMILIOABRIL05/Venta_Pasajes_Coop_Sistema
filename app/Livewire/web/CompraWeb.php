@@ -38,7 +38,7 @@ class CompraWeb extends Component
         return Viaje::with([
             'frecuencia.ruta.origen',
             'frecuencia.ruta.destino',
-            'bus.categoria',
+            'bus',
             'boletos',
         ])->findOrFail($this->viajeId);
     }
