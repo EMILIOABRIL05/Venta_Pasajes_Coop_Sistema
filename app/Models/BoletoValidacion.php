@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BoletoValidacion extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // Indicamos el nombre de la tabla para seguir la convención plural snake_case
     protected $table = 'boleto_validaciones';
