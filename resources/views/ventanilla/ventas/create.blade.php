@@ -280,42 +280,55 @@
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            <div class="mt-1">
+                                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" name="tiene_discapacidad" id="tiene_discapacidad" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors" {{ old('tiene_discapacidad') ? 'checked' : '' }}>
+                                    <span class="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-indigo-600 transition-colors">Posee carné de discapacidad</span>
+                                </label>
+                            </div>
                         </div>
 
-                        {{-- ── Precio unitario ── --}}
-                        <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-6">
-                            <label for="precio_unitario" class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                                Precio por asiento (USD)
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm font-semibold">$</span>
-                                <input type="number"
-                                       name="precio_unitario"
-                                       id="precio_unitario"
-                                       value="{{ old('precio_unitario') }}"
-                                       placeholder="0.00"
-                                       step="0.01"
-                                       min="0.01"
-                                       class="w-full rounded-xl border-gray-200 bg-gray-50 pl-7 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition
-                                              {{ $errors->has('precio_unitario') ? 'border-red-400 bg-red-50' : '' }}">
+                        {{-- ── Desglose de Compra ── --}}
+                        <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white flex items-center gap-3">
+                                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                                </span>
+                                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Resumen de Compra</h3>
                             </div>
-                            @error('precio_unitario')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- ── Resumen de selección ── --}}
-                        <div class="bg-indigo-50 rounded-2xl ring-1 ring-indigo-100 p-5">
-                            <p class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-3">Resumen</p>
-                            <div class="flex justify-between text-sm text-gray-600 mb-1">
-                                <span>Asientos seleccionados:</span>
-                                <span id="resumen-count" class="font-bold text-gray-800">0</span>
+                            
+                            <div class="p-6">
+                                <div class="space-y-3 mb-5">
+                                    <div class="flex justify-between items-center text-sm text-gray-600">
+                                        <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-gray-300"></div> Tarifa Base de la Ruta</span>
+                                        <span id="desglose-base" class="font-medium text-gray-800">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm text-gray-600 hidden" id="row-recargo">
+                                        <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div> Recargo Asiento VIP (<span id="count-vip">0</span>)</span>
+                                        <span id="desglose-recargo" class="font-medium text-amber-600">+$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm text-gray-600 hidden" id="row-descuento">
+                                        <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Descuento Prioritario (50%)</span>
+                                        <span id="desglose-descuento" class="font-medium text-emerald-600">-$0.00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t border-gray-100 pt-4 pb-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-[11px] font-bold uppercase tracking-widest text-gray-400">Total Neto a Pagar</span>
+                                        <span id="desglose-neto" class="text-2xl font-extrabold text-indigo-700 tracking-tight">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500">
+                                        <span>Precio Base x Boleto: <strong id="desglose-unitario" class="text-gray-700">$0.00</strong></span>
+                                        <span>Asientos Seleccionados: <strong id="resumen-count" class="text-gray-700">0</strong></span>
+                                    </div>
+                                </div>
+                                <div id="resumen-asientos" class="mt-4 flex flex-wrap gap-1 min-h-[1.5rem]"></div>
                             </div>
-                            <div class="flex justify-between text-sm text-gray-600">
-                                <span>Total estimado:</span>
-                                <span id="resumen-total" class="font-bold text-emerald-700">$0.00</span>
-                            </div>
-                            <div id="resumen-asientos" class="mt-3 flex flex-wrap gap-1 min-h-[1.5rem]"></div>
+                            
+                            {{-- Se envía el unitario como input hidden, el backend procesa recargos y descuentos --}}
+                            <input type="hidden" name="precio_unitario" id="precio_unitario" value="{{ old('precio_unitario') }}">
                         </div>
 
                         {{-- ── Botón submit ── --}}
@@ -346,7 +359,16 @@
         var container   = document.getElementById('asientos-hidden-container');
         var btnSubmit   = document.getElementById('btn-submit');
         var countEl     = document.getElementById('resumen-count');
-        var totalEl     = document.getElementById('resumen-total');
+        
+        var baseEl      = document.getElementById('desglose-base');
+        var recargoRow  = document.getElementById('row-recargo');
+        var recargoEl   = document.getElementById('desglose-recargo');
+        var countVipEl  = document.getElementById('count-vip');
+        var descRow     = document.getElementById('row-descuento');
+        var descEl      = document.getElementById('desglose-descuento');
+        var netoEl      = document.getElementById('desglose-neto');
+        var unitarioEl  = document.getElementById('desglose-unitario');
+        
         var asientosEl  = document.getElementById('resumen-asientos');
         var precioInput = document.getElementById('precio_unitario');
 
@@ -354,6 +376,7 @@
         var cedulaInput = document.getElementById('cedula');
         var nombreInput = document.getElementById('nombre_completo');
         var edadInput   = document.getElementById('edad');
+        var discapacidadCb = document.getElementById('tiene_discapacidad');
         var spinner     = document.getElementById('cedula-spinner');
         var checkMark   = document.getElementById('cedula-check');
         var helper      = document.getElementById('cedula-helper');
@@ -391,48 +414,95 @@
 
         // ── Sincronizar Resumen ──────────────────────────────────────────────
         function syncResumen() {
-            var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
-            var count    = hiddens.length;
-            var precioBaseSelected = parseFloat(precioInput.value) || 0;
-            var total = 0;
-
-            asientosEl.innerHTML = '';
-            hiddens.forEach(function (inp) {
-                var seatNumber = inp.value;
-                var btn = document.getElementById('asiento-' + seatNumber);
-                var isVip = btn && btn.dataset.category === 'vip';
-                var price = isVip ? (precioBaseSelected * 1.5) : precioBaseSelected;
-                total += price;
-
-                var badge = document.createElement('span');
-                badge.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-indigo-200 text-indigo-800 text-xs font-bold';
-                badge.textContent = seatNumber;
-                asientosEl.appendChild(badge);
-            });
-
-            countEl.textContent = count;
-            totalEl.textContent = '$' + total.toFixed(2);
-            btnSubmit.disabled = count === 0;
+            recalcularPrecio();
         }
 
         // ── Recalcular Precio Unitario por Descuento o Ruta ─────────────────
         function recalcularPrecio() {
             var selectedOption = rutaSelect.options[rutaSelect.selectedIndex];
             if (!selectedOption || !selectedOption.value) {
+                baseEl.textContent = '$0.00';
+                netoEl.textContent = '$0.00';
+                unitarioEl.textContent = '$0.00';
+                if (precioInput) precioInput.value = '0.00';
                 return;
             }
+            
             var precioBase = parseFloat(selectedOption.dataset.precio) || 0;
             var edadVal = parseInt(edadInput.value);
+            var tieneDiscapacidad = discapacidadCb ? discapacidadCb.checked : false;
             
-            var precioFinal = precioBase;
-            if (!isNaN(edadVal)) {
-                // Descuento por edad (Manuel's DescuentoPorEdad: nino <= 12, tercera_edad >= 65)
-                if (edadVal <= 12 || edadVal >= 65) {
-                    precioFinal = Math.round((precioBase * 0.5) * 100) / 100;
-                }
+            var aplicaDescuento = false;
+            if (!isNaN(edadVal) && (edadVal <= 12 || edadVal >= 65)) {
+                aplicaDescuento = true;
             }
-            precioInput.value = precioFinal.toFixed(2);
-            syncResumen();
+            if (tieneDiscapacidad) {
+                aplicaDescuento = true;
+            }
+
+            var hiddens  = container.querySelectorAll('input[name="asientos[]"]');
+            var count    = hiddens.length;
+            
+            var countVip = 0;
+            var totalRecargo = 0;
+            hiddens.forEach(function (inp) {
+                var btn = document.getElementById('asiento-' + inp.value);
+                if (btn && btn.dataset.category === 'vip') {
+                    countVip++;
+                    totalRecargo += precioBase * 0.5;
+                }
+            });
+
+            var totalBase = precioBase * count;
+            var subtotal = totalBase + totalRecargo;
+            
+            var totalDescuento = 0;
+            if (aplicaDescuento) {
+                totalDescuento = subtotal * 0.50;
+            }
+            
+            var totalNeto = subtotal - totalDescuento;
+
+            countEl.textContent = count;
+            unitarioEl.textContent = '$' + precioBase.toFixed(2);
+            if (precioInput) precioInput.value = precioBase.toFixed(2);
+
+            baseEl.textContent = '$' + totalBase.toFixed(2);
+            
+            if (countVip > 0) {
+                recargoRow.classList.remove('hidden');
+                recargoRow.classList.add('flex');
+                countVipEl.textContent = countVip;
+                recargoEl.textContent = '+$' + totalRecargo.toFixed(2);
+            } else {
+                recargoRow.classList.add('hidden');
+                recargoRow.classList.remove('flex');
+            }
+
+            if (aplicaDescuento && subtotal > 0) {
+                descRow.classList.remove('hidden');
+                descRow.classList.add('flex');
+                descEl.textContent = '-$' + totalDescuento.toFixed(2);
+            } else {
+                descRow.classList.add('hidden');
+                descRow.classList.remove('flex');
+            }
+
+            netoEl.textContent = '$' + totalNeto.toFixed(2);
+
+            asientosEl.innerHTML = '';
+            hiddens.forEach(function (inp) {
+                var btn = document.getElementById('asiento-' + inp.value);
+                var isVip = btn && btn.dataset.category === 'vip';
+                var badge = document.createElement('span');
+                badge.className = isVip 
+                    ? 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 shadow-sm'
+                    : 'inline-flex items-center justify-center w-7 h-7 rounded-md bg-indigo-200 text-indigo-800 text-xs font-bold shadow-sm';
+                badge.textContent = inp.value;
+                asientosEl.appendChild(badge);
+            });
+
+            btnSubmit.disabled = count === 0;
         }
 
         function clearSelectedSeats() {
@@ -639,7 +709,7 @@
             recalcularPrecio();
         });
         edadInput.addEventListener('input', recalcularPrecio);
-        precioInput.addEventListener('input', syncResumen);
+        if (discapacidadCb) discapacidadCb.addEventListener('change', recalcularPrecio);
 
         // ── Inicialización / Restauración de old() ──────────────────────────
         if (rutaSelect.value) {
