@@ -62,8 +62,6 @@
 <body>
     <div class="boleto">
         <div class="header">
-            <!-- Aquí puedes agregar el logo de la Cooperativa -->
-            <!-- <img src="{{ asset('images/logo.png') }}" alt="Logo Cooperativa" class="logo"> -->
             <div class="titulo">Cooperativa de Transporte</div>
             <div>Boleto de Pasaje</div>
         </div>
@@ -98,7 +96,7 @@
         </div>
 
         <div class="qr">
-            {!! $qrCode !!}
+            <img src="data:image/svg+xml;base64,{{ $qrCode }}" alt="Código QR de Validación" style="width: 150px; height: 150px;">
         </div>
 
         <div class="footer">
