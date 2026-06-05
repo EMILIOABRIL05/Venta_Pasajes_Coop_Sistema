@@ -2,24 +2,48 @@
 
 namespace App\Livewire\Web;
 
-use Livewire\Component;
-use App\Models\Viaje;
+use App\Models\Asiento;
+use App\Models\Boleto;
 use App\Models\Pasajero;
 use App\Models\Venta;
-use App\Models\Boleto;
+use App\Models\Viaje;
 use App\Support\DescuentoPorEdad;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class CompraWeb extends Component
 {
     public $viajeId;
 
     public $asientosSeleccionados = [];
+
     public $datosPasajeros = [];
-    public $tipoAsiento = 'estandar';
-    public $recargo = 0.00;
+
     public $total = 0.00;
+
+    /**
+     * Mapa de categorías por número de asiento.
+     * Ejemplo: ['1' => 'estandar', '5' => 'vip', ...]
+     */
+    public array $categoriasAsientos = [];
+
+    /**
+     * Precios base por asiento (ya con recargo de categoría aplicado).
+     * Ejemplo: ['1' => 10.00, '5' => 15.00, ...]
+     */
+    public array $preciosPorAsiento = [];
+
+    /**
+     * Asientos ocupados (solo números como strings).
+     */
+    public array $asientosOcupados = [];
+
+    /**
+     * Precio base de la ruta (sin recargos).
+     */
+    public float $precioBase = 0.00;
 
     protected $rules = [
         'datosPasajeros.*.nombre' => 'required|string|min:3',
@@ -27,10 +51,49 @@ class CompraWeb extends Component
         'datosPasajeros.*.edad' => 'required|integer|min:0|max:110',
     ];
 
-    public function mount($viajeId)
+    public function mount($viajeId): void
     {
         $this->viajeId = $viajeId;
-        $this->recargo = 0.00;
+        $this->cargarMapaAsientos();
+    }
+
+    /**
+     * Carga el mapa de asientos con categorías reales desde la BD.
+     */
+    protected function cargarMapaAsientos(): void
+    {
+        $viaje = $this->getViajeData();
+
+        $this->precioBase = (float) ($viaje->frecuencia->ruta->precio_base ?? 0);
+
+        // Asientos ocupados para este viaje
+        $this->asientosOcupados = Boleto::where('viaje_id', $viaje->id)
+            ->activos()
+            ->pluck('numero_asiento')
+            ->map(fn ($s) => (string) $s)
+            ->toArray();
+
+        // Categorías reales desde la tabla asientos del bus
+        $asientosBus = Asiento::where('bus_id', $viaje->bus_id)
+            ->get()
+            ->keyBy(fn ($a) => (string) $a->numero);
+
+        $capacidad = $viaje->bus->numero_asientos ?? 40;
+        $this->categoriasAsientos = [];
+        $this->preciosPorAsiento = [];
+
+        foreach (range(1, $capacidad) as $numero) {
+            $key = (string) $numero;
+            $asiento = $asientosBus->get($key);
+
+            $categoria = $asiento?->categoria ?? 'estandar';
+            $this->categoriasAsientos[$key] = $categoria;
+
+            // Precio con recargo: VIP = base * 1.5, Estandar = base
+            $this->preciosPorAsiento[$key] = $categoria === 'vip'
+                ? round($this->precioBase * 1.5, 2)
+                : round($this->precioBase, 2);
+        }
     }
 
     private function getViajeData()
@@ -43,9 +106,11 @@ class CompraWeb extends Component
         ])->findOrFail($this->viajeId);
     }
 
-    public function seleccionarAsiento($numeroAsiento)
+    public function seleccionarAsiento($numeroAsiento): void
     {
-        if (!$numeroAsiento) return;
+        if (! $numeroAsiento) {
+            return;
+        }
         $numeroAsiento = (string) $numeroAsiento;
 
         if (in_array($numeroAsiento, $this->asientosSeleccionados)) {
@@ -54,9 +119,7 @@ class CompraWeb extends Component
         } else {
             $this->asientosSeleccionados[] = $numeroAsiento;
 
-            $viaje = $this->getViajeData();
-            $precioBase = $viaje->frecuencia->ruta->precio_base ?? 0;
-            $precioConRecargo = $precioBase + $this->recargo;
+            $precioBaseAsiento = $this->preciosPorAsiento[$numeroAsiento] ?? $this->precioBase;
 
             $nombreAuto = '';
             $cedulaAuto = '';
@@ -70,42 +133,36 @@ class CompraWeb extends Component
                 'nombre' => $nombreAuto,
                 'cedula' => $cedulaAuto,
                 'edad' => '',
-                'precio' => $precioConRecargo
+                'precio' => $precioBaseAsiento,
+                'categoria' => $this->categoriasAsientos[$numeroAsiento] ?? 'estandar',
             ];
         }
 
         $this->calcularTotal();
     }
 
-    public function updatedTipoAsiento($value)
+    public function updated($propertyName): void
     {
-        $this->recargo = ($value === 'vip') ? 5.00 : 0.00;
-        $this->calcularTotal();
-    }
-
-    public function updated($propertyName)
-    {
-        if (str_contains($propertyName, 'edad') || str_contains($propertyName, 'tipoAsiento')) {
+        if (str_contains($propertyName, 'edad')) {
             $this->calcularTotal();
         }
     }
 
-    public function calcularTotal()
+    public function calcularTotal(): void
     {
         $this->total = 0;
-        $viaje = $this->getViajeData();
-        $precioBase = $viaje->frecuencia->ruta->precio_base ?? 0;
-        $precioConRecargo = $precioBase + $this->recargo;
 
         foreach ($this->datosPasajeros as $key => $pasajero) {
+            $precioBaseAsiento = $this->preciosPorAsiento[$key] ?? $this->precioBase;
             $edad = $pasajero['edad'];
+
             if ($edad !== '' && is_numeric($edad)) {
-                $precioFinal = DescuentoPorEdad::precioFinal($precioConRecargo, (int) $edad);
+                $precioFinal = DescuentoPorEdad::precioFinal($precioBaseAsiento, (int) $edad);
                 $this->datosPasajeros[$key]['precio'] = $precioFinal;
                 $this->total += $precioFinal;
             } else {
-                $this->datosPasajeros[$key]['precio'] = $precioConRecargo;
-                $this->total += $precioConRecargo;
+                $this->datosPasajeros[$key]['precio'] = $precioBaseAsiento;
+                $this->total += $precioBaseAsiento;
             }
         }
     }
@@ -116,12 +173,14 @@ class CompraWeb extends Component
 
         if (empty($this->asientosSeleccionados)) {
             session()->flash('error', 'Debes seleccionar al menos un asiento.');
+
             return;
         }
 
         $redirect = null;
         $errorVerificacion = false;
         $viaje = $this->getViajeData();
+
         try {
             DB::transaction(function () use (&$redirect, &$errorVerificacion, $viaje) {
 
@@ -132,10 +191,10 @@ class CompraWeb extends Component
                     ->unique()
                     ->toArray();
 
-                if (!empty($asientosYaVendidos)) {
+                if (! empty($asientosYaVendidos)) {
                     $textoAsientos = count($asientosYaVendidos) === 1
-                        ? 'El asiento ' . $asientosYaVendidos[0]
-                        : 'Los asientos ' . implode(', ', $asientosYaVendidos);
+                        ? 'El asiento '.$asientosYaVendidos[0]
+                        : 'Los asientos '.implode(', ', $asientosYaVendidos);
 
                     $this->asientosSeleccionados = array_diff($this->asientosSeleccionados, $asientosYaVendidos);
                     foreach ($asientosYaVendidos as $ocupado) {
@@ -143,16 +202,18 @@ class CompraWeb extends Component
                     }
                     $this->calcularTotal();
 
-                    session()->flash('error', $textoAsientos . ' ya está ocupado. Por favor, selecciona otro.');
+                    session()->flash('error', $textoAsientos.' ya está ocupado. Por favor, selecciona otro.');
                     $errorVerificacion = true;
+
                     return;
                 }
 
                 $venta = Venta::create([
-                    'user_id' => Auth::id(),
+                    'user_id' => null,
                     'cliente_id' => Auth::id(),
                     'total' => $this->total,
-                    'estado' => 'Pendiente',
+                    'estado' => Venta::ESTADO_PENDIENTE,
+                    'canal_venta' => Venta::CANAL_WEB,
                     'comprobante' => null,
                 ]);
 
@@ -168,12 +229,14 @@ class CompraWeb extends Component
                     );
 
                     Boleto::create([
-                        'venta_id'       => $venta->id,
-                        'pasajero_id'    => $pasajero->id,
-                        'viaje_id'       => $viaje->id,
-                        'frecuencia_id'  => $viaje->frecuencia_id,
+                        'venta_id' => $venta->id,
+                        'pasajero_id' => $pasajero->id,
+                        'viaje_id' => $viaje->id,
+                        'frecuencia_id' => $viaje->frecuencia_id,
                         'numero_asiento' => $asiento,
-                        'precio_final'   => $datos['precio'],
+                        'categoria_asiento' => $this->categoriasAsientos[$asiento] ?? 'estandar',
+                        'precio_final' => $datos['precio'],
+                        'estado' => Boleto::ESTADO_ACTIVO,
                     ]);
                 }
 
@@ -189,13 +252,14 @@ class CompraWeb extends Component
                 return;
             }
 
-        } catch (\Illuminate\Database\QueryException $e) {
-            $code = (string)$e->getCode();
+        } catch (QueryException $e) {
+            $code = (string) $e->getCode();
             $msg = strtolower($e->getMessage());
             if ($code === '23505' || $code === '23000' || $code === '19' || str_contains($msg, 'unique') || str_contains($msg, 'unicidad')) {
                 $asientoAfectado = $this->asientosSeleccionados[0] ?? '5';
                 session()->flash('error', "El asiento {$asientoAfectado} se vendió antes; recarga el mapa.");
                 $this->dispatch('refreshMapa');
+
                 return null;
             }
             throw $e;
@@ -205,9 +269,11 @@ class CompraWeb extends Component
                 $asientoAfectado = $this->asientosSeleccionados[0] ?? '5';
                 session()->flash('error', "El asiento {$asientoAfectado} se vendió antes; recarga el mapa.");
                 $this->dispatch('refreshMapa');
+
                 return null;
             }
-            session()->flash('error', 'Error al procesar la compra: ' . $e->getMessage());
+            session()->flash('error', 'Error al procesar la compra: '.$e->getMessage());
+
             return null;
         }
 
@@ -217,7 +283,7 @@ class CompraWeb extends Component
     public function render()
     {
         return view('components.compra-web', [
-            'viaje' => $this->getViajeData()
+            'viaje' => $this->getViajeData(),
         ])->layout('layouts.carrito');
     }
 }

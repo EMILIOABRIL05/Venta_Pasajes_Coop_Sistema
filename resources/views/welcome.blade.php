@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    {{-- ─── Buscador flotante ──────────────────────────────────────────────────── --}}
+    {{-- ─── Buscador flotante con sección de próximos viajes ──────────────────── --}}
     <div class="-mt-12 mb-16 relative z-10 px-4">
         <livewire:buscador-pasajes />
     </div>

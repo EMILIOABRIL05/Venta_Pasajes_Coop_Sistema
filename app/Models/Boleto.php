@@ -5,12 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Models\Frecuencia;
-use App\Models\Viaje;
 
 class Boleto extends Model
 {
     use SoftDeletes;
+
+    // ─── Constantes de Estado ──────────────────────────────────────────────────
+
+    const ESTADO_ACTIVO = 'activo';
+
+    const ESTADO_CANCELADO = 'cancelado';
+
+    const ESTADO_USADO = 'usado';
+
+    const ESTADO_NO_SHOW = 'no_show';
 
     // ─── Configuración UUID ───────────────────────────────────────────────────
 
@@ -47,6 +55,7 @@ class Boleto extends Model
      * Al crear un nuevo Boleto se generan automáticamente:
      *   · id             → UUID v4 (identificador interno único)
      *   · codigo_reserva → Código alfanumérico legible (identificador de ventanilla)
+     *   · estado         → 'activo' por defecto
      */
     protected static function booted(): void
     {
@@ -59,6 +68,11 @@ class Boleto extends Model
             // Código de reserva legible
             if (empty($boleto->codigo_reserva)) {
                 $boleto->codigo_reserva = static::generarCodigoReserva();
+            }
+
+            // Estado por defecto
+            if (empty($boleto->estado)) {
+                $boleto->estado = self::ESTADO_ACTIVO;
             }
         });
     }
@@ -75,12 +89,12 @@ class Boleto extends Model
      */
     private static function generarCodigoReserva(): string
     {
-        $prefijo = 'AMB-' . now()->year . '-';
+        $prefijo = 'AMB-'.now()->year.'-';
 
         do {
             // 4 caracteres: letras mayúsculas + dígitos (base 36)
             $sufijo = strtoupper(Str::random(4));
-            $codigo = $prefijo . $sufijo;
+            $codigo = $prefijo.$sufijo;
         } while (static::withTrashed()->where('codigo_reserva', $codigo)->exists());
 
         return $codigo;
@@ -121,6 +135,66 @@ class Boleto extends Model
         return $this->belongsTo(Pasajero::class);
     }
 
-    
-}
+    // ─── Scopes ──────────────────────────────────────────────────────────────
 
+    /**
+     * Filtra boletos activos (válidos para viajar).
+     */
+    public function scopeActivos($query)
+    {
+        return $query->where('estado', self::ESTADO_ACTIVO);
+    }
+
+    /**
+     * Filtra boletos cancelados.
+     */
+    public function scopeCancelados($query)
+    {
+        return $query->where('estado', self::ESTADO_CANCELADO);
+    }
+
+    // ─── Métodos de Negocio ──────────────────────────────────────────────────
+
+    /**
+     * Indica si el boleto está activo (válido para viajar).
+     */
+    public function estaActivo(): bool
+    {
+        return $this->estado === self::ESTADO_ACTIVO;
+    }
+
+    /**
+     * Indica si el boleto fue cancelado.
+     */
+    public function estaCancelado(): bool
+    {
+        return $this->estado === self::ESTADO_CANCELADO;
+    }
+
+    /**
+     * Indica si el boleto ya fue utilizado (escaneado por chofer).
+     */
+    public function estaUsado(): bool
+    {
+        return $this->estado === self::ESTADO_USADO;
+    }
+
+    /**
+     * Marca el boleto como usado tras escaneo QR exitoso.
+     */
+    public function marcarComoUsado(): void
+    {
+        $this->update(['estado' => self::ESTADO_USADO]);
+    }
+
+    /**
+     * Marca el boleto como cancelado con fecha de cancelación.
+     */
+    public function marcarComoCancelado(): void
+    {
+        $this->update([
+            'estado' => self::ESTADO_CANCELADO,
+            'fecha_cancelacion' => now(),
+        ]);
+    }
+}

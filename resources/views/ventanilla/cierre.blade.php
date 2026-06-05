@@ -227,14 +227,14 @@
                             <p class="text-sm font-semibold text-gray-800">Últimas Transacciones</p>
                         </div>
                     </div>
-                    @if($ultimasTransacciones->isNotEmpty())
+                    @if($ultimasTransacciones->total() > 0)
                         <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                            Últimas {{ $ultimasTransacciones->count() }}
+                            {{ $ultimasTransacciones->total() }} total
                         </span>
                     @endif
                 </div>
 
-                @if($ultimasTransacciones->isEmpty())
+                @if($ultimasTransacciones->total() === 0)
                     <div class="flex flex-col items-center justify-center py-14 text-gray-400 gap-3">
                         <span class="text-5xl opacity-30">📭</span>
                         <p class="text-sm font-medium">No hay transacciones registradas hoy.</p>
@@ -246,6 +246,7 @@
                                 <tr>
                                     <th class="px-6 py-3.5 text-left font-semibold">Hora</th>
                                     <th class="px-6 py-3.5 text-left font-semibold">Venta #</th>
+                                    <th class="px-6 py-3.5 text-left font-semibold">Canal</th>
                                     <th class="px-6 py-3.5 text-left font-semibold">Pasajero</th>
                                     <th class="px-6 py-3.5 text-left font-semibold">Ruta</th>
                                     <th class="px-6 py-3.5 text-center font-semibold">Asientos</th>
@@ -255,48 +256,76 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50 bg-white">
-                                @foreach($ultimasTransacciones as $i => $tx)
+                                @foreach($ultimasTransacciones as $tx)
                                     <tr class="group hover:bg-indigo-50/40 transition-colors duration-150">
                                         <td class="px-6 py-3.5">
                                             <span class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2 py-0.5 text-xs font-mono font-semibold text-gray-600">
-                                                🕐 {{ $tx['hora'] }}
+                                                🕐 {{ $tx->created_at->format('H:i') }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#{{ $tx['id'] }}</td>
-                                        <td class="px-6 py-3.5 font-medium text-gray-800">{{ $tx['pasajero'] }}</td>
+                                        <td class="px-6 py-3.5 font-mono text-xs text-gray-400">#{{ $tx->id }}</td>
                                         <td class="px-6 py-3.5">
+                                            @if($tx->canal_venta === 'web')
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                                    </svg>
+                                                    Web
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                                    </svg>
+                                                    Ventanilla
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-3.5 font-medium text-gray-800">
+                                            {{ optional($tx->boletos->first()?->pasajero)->nombre_completo ?? '—' }}
+                                        </td>
+                                        <td class="px-6 py-3.5">
+                                            @php
+                                                $primerBoleto = $tx->boletos->first();
+                                                $rutaNombre = $primerBoleto
+                                                    ? (optional(optional($primerBoleto->frecuencia)->ruta)->origen->nombre ?? '—') . ' → ' . (optional(optional($primerBoleto->frecuencia)->ruta)->destino->nombre ?? '—')
+                                                    : 'Sin ruta';
+                                            @endphp
                                             <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-                                                {{ $tx['ruta'] }}
+                                                {{ $rutaNombre }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-3.5 text-center text-xs text-gray-500 font-mono">
-                                            {{ $tx['asientos'] ?: '—' }}
+                                            {{ $tx->boletos->pluck('numero_asiento')->sort()->join(', ') ?: '—' }}
                                         </td>
                                         <td class="px-6 py-3.5 text-center">
                                             <span class="inline-flex items-center justify-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                                                {{ $tx['boletos'] }}
+                                                {{ $tx->boletos->count() }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-3.5 text-right font-bold text-gray-900">
-                                            ${{ number_format($tx['total'], 2) }}
+                                        <td class="px-6 py-3.5 text-right font-bold {{ $tx->canal_venta === 'web' ? 'text-blue-600' : 'text-gray-900' }}">
+                                            ${{ number_format($tx->total, 2) }}
                                         </td>
                                         <td class="px-6 py-3.5 text-right">
-                                            @if(!empty($tx['boleto_ids']))
-                                                <a href="{{ route('ventas.comprobante.descargar', $tx['id']) }}"
-                                                   target="_blank"
-                                                   class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 hover:shadow transition-all duration-150"
-                                                   title="Descargar comprobante con todos los boletos">
-                                                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                                    </svg>
-                                                    PDF
-                                                </a>
-                                            @endif
+                                            <a href="{{ route('ventas.comprobante.descargar', $tx->id) }}"
+                                               target="_blank"
+                                               class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 hover:shadow transition-all duration-150"
+                                               title="Descargar comprobante con todos los boletos">
+                                                <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                                </svg>
+                                                PDF
+                                            </a>
                                         </td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    {{-- Paginación --}}
+                    <div class="border-t border-gray-100 px-6 py-4">
+                        {{ $ultimasTransacciones->links() }}
                     </div>
                 @endif
             </div>

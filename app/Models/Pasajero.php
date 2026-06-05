@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\CalculaDescuentoPorEdad;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\CalculaDescuentoPorEdad;
 
 class Pasajero extends Model
 {
-    use SoftDeletes, CalculaDescuentoPorEdad;
+    use CalculaDescuentoPorEdad, SoftDeletes;
 
     /**
      * Campos asignables masivamente.
@@ -30,6 +30,25 @@ class Pasajero extends Model
     {
         return $this->hasMany(Boleto::class);
     }
+
+    /**
+     * Vincula el pasajero con su cuenta de usuario web (si existe),
+     * buscando por número de cédula.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'cedula', 'cedula');
+    }
+
+    /**
+     * Indica si este pasajero tiene una cuenta de usuario vinculada.
+     */
+    public function tieneCuenta(): bool
+    {
+        return $this->user()->exists();
+    }
+
+    // ─── Métodos de Negocio ──────────────────────────────────────────────────
 
     public function esTerceraEdad(): bool
     {

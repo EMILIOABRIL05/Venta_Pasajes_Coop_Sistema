@@ -29,7 +29,7 @@
                     <svg class="w-4 h-4 mr-1.5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M16 16h3a1 1 0 001-1v-4a1 1 0 00-1-1h-3m-9 0h3"></path>
                     </svg>
-                    Bus: {{ $viaje->bus->placa ?? 'N/D' }} ({{ $viaje->bus->categoria->nombre ?? 'Normal' }})
+                    Bus: {{ $viaje->bus->placa ?? 'N/D' }}
                 </span>
             </div>
         </div>
@@ -41,10 +41,10 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        <!-- COLUMNA IZQUIERDA: Selector de Asiento e Info -->
+        <!-- COLUMNA IZQUIERDA: Mapa de Asientos -->
         <div class="lg:col-span-2 space-y-6">
             
-            <!-- Selector de Categoría de Asiento Global -->
+            <!-- Leyenda del Mapa de Asientos -->
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
                 <div class="flex items-center justify-between mb-4">
                     <div>
@@ -52,68 +52,43 @@
                             <svg class="w-5 h-5 mr-2 text-[#CC0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2H7a2 2 0 01-2-2V5zM5 15a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2z"></path>
                             </svg>
-                            Categoría del Asiento
+                            Mapa de Asientos
                         </h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Elige la categoría para aplicar el recargo respectivo.</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Selecciona tus asientos. El precio se calcula automáticamente según la categoría.</p>
                     </div>
                     <span class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-                        Tarifa Base: ${{ number_format($viaje->frecuencia->ruta->precio_base ?? 0, 2) }}
+                        Tarifa Base: ${{ number_format($precioBase, 2) }}
                     </span>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 {{ $tipoAsiento === 'estandar' ? 'border-[#003366] bg-blue-50/40 shadow-md' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50' }}">
-                        <input type="radio" wire:model.live="tipoAsiento" value="estandar" class="sr-only">
-                        <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center">
-                                <span class="w-5 h-5 rounded-full border-2 border-[#003366] flex items-center justify-center mr-3">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-[#003366] transition-transform duration-300 {{ $tipoAsiento === 'estandar' ? 'scale-100' : 'scale-0' }}"></span>
-                                </span>
-                                <div>
-                                    <span class="block font-bold text-gray-800 text-sm">Estándar</span>
-                                    <span class="block text-xs text-gray-500">Sin cargos adicionales</span>
-                                </div>
-                            </div>
-                            <span class="font-extrabold text-sm text-[#003366]">+$0.00</span>
-                        </div>
-                    </label>
-
-                    <label class="relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 {{ $tipoAsiento === 'vip' ? 'border-[#003366] bg-blue-50/40 shadow-md' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50' }}">
-                        <input type="radio" wire:model.live="tipoAsiento" value="vip" class="sr-only">
-                        <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center">
-                                <span class="w-5 h-5 rounded-full border-2 border-[#003366] flex items-center justify-center mr-3">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-[#003366] transition-transform duration-300 {{ $tipoAsiento === 'vip' ? 'scale-100' : 'scale-0' }}"></span>
-                                </span>
-                                <div>
-                                    <span class="block font-bold text-gray-800 text-sm flex items-center">
-                                        VIP
-                                        <span class="ml-1.5 text-[9px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Premium</span>
-                                    </span>
-                                    <span class="block text-xs text-gray-500">Mayor confort y servicios</span>
-                                </div>
-                            </div>
-                            <span class="font-extrabold text-sm text-[#CC0000]">+$5.00</span>
-                        </div>
-                    </label>
+                <!-- Leyenda de colores -->
+                <div class="flex flex-wrap gap-4 text-xs font-semibold">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                        <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
+                        Estándar — ${{ number_format($precioBase, 2) }}
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1.5 text-yellow-700">
+                        <span class="h-3 w-3 rounded-full bg-yellow-500"></span>
+                        VIP — ${{ number_format($precioBase * 1.5, 2) }} (+50%)
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-[#CC0000]/10 px-3 py-1.5 text-[#CC0000]">
+                        <span class="h-3 w-3 rounded-full bg-[#CC0000]"></span>
+                        Ocupado
+                    </span>
                 </div>
             </div>
 
             <!-- Mapa de Asientos -->
             <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100">
-                <div class="mb-6 pb-4 border-b border-gray-100">
-                    <h2 class="text-2xl font-bold text-[#003366]">Selecciona tus Asientos</h2>
-                    <p class="text-gray-500 mt-1 text-sm">Haz clic en los asientos disponibles para agregarlos a tu compra.</p>
-                </div>
-                
                 <div class="flex justify-center bg-gray-50 rounded-xl p-6 border border-gray-150"
                      wire:key="seat-map-container"
                      wire:loading.class="opacity-50 pointer-events-none transition-opacity">
                     
                     <x-seat-map 
                         :seatNumbers="range(1, $viaje->bus->numero_asientos ?? 40)" 
-                        :occupiedSeats="$viaje->boletos ? $viaje->boletos->pluck('numero_asiento')->toArray() : []"
+                        :occupiedSeats="$asientosOcupados"
                         :selectedSeats="$asientosSeleccionados"
+                        :seatCategories="$categoriasAsientos"
                     />
                 </div>
             </div>
@@ -152,6 +127,10 @@
                         <!-- Formularios de Pasajeros -->
                         <div class="space-y-4 overflow-y-auto pr-2 mb-6 custom-scrollbar" style="max-height: 400px;">
                             @foreach($asientosSeleccionados as $asiento)
+                                @php
+                                    $cat = $categoriasAsientos[$asiento] ?? 'estandar';
+                                    $precioAsiento = $preciosPorAsiento[$asiento] ?? $precioBase;
+                                @endphp
                                 <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-200 group">
                                     <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-150">
                                         <div class="flex items-center">
@@ -160,9 +139,15 @@
                                             </div>
                                             <span class="font-bold text-gray-700 text-sm">Pasajero</span>
                                         </div>
-                                        <span class="text-[9px] font-extrabold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full uppercase tracking-wider">
-                                            {{ $tipoAsiento === 'vip' ? 'VIP' : 'Estándar' }}
-                                        </span>
+                                        @if($cat === 'vip')
+                                            <span class="text-[9px] font-extrabold px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full uppercase tracking-wider">
+                                                VIP — ${{ number_format($precioAsiento, 2) }}
+                                            </span>
+                                        @else
+                                            <span class="text-[9px] font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider">
+                                                Estándar — ${{ number_format($precioAsiento, 2) }}
+                                            </span>
+                                        @endif
                                     </div>
                                     
                                     <div class="space-y-3">
@@ -196,12 +181,14 @@
                                     <div class="mt-3 pt-2.5 border-t border-gray-150 text-xs text-gray-600 space-y-1">
                                         <div class="flex justify-between">
                                             <span>Precio base:</span>
-                                            <span>${{ number_format($viaje->frecuencia->ruta->precio_base ?? 0, 2) }}</span>
+                                            <span>${{ number_format($precioBase, 2) }}</span>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <span>Recargo Asiento ({{ ucfirst($tipoAsiento) }}):</span>
-                                            <span>+${{ number_format($recargo, 2) }}</span>
-                                        </div>
+                                        @if($cat === 'vip')
+                                            <div class="flex justify-between text-yellow-700 font-medium">
+                                                <span>Recargo VIP (+50%):</span>
+                                                <span>+${{ number_format($precioBase * 0.5, 2) }}</span>
+                                            </div>
+                                        @endif
                                         
                                         @php
                                             $edadPasajeroRaw = $datosPasajeros[$asiento]['edad'] ?? '';
@@ -212,14 +199,14 @@
                                         @if($aplicaDescuento)
                                             <div class="flex justify-between text-green-600 font-medium">
                                                 <span>Descuento de Ley (50%):</span>
-                                                <span>-${{ number_format((\App\Support\DescuentoPorEdad::monto(($viaje->frecuencia->ruta->precio_base ?? 0) + $recargo, $edadPasajero)), 2) }}</span>
+                                                <span>-${{ number_format(\App\Support\DescuentoPorEdad::monto($precioAsiento, $edadPasajero), 2) }}</span>
                                             </div>
                                         @endif
                                         
                                         <div class="flex justify-between items-center pt-1 border-t border-dashed border-gray-200 mt-1">
                                             <span class="font-bold text-gray-700">Subtotal Asiento:</span>
                                             <span class="font-extrabold text-[#003366] text-sm">
-                                                ${{ number_format($datosPasajeros[$asiento]['precio'] ?? (($viaje->frecuencia->ruta->precio_base ?? 0) + $recargo), 2) }}
+                                                ${{ number_format($datosPasajeros[$asiento]['precio'] ?? $precioAsiento, 2) }}
                                             </span>
                                         </div>
                                     </div>
@@ -236,10 +223,6 @@
                                 <div class="flex justify-between text-blue-200 text-xs font-semibold mb-1 uppercase tracking-wider">
                                     <span>Asientos seleccionados:</span>
                                     <span class="bg-blue-800 px-2 py-0.5 rounded-full text-white">{{ count($asientosSeleccionados) }}</span>
-                                </div>
-                                <div class="flex justify-between text-blue-200 text-xs mb-1">
-                                    <span>Categoría elegida:</span>
-                                    <span class="font-bold uppercase">{{ $tipoAsiento }}</span>
                                 </div>
                                 <div class="flex justify-between items-end mt-2 pt-2 border-t border-blue-800">
                                     <span class="text-xs font-semibold text-blue-100 uppercase tracking-widest">Total a Pagar</span>

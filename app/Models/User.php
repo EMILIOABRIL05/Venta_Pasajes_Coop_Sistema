@@ -3,17 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Events\UserCreated;
+use App\Traits\CalculaDescuentoPorEdad;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Traits\CalculaDescuentoPorEdad;
 use Spatie\Permission\Traits\HasRoles;
-use App\Events\UserCreated;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, SoftDeletes, CalculaDescuentoPorEdad;
+    use CalculaDescuentoPorEdad, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $dispatchesEvents = [
         'created' => UserCreated::class,
@@ -38,10 +38,30 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'fecha_nacimiento'  => 'date',
+            'password' => 'hashed',
+            'fecha_nacimiento' => 'date',
         ];
     }
+
+    // ─── Relaciones ──────────────────────────────────────────────────────────
+
+    /**
+     * Ventas donde este usuario actuó como cajero/ventanilla (user_id).
+     */
+    public function ventasCajero()
+    {
+        return $this->hasMany(Venta::class, 'user_id');
+    }
+
+    /**
+     * Ventas donde este usuario es el comprador web (cliente_id).
+     */
+    public function ventasWeb()
+    {
+        return $this->hasMany(Venta::class, 'cliente_id');
+    }
+
+    // ─── Métodos de Negocio ──────────────────────────────────────────────────
 
     public function esTerceraEdad(): bool
     {
@@ -51,5 +71,21 @@ class User extends Authenticatable
     public function esNino(): bool
     {
         return $this->tipoDescuentoPorEdad() === 'nino';
+    }
+
+    /**
+     * Indica si el usuario tiene rol de cliente (comprador web).
+     */
+    public function esCliente(): bool
+    {
+        return $this->hasRole('cliente');
+    }
+
+    /**
+     * Indica si el usuario tiene rol de oficinista (vendedor ventanilla).
+     */
+    public function esOficinista(): bool
+    {
+        return $this->hasRole('oficinista');
     }
 }
