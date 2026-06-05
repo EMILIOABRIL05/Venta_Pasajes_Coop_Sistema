@@ -21,4 +21,9 @@ class Frecuencia extends Model
     {
         return $this->belongsTo(Ruta::class, 'ruta_id');
     }
+
+    public function viajes()
+    {
+        return $this->hasMany(Viaje::class, 'frecuencia_id');
+    }
 }

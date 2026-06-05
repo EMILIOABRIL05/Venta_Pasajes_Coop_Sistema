@@ -80,7 +80,7 @@ class SolicitudCambioController extends Controller
         $user = Auth::user();
         $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
 
-        $query = SolicitudCambio::with(['usuario', 'reporteTecnico'])
+        $query = SolicitudCambio::with(['usuario', 'evaluador', 'reporteTecnico'])
             ->latest();
 
         if (! $isDeveloper) {
@@ -97,7 +97,7 @@ class SolicitudCambioController extends Controller
         $user = Auth::user();
         $isDeveloper = $user->hasRole('developer') || $user->hasRole('admin');
 
-        $solicitud = SolicitudCambio::with(['usuario', 'reporteTecnico'])
+        $solicitud = SolicitudCambio::with(['usuario', 'evaluador', 'reporteTecnico'])
             ->findOrFail($id);
 
         if (! $isDeveloper && $solicitud->user_id !== $user->id) {
@@ -117,14 +117,19 @@ class SolicitudCambioController extends Controller
         }
 
         $validated = $request->validate([
-            'estado_pipeline' => 'required|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
+            'estado_pipeline'  => 'required|in:Propuesto,En Desarrollo,Validado en Sandbox,Mergado,Desplegado,Rechazado',
+            'motivo_rechazo'   => 'nullable|string|required_if:estado_pipeline,Rechazado',
         ]);
 
         $solicitud = SolicitudCambio::findOrFail($id);
 
-        return DB::transaction(function () use ($solicitud, $validated) {
+        return DB::transaction(function () use ($solicitud, $validated, $user) {
             $solicitud->update([
                 'estado_pipeline' => $validated['estado_pipeline'],
+                'evaluador_id'    => $user->id,
+                'motivo_rechazo'  => $validated['estado_pipeline'] === 'Rechazado'
+                    ? $validated['motivo_rechazo']
+                    : null,
             ]);
 
             return redirect()
@@ -142,7 +147,7 @@ class SolicitudCambioController extends Controller
             abort(403);
         }
 
-        $solicitud = SolicitudCambio::with(['usuario', 'reporteTecnico'])
+        $solicitud = SolicitudCambio::with(['usuario', 'evaluador', 'reporteTecnico'])
             ->findOrFail($id);
 
         return view('solicitudes-cambio.edit', compact('solicitud', 'isDeveloper'));
@@ -182,6 +187,7 @@ class SolicitudCambioController extends Controller
                 'descripcion'      => $validated['descripcion'],
                 'prioridad'        => $validated['prioridad'],
                 'estado_pipeline'  => $validated['estado_pipeline'] ?? $solicitud->estado_pipeline,
+                'evaluador_id'     => $user->id,
             ]);
 
             $sandboxModules = $validated['sandbox_modules'] ?? [];
@@ -219,5 +225,15 @@ class SolicitudCambioController extends Controller
                 ->route('solicitudes-cambio.show', $solicitud->id)
                 ->with('success', 'Solicitud actualizada correctamente.');
         });
+    }
+
+    public function misSolicitudes()
+    {
+        $solicitudes = SolicitudCambio::with(['evaluador', 'reporteTecnico'])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get();
+
+        return view('solicitudes.mis_solicitudes', compact('solicitudes'));
     }
 }

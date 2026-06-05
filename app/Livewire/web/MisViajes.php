@@ -46,8 +46,8 @@ class MisViajes extends Component
             return;
         }
 
-        // Generar QR en formato SVG base64; el lector envia este UUID al endpoint POST.
-        $qrCode = base64_encode(QrCode::format('svg')->size(150)->generate($boleto->id));
+        // Generar QR en formato SVG base64 para compatibilidad con PDF sin imagick
+        $qrCode = base64_encode((string) QrCode::format('svg')->size(150)->generate($boleto->id));
 
         $data = [
             'boleto' => $boleto,

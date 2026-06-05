@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             AsientoSeeder::class,
             RolesAndPermissionsSeeder::class,
             TestUsersSeeder::class,
+            SolicitudCambioSeeder::class,
         ]);
     }
 }

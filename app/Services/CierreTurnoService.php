@@ -213,13 +213,14 @@ class CierreTurnoService
             ->sortByDesc('created_at')
             ->take($limite)
             ->map(fn (Venta $v) => [
-                'id'       => $v->id,
-                'hora'     => $v->created_at->format('H:i'),
-                'total'    => (float) $v->total,
-                'boletos'  => $v->boletos->count(),
-                'asientos' => $v->boletos->pluck('numero_asiento')->sort()->join(', '),
-                'pasajero' => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
-                'ruta'     => $this->nombreRutaVenta($v),
+                'id'         => $v->id,
+                'hora'       => $v->created_at->format('H:i'),
+                'total'      => (float) $v->total,
+                'boletos'    => $v->boletos->count(),
+                'asientos'   => $v->boletos->pluck('numero_asiento')->sort()->join(', '),
+                'pasajero'   => optional($v->boletos->first()?->pasajero)->nombre_completo ?? '—',
+                'ruta'       => $this->nombreRutaVenta($v),
+                'boleto_ids' => $v->boletos->pluck('id')->toArray(),
             ])
             ->values();
     }

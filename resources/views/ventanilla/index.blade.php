@@ -98,6 +98,17 @@
                         </div>
 
                     </div>
+
+                    {{-- Botones de acción: Descargar comprobante con todos los boletos --}}
+                    <div class="px-6 pb-5">
+                        <a href="{{ route('ventas.comprobante.descargar', $v['id']) }}"
+                           class="inline-flex items-center gap-2 rounded-lg bg-[#003366] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#002244] active:scale-95 transition-all duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+                            </svg>
+                            Descargar Comprobante ({{ $v['boletos'] }} boleto{{ $v['boletos'] > 1 ? 's' : '' }})
+                        </a>
+                    </div>
                 </div>
             @endif
             {{-- /Flash --}}
@@ -130,7 +141,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2a4 4 0 014-4h0a4 4 0 014 4v2M9 17H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4"/>
                         </svg>
-                        <p class="text-sm font-medium">No hay rutas registradas aún.</p>
+                        <p class="text-sm font-medium">No hay rutas con viajes programados.</p>
+                        <p class="text-xs text-gray-300">Asigna un bus y chofer desde la Hoja de Ruta para activar ventas.</p>
                     </div>
                 @else
                     <div class="overflow-x-auto">

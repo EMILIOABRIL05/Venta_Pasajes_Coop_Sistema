@@ -12,11 +12,13 @@ class SolicitudCambio extends Model
 
     protected $fillable = [
         'user_id',
+        'evaluador_id',
         'tipo_solicitud',
         'origen_solicitud',
         'descripcion',
         'prioridad',
         'estado_pipeline',
+        'motivo_rechazo',
     ];
 
     protected $casts = [
@@ -28,6 +30,11 @@ class SolicitudCambio extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function evaluador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'evaluador_id');
     }
 
     public function reporteTecnico(): HasOne
