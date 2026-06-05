@@ -1,105 +1,104 @@
-Aquí tienes el contenido exacto que debes copiar y pegar en un archivo llamado `CONTRIBUTING.md` en la raíz de tu repositorio. 
+# Guía de contribución
 
-Este archivo será la "Biblia" técnica para tu equipo. Define paso a paso qué comandos ejecutar, cómo nombrar las ramas y la regla estricta de los commits para que todos terminen con una buena calificación y sin conflictos en el código.
+Gracias por contribuir al Sistema de Venta de Pasajes de la Cooperativa Ambato.
+Este documento resume el flujo de trabajo, las convenciones técnicas y las
+reglas mínimas para mantener el repositorio ordenado.
 
----
+Antes de escribir código, lee también [intrucciones.md](intrucciones.md), donde
+están las reglas de arquitectura, negocio, UI y sprints del proyecto.
 
-# 🛠️ Guía de Contribución y GitFlow - Sistema Cooperativa Ambato
+## Flujo de ramas
 
-¡Bienvenidos al equipo de desarrollo! Para mantener el código limpio, evitar conflictos y asegurar que **todos tengan una cantidad equitativa de commits**, trabajaremos bajo una metodología estricta basada en **GitFlow** y **Commits Atómicos**.
+El proyecto usa GitFlow:
 
-Por favor, lee este documento antes de escribir tu primera línea de código.
+- `main`: rama de producción. No recibe commits directos.
+- `develop`: rama de integración. Todo cambio debe entrar mediante Pull Request.
+- `feature/nombre-de-la-tarea`: nuevas funcionalidades.
+- `fix/nombre-del-error`: correcciones de errores.
 
----
+Siempre crea tu rama desde `develop`:
 
-## 🌳 1. Estructura de Ramas (GitFlow)
-
-En este repositorio existen dos ramas principales que **NUNCA deben recibir commits directos**:
-*   🔴 **`main`**: Es la rama de producción. Solo el Líder del Proyecto hace *merge* aquí cuando se lanza una nueva versión (Tag v0.1.0, v0.5.0, etc.). **ESTÁ PROHIBIDO TOCARLA.**
-*   🟡 **`develop`**: Es la rama de integración. Aquí se une el trabajo de los 6 desarrolladores. Todo tu código debe apuntar a esta rama mediante un Pull Request (PR).
-
-### Ramas de Trabajo (Tú creas estas)
-Cada vez que inicies una tarea, debes crear una rama temporal derivada de `develop`:
-*   🟢 **`feature/nombre-de-la-tarea`**: Para desarrollar algo nuevo. *(Ej: `feature/crud-buses`, `feature/venta-ventanilla`)*
-*   🟠 **`fix/nombre-del-error`**: Para arreglar un bug. *(Ej: `fix/error-descuento-tercera-edad`)*
-
----
-
-## 💻 2. El Flujo de Trabajo Diario (Comandos Git)
-
-Sigue estos pasos EXACTAMENTE en este orden cada vez que vayas a programar:
-
-### Paso A: Sincronizarte con el equipo (Al iniciar tu día)
-Antes de programar, asegúrate de tener lo último que aprobó el Líder.
 ```bash
 git checkout develop
 git pull origin develop
+git checkout -b feature/mi-tarea
 ```
 
-### Paso B: Crear tu rama de trabajo
-Crea tu rama basada en develop. Usa minúsculas y guiones.
-```bash
-git checkout -b feature/mi-modulo-asignado
-```
+## Commits atómicos
 
-### Paso C: Escribir código y hacer COMMITS ATÓMICOS
-**REGLA DE ORO:** Un commit por archivo o acción lógica. Prohibido hacer un solo commit al final del día.
+Cada commit debe representar una única intención lógica. Evita mezclar
+migraciones, modelos, vistas y cambios de configuración en un solo commit si
+pueden revisarse por separado.
 
-*Ejemplo del flujo de un módulo:*
+Ejemplo:
+
 ```bash
-git add database/migrations/xxx_create_buses_table.php
-git commit -m "feat: crea migracion de tabla buses"
+git add database/migrations/xxxx_create_buses_table.php
+git commit -m "feat: crear migración de buses"
 
 git add app/Models/Bus.php
-git commit -m "feat: crea modelo Bus con relaciones y softdeletes"
+git commit -m "feat: crear modelo Bus"
 
-git add app/Livewire/Admin/BusComponent.php
-git commit -m "feat: crea componente livewire para backend de buses"
-
-git add resources/views/livewire/admin/bus-component.blade.php
-git commit -m "ui: diseña formulario tailwind para crear bus"
+git add resources/views/livewire/catalogos/buses-crud.blade.php
+git commit -m "ui: maquetar formulario de buses"
 ```
 
-### Paso D: Subir tu rama a GitHub
-Cuando termines tu tarea (o al final del día para respaldar):
+## Prefijos de commit
+
+Usa mensajes claros, en español y con uno de estos prefijos:
+
+- `feat:` nueva funcionalidad.
+- `ui:` cambios visuales o de interfaz.
+- `fix:` corrección de errores.
+- `refactor:` mejora interna sin cambiar comportamiento esperado.
+- `docs:` documentación.
+- `config:` configuración, rutas, Docker o herramientas.
+
+## Pull Requests
+
+Antes de abrir un Pull Request:
+
+1. Verifica que tu rama venga de `develop`.
+2. Ejecuta las pruebas y herramientas de calidad aplicables.
+3. Confirma que el PR tenga como base `develop`.
+4. Describe el cambio, el motivo y las pruebas realizadas.
+5. Espera revisión del líder o de otro integrante; no te autoapruebes.
+
+Comandos recomendados:
+
 ```bash
-git push origin feature/mi-modulo-asignado
+php artisan pint
+php artisan test
+npm run build
 ```
 
-### Paso E: Crear el Pull Request (PR)
-1. Ve a GitHub.com.
-2. Haz clic en "Compare & pull request".
-3. **IMPORTANTE:** Asegúrate de que la flecha apunte a `develop` (base: `develop` <- compare: `feature/mi-modulo-asignado`).
-4. Avisa al Líder de Proyecto para que revise y apruebe tu código. **Nadie puede auto-aprobarse un PR.**
+## Convenciones técnicas
 
----
+- Modelos en singular PascalCase: `Boleto`, `HojaRuta`, `Frecuencia`.
+- Tablas en plural snake_case: `boletos`, `hojas_ruta`, `frecuencias`.
+- La tabla `boletos` debe usar UUID como llave primaria.
+- Entidades principales como buses, rutas, frecuencias y usuarios deben usar
+  `SoftDeletes`.
+- Cuando intervienen permisos o middleware de acceso, `User` debe usar
+  `HasRoles` de Spatie.
+- Toda operación de venta, cobro o cambio financiero debe ejecutarse dentro de
+  `DB::transaction()`.
 
-## 📝 3. Convenciones de Código y Base de Datos
+Ejemplo:
 
-Si el Líder detecta que no sigues estas reglas, rechazará tu Pull Request:
+```php
+DB::transaction(function () {
+    // Guardar venta, boletos y pagos relacionados.
+});
+```
 
-1.  **Nomenclatura DB:** 
-    *   Modelos en Singular y PascalCase: `HojaRuta`, `Boleto`.
-    *   Tablas en Plural y snake_case: `hojas_ruta`, `boletos`.
-2.  **Seguridad de Boletos:** La tabla `boletos` DEBE usar **UUID** (`$table->uuid('id')->primary();`) en lugar de IDs numéricos.
-3.  **No Borrar Datos:** Tablas principales (Buses, Rutas, Usuarios) deben usar obligatoriamente `$table->softDeletes();` en la migración y el trait `SoftDeletes` en el modelo.
-4.  **Transacciones:** Todo lo que involucre dinero (crear una venta y boletos) debe ir envuelto en una transacción de base de datos para evitar cobros si falla el sistema.
-    ```php
-    DB::transaction(function () {
-        // Lógica de guardar venta y boletos
-    });
-    ```
+## Seguridad y datos sensibles
 
----
+- No subas archivos `.env`, credenciales, tokens ni respaldos con datos reales.
+- Usa `.env.example` para documentar variables necesarias.
+- Reporta vulnerabilidades siguiendo [SECURITY.md](SECURITY.md).
 
-## 💬 4. Tipos de Commits Permitidos (Prefijos)
-Usa estos prefijos al hacer `git commit -m "..."` para mantener el historial ordenado:
-*   `feat:` -> Nueva funcionalidad (Migraciones, modelos, controladores).
-*   `ui:` -> Cambios visuales (Tailwind, vistas Blade).
-*   `fix:` -> Solución de un error o bug.
-*   `refactor:` -> Mejorar código sin añadir funcionalidades nuevas.
-*   `docs:` -> Cambios en README, comentarios o este CONTRIBUTING.md.
-*   `config:` -> Cambios en rutas, Docker, o configuraciones de Laravel.
+## Dudas
 
----
-*Si tienes dudas con un comando o la base de datos se desconfigura, detente y comunícate con el Líder del Proyecto antes de forzar un push (`--force` está estrictamente prohibido).*
+Si falta evidencia en el código o en la documentación, detente y consulta al
+líder del proyecto antes de asumir un flujo nuevo.
