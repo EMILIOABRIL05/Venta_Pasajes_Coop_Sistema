@@ -175,7 +175,7 @@ class VentaController extends Controller
         // Si es admin o oficinista puede descargar cualquiera, si es cliente solo los suyos
         $query = Boleto::with(['venta', 'pasajero', 'frecuencia.ruta.origen', 'frecuencia.ruta.destino']);
 
-        if (auth()->user()->hasRole('admin|oficinista')) {
+        if (auth()->user()->hasAnyRole(['admin', 'oficinista'])) {
             $boleto = $query->findOrFail($id);
         } else {
             $boleto = $query->whereHas('venta', function ($q) {
@@ -183,8 +183,8 @@ class VentaController extends Controller
             })->findOrFail($id);
         }
 
-        // Generamos el QR con el UUID contenido en $boleto->id
-        $qrCode = QrCode::size(200)->generate($boleto->id);
+        // Generamos el QR en formato SVG y lo codificamos en base64 para evitar conflictos de comillas en el HTML del PDF
+        $qrCode = base64_encode((string) QrCode::format('svg')->size(200)->generate($boleto->id));
 
         $data = [
             'boleto' => $boleto,
@@ -193,6 +193,34 @@ class VentaController extends Controller
 
         $pdf = Pdf::loadView('ventas.boleto_pdf', $data);
         return $pdf->download('Boleto-Ambato-' . $boleto->id . '.pdf');
+    }
+
+    /**
+     * Descarga un comprobante de venta con TODOS los boletos en un solo PDF (multi-página).
+     * Estándar de industria: un PDF por transacción, un boleto por página.
+     */
+    public function descargarComprobanteVenta($venta_id)
+    {
+        $query = Venta::with(['boletos.pasajero', 'boletos.frecuencia.ruta.origen', 'boletos.frecuencia.ruta.destino']);
+
+        if (auth()->user()->hasAnyRole(['admin', 'oficinista'])) {
+            $venta = $query->findOrFail($venta_id);
+        } else {
+            $venta = $query->where('cliente_id', auth()->id())->findOrFail($venta_id);
+        }
+
+        $boletosConQr = $venta->boletos->map(function ($boleto) {
+            $boleto->qrCode = base64_encode((string) QrCode::format('svg')->size(200)->generate($boleto->id));
+            return $boleto;
+        });
+
+        $data = [
+            'venta' => $venta,
+            'boletos' => $boletosConQr,
+        ];
+
+        $pdf = Pdf::loadView('ventas.comprobante_venta_pdf', $data);
+        return $pdf->download('Comprobante-Venta-' . $venta->id . '.pdf');
     }
 
     /**

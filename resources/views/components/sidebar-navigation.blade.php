@@ -48,6 +48,26 @@
                 </a>
             @endif
 
+            {{-- Mis Solicitudes (Todos los usuarios autenticados) --}}
+            <a href="{{ route('mis-solicitudes') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('mis-solicitudes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0h4m-4 4h4m-4 4h4" />
+                </svg>
+                Mis Solicitudes
+            </a>
+
+            {{-- Auditoría DevOps (Solo admin/developer) --}}
+            @if ($esAdmin || $esDeveloper)
+                <a href="{{ route('auditoria.dashboard') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('auditoria.dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Auditoría DevOps
+                </a>
+            @endif
+
             @if ($esChofer || $esAdmin)
                 <a href="{{ route('chofer.dashboard') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('chofer.dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
@@ -333,6 +353,26 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
                         Listado de Cambios
+                    </a>
+                @endif
+
+                {{-- Mis Solicitudes (Todos los usuarios autenticados) --}}
+                <a href="{{ route('mis-solicitudes') }}" @click="open = false"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('mis-solicitudes') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0h4m-4 4h4m-4 4h4" />
+                    </svg>
+                    Mis Solicitudes
+                </a>
+
+                {{-- Auditoría DevOps (Solo admin/developer) --}}
+                @if ($esAdmin || $esDeveloper)
+                    <a href="{{ route('auditoria.dashboard') }}" @click="open = false"
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 mb-2 {{ request()->routeIs('auditoria.dashboard') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Auditoría DevOps
                     </a>
                 @endif
 

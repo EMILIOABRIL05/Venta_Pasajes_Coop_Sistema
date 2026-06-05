@@ -57,8 +57,8 @@ class BoletoVendido extends Mailable implements ShouldQueue
         // Cargar las relaciones necesarias para el PDF
         $this->boleto->loadMissing(['venta', 'pasajero', 'frecuencia.ruta.origen', 'frecuencia.ruta.destino']);
 
-        // Generar el código QR
-        $qrCode = QrCode::size(200)->generate($this->boleto->id);
+        // Generar el código QR en SVG base64 para compatibilidad con PDF sin imagick
+        $qrCode = base64_encode((string) QrCode::format('svg')->size(200)->generate($this->boleto->id));
 
         // Generar el PDF del boleto reutilizando la vista del Sprint anterior
         $pdf = Pdf::loadView('ventas.boleto_pdf', [

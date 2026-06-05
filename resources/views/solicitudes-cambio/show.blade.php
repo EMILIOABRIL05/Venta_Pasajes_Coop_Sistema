@@ -18,6 +18,11 @@
                     Solicitado por <span class="font-medium text-gray-700">{{ $solicitud->usuario->name }}</span>
                     &middot; {{ $solicitud->created_at->format('d/m/Y H:i') }}
                 </p>
+                @if($solicitud->evaluador)
+                <p class="text-sm text-gray-500 mt-1">
+                    Evaluado por <span class="font-medium text-[#003366]">{{ $solicitud->evaluador->name }}</span>
+                </p>
+                @endif
             </div>
             <div class="flex items-center gap-3">
                 @php
@@ -60,7 +65,7 @@
 
         {{-- ─── Action Buttons (Developer/Admin Only) ──────────────────── --}}
         @if($isDeveloper && count($nextSteps) > 0)
-        <div class="mb-6 rounded-lg bg-white p-4 shadow-md border border-gray-200">
+        <div x-data="{ showRechazo: false, motivo: '' }" class="mb-6 rounded-lg bg-white p-4 shadow-md border border-gray-200">
             <h4 class="mb-3 text-sm font-semibold text-gray-700">Avanzar en Pipeline</h4>
             <div class="flex flex-wrap gap-2">
                 @foreach($nextSteps as $nextStep)
@@ -74,24 +79,67 @@
                         ];
                         $btnClass = $btnColors[$nextStep] ?? 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
                     @endphp
+                    @if($nextStep === 'Rechazado')
+                    <button type="button"
+                            @click="showRechazo = !showRechazo"
+                            class="rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $btnClass }}">
+                        Rechazar
+                    </button>
+                    @else
                     <form method="POST" action="{{ route('solicitudes-cambio.update-status', $solicitud->id) }}" class="inline">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="estado_pipeline" value="{{ $nextStep }}">
                         <button type="submit"
                                 class="rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $btnClass }}">
-                            {{ $nextStep === 'Rechazado' ? 'Rechazar' : 'Mover a: ' . $nextStep }}
+                            Mover a: {{ $nextStep }}
                         </button>
                     </form>
+                    @endif
                 @endforeach
             </div>
+
+            {{-- Motivo de Rechazo Form ──────────────────────────────────── --}}
+            <div x-show="showRechazo" x-transition class="mt-4 pt-4 border-t border-red-100">
+                <form method="POST" action="{{ route('solicitudes-cambio.update-status', $solicitud->id) }}">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="estado_pipeline" value="Rechazado">
+                    <label for="motivo_rechazo" class="block text-sm font-medium text-red-700 mb-1">
+                        Motivo de Rechazo <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="motivo_rechazo" x-model="motivo" rows="3" required
+                              class="w-full rounded-md border-red-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm"
+                              placeholder="Explique por qué se rechaza esta solicitud..."></textarea>
+                    <div class="mt-3 flex justify-end gap-2">
+                        <button type="button" @click="showRechazo = false; motivo = ''"
+                                class="rounded-md bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                                class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">
+                            Confirmar Rechazo
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-        @elseif($isDeveloper && $solicitud->estado_pipeline === 'Rechazado')
-        <div class="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-800 border border-red-200">
-            <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Esta solicitud ha sido rechazada.
+        @elseif($solicitud->estado_pipeline === 'Rechazado')
+        <div class="mb-6 rounded-lg bg-red-50 p-5 border border-red-200">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <div>
+                    <h4 class="text-sm font-bold text-red-800">Solicitud Rechazada</h4>
+                    @if($solicitud->motivo_rechazo)
+                    <p class="mt-2 text-sm text-red-700 whitespace-pre-wrap">{{ $solicitud->motivo_rechazo }}</p>
+                    @endif
+                    @if($solicitud->evaluador)
+                    <p class="mt-2 text-xs text-red-500">Evaluado por: {{ $solicitud->evaluador->name }}</p>
+                    @endif
+                </div>
+            </div>
         </div>
         @endif
 

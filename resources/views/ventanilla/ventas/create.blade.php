@@ -190,20 +190,18 @@
                                     class="w-full rounded-xl border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition
                                            {{ $errors->has('ruta_id') ? 'border-red-400 bg-red-50' : '' }}">
                                 <option value="">— Seleccione una ruta —</option>
-                                @foreach ($rutas as $ruta)
-                                    @php
-                                        $bloqueada = $rutasBloqueadas->contains($ruta->id);
-                                    @endphp
+                                @forelse ($rutas as $ruta)
                                     <option value="{{ $ruta->id }}"
                                         data-precio="{{ $ruta->precio_base }}"
-                                        {{ $bloqueada ? 'disabled' : '' }}
                                         {{ old('ruta_id') == $ruta->id ? 'selected' : '' }}>
                                         {{ $ruta->origen->nombre ?? '?' }} → {{ $ruta->destino->nombre ?? '?' }}
                                         (${{ number_format($ruta->precio_base, 2) }})
-                                        {{ $bloqueada ? '— 🚫 Bus en Ruta ' : '' }}
                                     </option>
-                                @endforeach
+                                @empty
+                                    <option value="" disabled>No hay rutas con viajes programados</option>
+                                @endforelse
                             </select>
+                            <p id="viaje-fecha-info" class="mt-2 text-xs text-indigo-600 font-medium hidden"></p>
                             @error('ruta_id')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -373,6 +371,7 @@
         var precioInput = document.getElementById('precio_unitario');
 
         var rutaSelect  = document.getElementById('ruta_id');
+        var viajeFechaInfo = document.getElementById('viaje-fecha-info');
         var cedulaInput = document.getElementById('cedula');
         var nombreInput = document.getElementById('nombre_completo');
         var edadInput   = document.getElementById('edad');
@@ -507,6 +506,10 @@
 
         function clearSelectedSeats() {
             container.innerHTML = '';
+            if (viajeFechaInfo) {
+                viajeFechaInfo.classList.add('hidden');
+                viajeFechaInfo.textContent = '';
+            }
             syncResumen();
         }
 
@@ -538,6 +541,11 @@
                 .then(function(data) {
                     if (data.success) {
                         clearSelectedSeats();
+
+                        if (viajeFechaInfo) {
+                            viajeFechaInfo.textContent = '📅 Viaje programado: ' + data.viaje_fecha;
+                            viajeFechaInfo.classList.remove('hidden');
+                        }
 
                         var occupied = data.occupiedSeats || [];
                         var categories = data.seatCategories || {};

@@ -60,8 +60,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // TAREAS SPRINT 3 - LUIS (Estudiante 6)
-    // Descargar boleto en PDF con QR
+    // Descargar boleto individual en PDF con QR
     Route::get('/ventas/boleto/{id}/descargar', [VentaController::class, 'descargarBoleto'])->name('ventas.boleto.descargar');
+
+    // Descargar comprobante de venta completo (todos los boletos en un solo PDF)
+    Route::get('/ventas/comprobante/{venta_id}/descargar', [VentaController::class, 'descargarComprobanteVenta'])->name('ventas.comprobante.descargar');
 
     // Resumen del turno (Manolo)
     Route::get('/ventas/resumen-turno', [VentaController::class, 'resumenTurno'])
@@ -158,5 +161,15 @@ Route::middleware(['auth'])
         Route::patch('/{id}/estado', [\App\Http\Controllers\SolicitudCambioController::class, 'updateStatus'])
             ->name('update-status');
     });
+
+// ─── Mis Solicitudes (Usuarios estándar) ─────────────────────────────────────
+Route::get('/mis-solicitudes', [\App\Http\Controllers\SolicitudCambioController::class, 'misSolicitudes'])
+    ->middleware(['auth'])
+    ->name('mis-solicitudes');
+
+// ─── Auditoría y Git Flow Dashboard ──────────────────────────────────────────
+Route::get('/auditoria', [\App\Http\Controllers\AuditoriaController::class, 'index'])
+    ->middleware(['auth', 'role:admin|developer'])
+    ->name('auditoria.dashboard');
 
 require __DIR__.'/auth.php';

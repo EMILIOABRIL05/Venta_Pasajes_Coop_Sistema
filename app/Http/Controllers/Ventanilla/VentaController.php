@@ -41,7 +41,13 @@ class VentaController extends Controller
      */
     public function index()
     {
+        $hoy = now()->toDateString();
+
         $rutas = Ruta::with(['origen', 'destino'])
+            ->whereHas('frecuencias.viajes', function ($query) use ($hoy) {
+                $query->where('fecha', '>=', $hoy)
+                      ->whereIn('estado', ['programado', 'En Terminal']);
+            })
             ->orderBy('precio_base')
             ->get();
 
@@ -86,8 +92,8 @@ class VentaController extends Controller
         //    'Finalizada', se bloquea la venta de pasajes para toda la ruta.
         $hoy = now()->toDateString();
 
-        $viajeBloqueado = Viaje::where('fecha', $hoy)
-            ->where('estado', 'En Curso')
+        $viajeBloqueado = Viaje::where('fecha', '<=', $hoy)
+            ->whereIn('estado', ['En Curso', 'Finalizada'])
             ->whereHas('frecuencia', function ($q) use ($datosValidados) {
                 $q->where('ruta_id', $datosValidados['ruta_id']);
             })
@@ -112,16 +118,17 @@ class VentaController extends Controller
 
         $frecuencia = \App\Models\Frecuencia::where('ruta_id', $datosValidados['ruta_id'])->first();
         $viajeActivo = Viaje::with('bus.asientos')
-            ->where('fecha', $hoy)
+            ->where('fecha', '>=', $hoy)
             ->whereHas('frecuencia', function ($q) use ($datosValidados) {
                 $q->where('ruta_id', $datosValidados['ruta_id']);
             })
+            ->whereIn('estado', ['programado', 'En Terminal'])
+            ->orderBy('fecha')
             ->first();
 
-        // Verificar que ninguno de los asientos ya esté vendido en la base de datos para este viaje hoy (si el viaje existe)
+        // Verificar que ninguno de los asientos ya esté vendido en la base de datos para este viaje (si el viaje existe)
         if ($viajeActivo) {
             $vendidos = Boleto::where('frecuencia_id', $viajeActivo->frecuencia_id)
-                ->whereDate('created_at', $hoy)
                 ->whereIn('numero_asiento', array_map('strval', $asientos))
                 ->pluck('numero_asiento');
 
@@ -325,6 +332,7 @@ class VentaController extends Controller
                 'codigos'  => $venta->boletos
                                    ->pluck('codigo_reserva')
                                    ->join(' · '),
+                'boleto_ids' => $venta->boletos->pluck('id')->toArray(),
                 'cajero'   => auth()->user()->name ?? 'Sistema',
                 'fecha'    => now()->format('d/m/Y'),
                 'hora'     => now()->format('H:i:s'),
@@ -344,18 +352,15 @@ class VentaController extends Controller
     {
         $hoy = now()->toDateString();
 
-        $rutasBloqueadas = Viaje::where('fecha', $hoy)
-            ->whereIn('estado', ['En Curso', 'Finalizada'])
-            ->with('frecuencia.ruta')
-            ->get()
-            ->pluck('frecuencia.ruta_id')
-            ->unique();
-
         $rutas = Ruta::with(['origen', 'destino'])
+            ->whereHas('frecuencias.viajes', function ($query) use ($hoy) {
+                $query->where('fecha', '>=', $hoy)
+                      ->whereIn('estado', ['programado', 'En Terminal']);
+            })
             ->orderBy('precio_base')
             ->get();
 
-        return view('ventanilla.ventas.create', compact('rutas', 'rutasBloqueadas'));
+        return view('ventanilla.ventas.create', compact('rutas'));
     }
 
     /**
@@ -368,17 +373,19 @@ class VentaController extends Controller
     {
         $hoy = now()->toDateString();
 
-        $viaje = Viaje::where('fecha', $hoy)
+        $viaje = Viaje::where('fecha', '>=', $hoy)
             ->whereHas('frecuencia', function ($q) use ($ruta_id) {
                 $q->where('ruta_id', $ruta_id);
             })
+            ->whereIn('estado', ['programado', 'En Terminal'])
             ->with(['bus.asientos', 'frecuencia.ruta'])
+            ->orderBy('fecha')
             ->first();
 
         if (!$viaje) {
             return response()->json([
                 'success' => false,
-                'message' => 'No hay viajes programados hoy para esta ruta.'
+                'message' => 'No hay viajes programados para esta ruta.'
             ]);
         }
 
@@ -386,7 +393,7 @@ class VentaController extends Controller
         if (!$bus) {
             return response()->json([
                 'success' => false,
-                'message' => 'No hay un bus asignado al viaje de esta ruta hoy.'
+                'message' => 'No hay un bus asignado al viaje de esta ruta.'
             ]);
         }
 
@@ -399,9 +406,7 @@ class VentaController extends Controller
             })
             ->all();
 
-        // Obtener los asientos que ya están ocupados (boletos vendidos para esta frecuencia hoy)
         $occupiedSeats = Boleto::where('frecuencia_id', $viaje->frecuencia_id)
-            ->whereDate('created_at', $hoy)
             ->pluck('numero_asiento')
             ->map(fn($num) => (string) $num)
             ->toArray();
@@ -409,6 +414,7 @@ class VentaController extends Controller
         return response()->json([
             'success' => true,
             'viaje_id' => $viaje->id,
+            'viaje_fecha' => $viaje->fecha->format('d/m/Y'),
             'numero_asientos' => $numeroAsientos,
             'seatCategories' => $seatCategories,
             'occupiedSeats' => $occupiedSeats,
