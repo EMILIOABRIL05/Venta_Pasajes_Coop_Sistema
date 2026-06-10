@@ -114,6 +114,34 @@ class HojaRuta extends Component
             return;
         }
 
+        // Bloqueo de Solapamiento de Chofer (mismo patrón que el bus)
+        if ($this->chofer_user_id) {
+            $choferOcupado = Viaje::join('frecuencias', 'viajes.frecuencia_id', '=', 'frecuencias.id')
+                ->where('viajes.chofer_user_id', $this->chofer_user_id)
+                ->where('viajes.fecha', $this->fecha)
+                ->where('frecuencias.hora_salida', Frecuencia::find($this->frecuencia_id)->hora_salida)
+                ->whereNotIn('viajes.estado', ['Finalizada', 'cancelado'])
+                ->exists();
+
+            if ($choferOcupado) {
+                $this->dispatch('flash-message', message: 'Este chofer ya tiene un viaje asignado para esta fecha y hora.', type: 'error');
+
+                return;
+            }
+        }
+
+        // Bloqueo de Frecuencia Duplicada (exclusividad de horario por día)
+        $frecuenciaDuplicada = Viaje::where('frecuencia_id', $this->frecuencia_id)
+            ->where('fecha', $this->fecha)
+            ->whereNotIn('estado', ['Finalizada', 'cancelado'])
+            ->exists();
+
+        if ($frecuenciaDuplicada) {
+            $this->dispatch('flash-message', message: 'Ya existe un viaje programado para esta ruta y horario en la fecha seleccionada.', type: 'error');
+
+            return;
+        }
+
         Viaje::create([
             'fecha' => $this->fecha,
             'frecuencia_id' => $this->frecuencia_id,

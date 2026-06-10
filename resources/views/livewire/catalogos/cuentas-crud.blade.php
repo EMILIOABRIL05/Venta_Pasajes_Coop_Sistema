@@ -93,6 +93,7 @@
                             <select id="tipo_usuario" wire:model="tipo_usuario" class="w-full rounded-xl border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-[#003366] focus:ring-[#003366]">
                                 <option value="oficinista">Oficinista</option>
                                 <option value="chofer">Chofer</option>
+                                <option value="cliente">Cliente</option>
                             </select>
                             @error('tipo_usuario') <p class="mt-2 text-sm text-[#CC0000]">{{ $message }}</p> @enderror
                         </div>
@@ -147,7 +148,11 @@
                                 <div class="space-y-3">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h3 class="text-base font-bold text-slate-900">{{ $usuario->name }}</h3>
-                                        <span class="rounded-full bg-[#003366]/10 px-3 py-1 text-xs font-semibold text-[#003366]">{{ ucfirst($usuario->tipo_usuario) }}</span>
+                                        @if($usuario->roles->isEmpty())
+                                            <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-500">Sin Rol</span>
+                                        @else
+                                            <span class="rounded-full bg-[#003366]/10 px-3 py-1 text-xs font-semibold text-[#003366]">{{ ucfirst($usuario->getRoleNames()->first() ?? $usuario->tipo_usuario) }}</span>
+                                        @endif
                                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $usuario->cedula }}</span>
                                     </div>
 

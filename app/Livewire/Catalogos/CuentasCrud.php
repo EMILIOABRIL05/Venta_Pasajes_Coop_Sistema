@@ -4,9 +4,9 @@ namespace App\Livewire\Catalogos;
 
 use App\Livewire\Traits\RequiresRole;
 use App\Models\User;
-use Illuminate\Validation\Rules;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -50,7 +50,7 @@ class CuentasCrud extends Component
             'cedula' => ['required', 'string', 'regex:/^\d{10}$/', Rule::unique('users', 'cedula')->ignore($this->userId)],
             'telefono' => ['required', 'string', 'regex:/^\d{10}$/'],
             'fecha_nacimiento' => ['required', 'date', 'before:today'],
-            'tipo_usuario' => ['required', Rule::in(['oficinista', 'chofer'])],
+            'tipo_usuario' => ['required', Rule::in(['oficinista', 'chofer', 'cliente'])],
             'password' => [$this->userId ? 'nullable' : 'required', 'confirmed', Rules\Password::defaults()],
         ];
     }
@@ -98,7 +98,7 @@ class CuentasCrud extends Component
 
     public function edit(int $id): void
     {
-        $user = User::query()->whereIn('tipo_usuario', ['oficinista', 'chofer'])->findOrFail($id);
+        $user = User::query()->whereIn('tipo_usuario', ['oficinista', 'chofer', 'cliente'])->findOrFail($id);
 
         $this->userId = $user->id;
         $this->name = $user->name;
@@ -113,7 +113,7 @@ class CuentasCrud extends Component
 
     public function delete(int $id): void
     {
-        $user = User::query()->whereIn('tipo_usuario', ['oficinista', 'chofer'])->findOrFail($id);
+        $user = User::query()->whereIn('tipo_usuario', ['oficinista', 'chofer', 'cliente'])->findOrFail($id);
 
         if (auth()->id() === $user->id) {
             session()->flash('error', 'No puedes eliminar tu propia cuenta.');
@@ -149,7 +149,7 @@ class CuentasCrud extends Component
     {
         return view('livewire.catalogos.cuentas-crud', [
             'usuarios' => User::query()
-                ->whereIn('tipo_usuario', ['oficinista', 'chofer'])
+                ->whereIn('tipo_usuario', ['oficinista', 'chofer', 'cliente'])
                 ->latest()
                 ->paginate(8),
             'totalOficinistas' => User::query()->where('tipo_usuario', 'oficinista')->count(),

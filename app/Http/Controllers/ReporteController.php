@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pago;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReporteController extends Controller
@@ -24,7 +23,7 @@ class ReporteController extends Controller
             ->join('paradas as origen', 'rutas.origen_id', '=', 'origen.id')
             ->join('paradas as destino', 'rutas.destino_id', '=', 'destino.id')
             ->whereDate('ventas.created_at', now()->toDateString())
-            ->selectRaw('CONCAT(origen.nombre, " - ", destino.nombre) as ruta, COUNT(*) as total')
+            ->selectRaw("CONCAT(origen.nombre, ' - ', destino.nombre) as ruta, COUNT(*) as total")
             ->groupBy('ruta')
             ->orderBy('total', 'desc')
             ->get();
